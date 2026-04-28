@@ -1,0 +1,27 @@
+{
+  "_comment": "ClearPlan starter settings. Relative paths are resolved from the built application folder.",
+  "paths": {
+    "_comment": "Keep these paths local for the open-source starter package. Absolute paths still work if your clinic needs them.",
+    "constraintTemplatesDirectory": "ConstraintTemplates",
+    "defaultConventionalTemplate": "Starter_Conventional.csv",
+    "defaultHypofractionatedTemplate": "Starter_Hypofractionated.csv",
+    "defaultPlanSumTemplate": "Starter_PlanSum.csv",
+    "logsDirectory": "Logs",
+    "reportsDirectory": "Reports",
+    "csvExportDirectory": "Exports",
+    "stateDirectory": "State",
+    "usageLogFile": "Logs/ClearPlan_UserLog.csv",
+    "activityLogFile": "Logs/ActivityLog.csv",
+    "versionSeenUsersFile": "State/seen_versions.csv",
+    "changeLogFile": "CHANGELOG.md",
+    "feedbackFile": "FEEDBACK.md"
+  },
+  "links": {
+    "_comment": "Optional web links opened from the Help menu. Leave blank to show the local markdown file instead.",
+    "feedbackUrl": ""
+  },
+  "checks": {
+    "_comment": "The starter profile keeps only general example checks in ErrorCalculator.",
+    "profile": "starter"
+  }
+}

@@ -1,0 +1,10 @@
+.vs/
+packages/
+**/bin/
+**/obj/
+built/
+.codex_*
+*.bak
+Manuskript_Entwurf.docx
+ClearPlan-DLLs/VMS.TPS.Common.Model.API.dll
+ClearPlan-DLLs/VMS.TPS.Common.Model.Types.dll

@@ -1,0 +1,9 @@
+TemplateId,TemplateCodes,TemplateAliases,TemplateTypes,DVHObjective,Goal,Variation,Priority,Source,Notes
+Target,,PTV|CTV|GTV,PTV|CTV|GTV,D95%[%],>=95,>=93,1,Starter,Target coverage example
+Target,,PTV|CTV|GTV,PTV|CTV|GTV,D2%[%],<=107,<=110,1,Starter,Target hotspot example
+Body,,BODY|External|Outer Contour|KORPER,External,D0.035cc[%],<=110,<=115,2,Starter,Body maximum dose example
+SpinalCord,,SpinalCord|Myelon|Spinalkanal|Spinalkanal OAR,,D0.035cc[Gy],<=45,<=50,1,Starter,Generic serial OAR example
+Brainstem,,Brainstem|Hirnstamm|Hirnstamm OAR,,D0.035cc[Gy],<=54,<=60,2,Starter,Brainstem example
+Lung,,Lungs|LungeB|Lungen|Lung L|Lung R,,Mean[Gy],<=20,<=25,2,Starter,Parallel OAR example
+Heart,,Heart|Herz|Herz OAR,,Mean[Gy],<=20,<=25,2,Starter,Thoracic OAR example
+Parotid,,Parotid|ParotisL|ParotisR|Parotid L|Parotid R,,Mean[Gy],<=26,<=30,2,Starter,Head and neck OAR example

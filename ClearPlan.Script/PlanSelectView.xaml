@@ -1,0 +1,140 @@
+<UserControl
+    x:Class="ClearPlan.PlanSelectView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    >
+
+    <Grid Margin="8">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="500" />
+            <RowDefinition Height="20" />
+            <RowDefinition Height="20*" />
+            <RowDefinition Height="20" />
+            <!-- ListBox: make as high as possible -->
+            <RowDefinition Height="Auto" />
+            <!-- Buttons: make as high as necessary -->
+        </Grid.RowDefinitions>
+        <TextBlock 
+            Grid.Row="0"
+            Visibility="Collapsed"
+            Text="Select a constraint template:"
+            />
+        <ComboBox
+            Grid.Row="1"
+            ItemsSource="{Binding ConstraintComboBoxList}"
+            SelectedItem="{Binding ActiveConstraintPath}"
+            Visibility="Collapsed"
+            DisplayMemberPath="ConstraintName"
+            />
+        <StackPanel>
+        <TextBlock
+            Grid.Row="2"
+            Height="44"
+            FontSize="18"
+            Text="Multiple planning items found. Please select from planning items below:"
+            />
+        <!-- List of scripts -->
+        <DataGrid x:Name="planningItemSummariesDataGrid"
+                  Grid.Row="3" 
+                  FontSize="18"
+                  AutoGenerateColumns="False"
+                  HorizontalAlignment="Stretch"
+                  VerticalAlignment="Stretch"
+                  ItemsSource="{Binding PlanningItemSummaries, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                  IsReadOnly="True"
+                  ColumnWidth="*" 
+                  Height="504"
+                  >
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="PlanName" Width="4*" >
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Image Width="16" Height="16" HorizontalAlignment="Left">
+                                    <Image.Style>
+                                        <Style TargetType="{x:Type Image}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ApprovalStatus}" Value="PlanningApproved">
+                                                    <Setter Property="Source" Value="Resources/PlanApproved.png"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ApprovalStatus}" Value="UnApproved">
+                                                    <Setter Property="Source" Value="Resources/PlanUnapproved.png"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ApprovalStatus}" Value="TreatmentApproved">
+                                                    <Setter Property="Source" Value="Resources/TreatApproved.png"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ApprovalStatus}" Value="PlanSum">
+                                                    <Setter Property="Source" Value="Resources/PlanSum.png"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding ApprovalStatus}" Value="Rejected">
+                                                    <Setter Property="Source" Value="Resources/PlanRejected.png"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                                <TextBlock Text="{Binding PlanName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Padding="18,0,0,0" />
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="PlanCreated" Binding="{Binding PlanCreated, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="3*" />
+                <DataGridTextColumn Header="StructureSet" Binding="{Binding PlanStructureSet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="3*"/>
+                <DataGridTextColumn Header="Fields" Binding="{Binding PlanNumFields, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <DataGridTextColumn Header="FxDose" Binding="{Binding PlanFxDose, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <DataGridTextColumn Header="Fractions" Binding="{Binding PlanFractions, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <DataGridTextColumn Header="TotalDose" Binding="{Binding PlanTotalDose, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                <DataGridTextColumn Header="PlanTarget" Binding="{Binding PlanTarget, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="2*"/>
+                <DataGridTemplateColumn Header="IsDoseValid" Width="2*">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Image Width="16" Height="16" HorizontalAlignment="Center">
+                                    <Image.Style>
+                                        <Style TargetType="{x:Type Image}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsDoseValid}" Value="false">
+                                                    <Setter Property="Source" Value="Resources/DoseInValid.png"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsDoseValid}" Value="true">
+                                                    <Setter Property="Source" Value="Resources/DoseValid.png"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Image.Style>
+                                </Image>
+                            </Grid>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        </StackPanel>
+        <!-- Run and Exit buttons -->
+        <StackPanel
+            Grid.Row="2"
+            Orientation="Horizontal"
+            HorizontalAlignment="Center"
+            Margin="0,0,0,0"
+            >
+            <Button
+                Content="Run"
+                IsDefault="True"
+                FontSize="22"
+                Click="RunButton_OnClick"
+                Width="73" Height="44"
+                />
+            <Button
+                Content="Exit"
+                IsCancel="True"
+                FontSize="22"
+                Click="ExitButton_OnClick"
+                Width="73" Height="44"
+                Margin="8,0,0,0"
+                />
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

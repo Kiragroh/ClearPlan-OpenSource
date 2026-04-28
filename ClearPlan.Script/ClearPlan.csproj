@@ -1,0 +1,329 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{84D36DFB-52B3-4342-A40C-3344C7C6A521}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>VMS.TPS</RootNamespace>
+    <AssemblyName>ClearPlan.esapi</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\plugins</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>..\built\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <CodeAnalysisLogFile>..\..\plugins\PlanQualityMetrics.esapi.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
+    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
+    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+    <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <Prefer32Bit>false</Prefer32Bit>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <CodeAnalysisIgnoreGeneratedCode>true</CodeAnalysisIgnoreGeneratedCode>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>..\debug\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <CodeAnalysisLogFile>..\..\plugins\PlanQualityMetrics.esapi.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
+    <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
+    <CodeAnalysisModuleSuppressionsFile>GlobalSuppressions.cs</CodeAnalysisModuleSuppressionsFile>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSetDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\\Rule Sets</CodeAnalysisRuleSetDirectories>
+    <CodeAnalysisRuleDirectories>;C:\Program Files (x86)\Microsoft Visual Studio 10.0\Team Tools\Static Analysis Tools\FxCop\\Rules</CodeAnalysisRuleDirectories>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>
+    </ApplicationIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ClearPlan.Reporting, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\built\ClearPlan.Reporting.dll</HintPath>
+    </Reference>
+    <Reference Include="ClearPlan.Reporting.MigraDoc, Version=1.0.0.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\built\ClearPlan.Reporting.MigraDoc.dll</HintPath>
+    </Reference>
+    <Reference Include="CommandLine">
+      <HintPath>..\ClearPlan-DLLs\CommandLine.dll</HintPath>
+    </Reference>
+    <Reference Include="CommonServiceLocator">
+      <HintPath>..\ClearPlan-DLLs\CommonServiceLocator.dll</HintPath>
+    </Reference>
+    <Reference Include="EsapiEssentials">
+      <HintPath>..\ClearPlan-DLLs\EsapiEssentials.dll</HintPath>
+    </Reference>
+    <Reference Include="EsapiEssentials.PluginRunner, Version=2.2.1.0, Culture=neutral, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ClearPlan-DLLs\EsapiEssentials.PluginRunner.dll</HintPath>
+    </Reference>
+    <Reference Include="GalaSoft.MvvmLight">
+      <HintPath>..\ClearPlan-DLLs\GalaSoft.MvvmLight.dll</HintPath>
+    </Reference>
+    <Reference Include="GalaSoft.MvvmLight.Extras">
+      <HintPath>..\ClearPlan-DLLs\GalaSoft.MvvmLight.Extras.dll</HintPath>
+    </Reference>
+    <Reference Include="GalaSoft.MvvmLight.Platform">
+      <HintPath>..\ClearPlan-DLLs\GalaSoft.MvvmLight.Platform.dll</HintPath>
+    </Reference>
+    <Reference Include="itextsharp">
+      <HintPath>..\ClearPlan-DLLs\itextsharp.dll</HintPath>
+    </Reference>
+    <Reference Include="MigraDoc.DocumentObjectModel">
+      <HintPath>..\ClearPlan-DLLs\MigraDoc.DocumentObjectModel.dll</HintPath>
+    </Reference>
+    <Reference Include="MigraDoc.Rendering">
+      <HintPath>..\ClearPlan-DLLs\MigraDoc.Rendering.dll</HintPath>
+    </Reference>
+    <Reference Include="MigraDoc.RtfRendering">
+      <HintPath>..\ClearPlan-DLLs\MigraDoc.RtfRendering.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>..\ClearPlan-DLLs\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NLog">
+      <HintPath>..\ClearPlan-DLLs\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot">
+      <HintPath>..\ClearPlan-DLLs\OxyPlot.dll</HintPath>
+    </Reference>
+    <Reference Include="OxyPlot.Wpf">
+      <HintPath>..\ClearPlan-DLLs\OxyPlot.Wpf.dll</HintPath>
+    </Reference>
+    <Reference Include="ParallelExtensionsExtras">
+      <HintPath>..\ClearPlan-DLLs\ParallelExtensionsExtras.dll</HintPath>
+    </Reference>
+    <Reference Include="PdfSharp">
+      <HintPath>..\ClearPlan-DLLs\PdfSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="PdfSharp.Charting">
+      <HintPath>..\ClearPlan-DLLs\PdfSharp.Charting.dll</HintPath>
+    </Reference>
+    <Reference Include="ReachFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Net" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Printing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Interactivity">
+      <HintPath>..\ClearPlan-DLLs\System.Windows.Interactivity.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="VMS.TPS.Common.Model.API, Version=1.0.450.29, Culture=neutral, PublicKeyToken=305b81e210ec4b89, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ClearPlan-DLLs\VMS.TPS.Common.Model.API.dll</HintPath>
+    </Reference>
+    <Reference Include="VMS.TPS.Common.Model.Types, Version=1.0.450.29, Culture=neutral, PublicKeyToken=305b81e210ec4b89, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\ClearPlan-DLLs\VMS.TPS.Common.Model.Types.dll</HintPath>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Calculators\PQMHomogenityIndex.cs" />
+    <Compile Include="Calculators\PlanSelectCalculator.cs" />
+    <Compile Include="Calculators\PQMColors.cs" />
+    <Compile Include="Calculators\PQMCoveredDoseAtVolume.cs" />
+    <Compile Include="Calculators\PQMMinMaxMean.cs" />
+    <Compile Include="Calculators\PQMVolumeAtDose.cs" />
+    <Compile Include="Calculators\PQMDoseAtVolume.cs" />
+    <Compile Include="Calculators\PQMCoveredVolumeAtDose.cs" />
+    <Compile Include="Calculators\PQMConformationNumber.cs" />
+    <Compile Include="Calculators\PQMGradientIndex.cs" />
+    <Compile Include="CustomInsertDocumentsParameter.cs" />
+    <Compile Include="ExtensionMethods\Point3DExtensions.cs" />
+    <Compile Include="ExtensionMethods\Vector3DExtensions.cs" />
+    <Compile Include="Gateway.cs" />
+    <Compile Include="Helpers\AssemblyHelper.cs" />
+    <Compile Include="Helpers\ClearPlanSettings.cs" />
+    <Compile Include="Geometry\BoundingSphere.cs" />
+    <Compile Include="Geometry\CuttingEarsTriangulator.cs" />
+    <Compile Include="Geometry\LineSegment.cs" />
+    <Compile Include="Geometry\Mesh3D.cs" />
+    <Compile Include="Geometry\MeshBuilder.cs" />
+    <Compile Include="Geometry\MeshGeometryHelper.cs" />
+    <Compile Include="Geometry\MeshSimplification.cs" />
+    <Compile Include="Geometry\Plane3D.cs" />
+    <Compile Include="Geometry\Polygon.cs" />
+    <Compile Include="Geometry\Polygon3D.cs" />
+    <Compile Include="Geometry\Ray3D.cs" />
+    <Compile Include="Geometry\SharedFunctions.cs" />
+    <Compile Include="Geometry\SweepLinePolygonTriangulator.cs" />
+    <Compile Include="Geometry\Triangle.cs" />
+    <Compile Include="Helpers\ContourHelper.cs" />
+    <Compile Include="Helpers\DocumentationHelper.cs" />
+    <Compile Include="Helpers\HelixToolkitException.cs" />
+    <Compile Include="Helpers\INotifyUserMessaged.cs" />
+    <Compile Include="Helpers\UserMessagedEventArgs.cs" />
+    <Compile Include="Helpers\UserMessager.cs" />
+    <Compile Include="Log.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="ViewModels\DVHstatViewModel.cs" />
+    <Compile Include="ViewModels\RefViewModel.cs" />
+    <Compile Include="ViewModels\PlanSelectViewModel.cs" />
+    <Compile Include="ViewModels\PlanSelectDetailViewModel.cs" />
+    <Compile Include="ViewModels\StructureSetListViewModel.cs" />
+    <Compile Include="ViewModels\ConstraintListViewModel.cs" />
+    <Compile Include="ViewModels\StructureViewModel.cs" />
+    <Compile Include="ViewModels\ConstraintViewModel.cs" />
+    <Compile Include="Calculators\PlanningItemDetailsCalculator.cs" />
+    <Compile Include="ViewModels\PlanningItemDetailsViewModel.cs" />
+    <Compile Include="ViewModels\PlanningItemListViewModel.cs" />
+    <Compile Include="ViewModels\PlanningItemViewModel.cs" />
+    <Compile Include="Helpers\DVHExtensions.cs" />
+    <Compile Include="ViewModels\ErrorViewModel.cs" />
+    <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="MainView.xaml.cs">
+      <DependentUpon>MainView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Calculators\ErrorCalculator.cs" />
+    <Compile Include="Script.cs" />
+    <Compile Include="Calculators\PQMSummaryCalculator.cs" />
+    <Compile Include="ViewModels\PQMSummaryViewModel.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="WaitWindowPQM.xaml.cs">
+      <DependentUpon>WaitWindowPQM.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="PlanSelectView.xaml.cs">
+      <DependentUpon>PlanSelectView.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="MainView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="WaitWindowPQM.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="PlanSelectView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Distribution\settings.json">
+      <TargetPath>settings.json</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Distribution\CHANGELOG.md">
+      <TargetPath>CHANGELOG.md</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Distribution\FEEDBACK.md">
+      <TargetPath>FEEDBACK.md</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Distribution\ConstraintTemplates\Starter_Conventional.csv">
+      <TargetPath>ConstraintTemplates\Starter_Conventional.csv</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Distribution\ConstraintTemplates\Starter_Hypofractionated.csv">
+      <TargetPath>ConstraintTemplates\Starter_Hypofractionated.csv</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Distribution\ConstraintTemplates\Starter_PlanSum.csv">
+      <TargetPath>ConstraintTemplates\Starter_PlanSum.csv</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\PlanApproved.png" />
+    <Resource Include="Resources\PlanSum.png" />
+    <Resource Include="Resources\PlanUnapproved.png" />
+    <Resource Include="Resources\TreatApproved.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\PlanRejected.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\DoseInValid.png" />
+    <Resource Include="Resources\DoseValid.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\PlanVerification.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Resource Include="Resources\extended.png" />
+    <Resource Include="Resources\gated.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\bolus.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
