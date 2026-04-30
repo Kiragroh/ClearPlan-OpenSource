@@ -14,10 +14,11 @@ This repository has been cleaned up for onboarding and publication. The goal of 
 
 ## Quick Start
 
-1. Build `ClearPlan.sln` with `Debug|x64`.
-2. Open `built/settings.json`.
-3. Adjust paths or add a public feedback URL if needed.
-4. Start `built/ClearPlan.Runner.exe` or load the built plugin in your ESAPI environment.
+1. Add institution-approved copies of `VMS.TPS.Common.Model.API.dll` and `VMS.TPS.Common.Model.Types.dll` to `ClearPlan-DLLs`.
+2. Build `ClearPlan.sln` with `Debug|x64`.
+3. Open `built/settings.json`.
+4. Adjust paths or add a public feedback URL if needed.
+5. Start `built/ClearPlan.Runner.exe` or load the built plugin in your ESAPI environment.
 
 After the first build, the output folder contains:
 
@@ -108,6 +109,19 @@ Starter distribution files are maintained in `ClearPlan.Script/Distribution` and
 ## Build And Dependency Notes
 
 This repository is prepared for public sharing, but external users still need an ESAPI-capable environment and must verify whether they are allowed to use or redistribute vendor-specific assemblies in their institution.
+
+The public starter repository does not track these vendor-specific ESAPI files:
+
+- `ClearPlan-DLLs/VMS.TPS.Common.Model.API.dll`
+- `ClearPlan-DLLs/VMS.TPS.Common.Model.Types.dll`
+
+These must be supplied locally before building.
+
+## Community
+
+- Use GitHub Issues for bugs, onboarding problems, and feature requests.
+- Use the templates in `.github/ISSUE_TEMPLATE` to keep reports structured and anonymized.
+- See `CONTRIBUTING.md` for guidance on starter-friendly changes.
 
 For publication and collaboration, the important idea is:
 
