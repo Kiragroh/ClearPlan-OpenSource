@@ -2,10 +2,10 @@
 
 Use this page as the default landing place for feedback in local installations.
 
-Recommended setup for a public repository:
-- Create a GitHub issue tracker for `ClearPlan`.
-- Add the issue URL to `settings.json` under `links.feedbackUrl`.
-- Keep this file for local guidance and troubleshooting notes.
+Recommended public setup:
+- Use the GitHub issue tracker for `ClearPlan-OpenSource`.
+- Keep `links.feedbackUrl` in `settings.json` pointed to the issue page.
+- Keep this file as a local fallback for installations without web access.
 
 When reporting a problem it helps to include:
 - A short summary of the expected and actual behavior.

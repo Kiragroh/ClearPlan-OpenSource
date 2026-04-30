@@ -1,0 +1,64 @@
+name: Bug report
+description: Report a reproducible problem in ClearPlan
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem.
+
+        Please keep all patient data anonymized and do not attach proprietary clinical exports unless you are allowed to share them.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+      placeholder: A short description of the issue
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect instead?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Starter plan checks
+        - PQM template handling
+        - DVH visualization
+        - PDF report generation
+        - CSV export
+        - Settings or paths
+        - Build or dependencies
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Include ClearPlan version, ESAPI version if relevant, and anything else important.
+      placeholder: ClearPlan 2.9.3.1, Windows version, ESAPI version, etc.
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: How can someone else reproduce this?
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Click ...
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Screenshots, anonymized logs, or notes that may help.

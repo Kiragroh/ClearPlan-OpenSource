@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest an improvement for the ClearPlan starter framework
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement.
+
+        The most helpful requests for this repository are changes that make ClearPlan easier to understand, easier to configure, and easier to adapt across institutions.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or need
+      description: What is hard today, or what is missing?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What would you like ClearPlan to do?
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      options:
+        - General starter feature
+        - Documentation
+        - Settings and configuration
+        - PQM starter templates
+        - Starter plan checks
+        - Export or reporting
+        - Developer workflow
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: institution
+    attributes:
+      label: Site-specific context
+      description: If this request depends on one institution's workflow, describe that clearly.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Anything else that would help evaluate the idea.

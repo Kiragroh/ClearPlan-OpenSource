@@ -18,7 +18,7 @@
   },
   "links": {
     "_comment": "Optional web links opened from the Help menu. Leave blank to show the local markdown file instead.",
-    "feedbackUrl": ""
+    "feedbackUrl": "https://github.com/Kiragroh/ClearPlan-OpenSource/issues"
   },
   "checks": {
     "_comment": "The starter profile keeps only general example checks in ErrorCalculator.",
