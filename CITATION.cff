@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+title: "ClearPlan"
+message: "If you use this repository, please cite the software entry below."
+type: software
+authors:
+  - family-names: "Grohmann"
+    given-names: "Max"
+repository-code: "https://github.com/Kiragroh/ClearPlan-OpenSource"
+url: "https://github.com/Kiragroh/ClearPlan-OpenSource"
+license: "MIT"
+version: "2.9.3.1"
+date-released: "2026-04-30"
+abstract: "Open-source framework for automated radiotherapy plan review with plan quality metric evaluation, dose-volume histogram visualization, structured reporting, and failure-mode logging."

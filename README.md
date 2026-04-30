@@ -1,8 +1,8 @@
 # ClearPlan
 
-ClearPlan is an open-source starter framework for automated radiation therapy plan review with plan quality metrics, DVH visualization, structured report generation, and failure-mode logging.
+ClearPlan is an open-source framework for automated radiotherapy plan review that integrates plan quality metric evaluation, DVH visualization, structured report generation, and failure-mode logging.
 
-This repository has been cleaned up for onboarding and publication. The goal of the starter release is not to ship one clinic's full production rule set, but to give other teams a small, readable base that they can run, understand, and extend.
+This starter release is intended as a readable and extensible baseline for institution-specific implementation, collaborative development, and research dissemination. Rather than publishing one clinic's full production rule set, the repository provides a small, transparent foundation that other teams can run, adapt, and validate in their own environment.
 
 ## What Is Included
 
