@@ -5,6 +5,7 @@ packages/
 built/
 .codex_*
 *.bak
+.tools/
 Manuskript_Entwurf.docx
 ClearPlan-DLLs/VMS.TPS.Common.Model.API.dll
 ClearPlan-DLLs/VMS.TPS.Common.Model.Types.dll
