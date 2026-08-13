@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{8D99C513-E989-4E05-A038-8C49B4EEA59B}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ClearPlan.Core.Tests</RootNamespace>
+    <AssemblyName>ClearPlan.Core.Tests</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <StartupObject>ClearPlan.Core.Tests.Program</StartupObject>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\artifacts\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <PlatformTarget>x64</PlatformTarget>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\artifacts\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <PlatformTarget>x64</PlatformTarget>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\artifacts\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\artifacts\bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="MigraDoc.DocumentObjectModel">
+      <HintPath>..\ClearPlan-DLLs\MigraDoc.DocumentObjectModel.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="OxyPlot">
+      <HintPath>..\ClearPlan-DLLs\OxyPlot.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="OxyPlot.Wpf">
+      <HintPath>..\ClearPlan-DLLs\OxyPlot.Wpf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ConstraintCatalogServiceTests.cs" />
+    <Compile Include="ConstraintCatalogValidatorTests.cs" />
+    <Compile Include="ConstraintTableSelectorTests.cs" />
+    <Compile Include="ConstraintValueNormalizerTests.cs" />
+    <Compile Include="ClinicalReviewValueMapperTests.cs" />
+    <Compile Include="DvhSelectionPolicyTests.cs" />
+    <Compile Include="ExcelConstraintSourceTests.cs" />
+    <Compile Include="FieldNamingPreviewTests.cs" />
+    <Compile Include="PqmObjectiveMappingContractTests.cs" />
+    <Compile Include="PathSettingsIniTests.cs" />
+    <Compile Include="PathFailureClassifierTests.cs" />
+    <Compile Include="PqmDefaultReviewPolicyTests.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RefDbContractTests.cs" />
+    <Compile Include="RefDbJsonConstraintSourceTests.cs" />
+    <Compile Include="ReviewSnapshotTests.cs" />
+    <Compile Include="ReviewWorkspaceHostControllerTests.cs" />
+    <Compile Include="ReviewReportMappingTests.cs" />
+    <Compile Include="ReviewWindowSizePolicyTests.cs" />
+    <Compile Include="SettingsValidatorTests.cs" />
+    <Compile Include="SimulatorArgumentsTests.cs" />
+    <Compile Include="SimulatorOutputPathsTests.cs" />
+    <Compile Include="SimulatorVisibleActionTests.cs" />
+    <Compile Include="..\ClearPlan.Simulator\SimulatorArguments.cs">
+      <Link>SimulatorArguments.cs</Link>
+    </Compile>
+    <Compile Include="..\ClearPlan.Simulator\SimulatorOutputPaths.cs">
+      <Link>SimulatorOutputPaths.cs</Link>
+    </Compile>
+    <Compile Include="..\ClearPlan.Simulator\SimulatorSnapshotActions.cs">
+      <Link>SimulatorSnapshotActions.cs</Link>
+    </Compile>
+    <Compile Include="..\ClearPlan.Simulator\SyntheticDvhPngService.cs">
+      <Link>SyntheticDvhPngService.cs</Link>
+    </Compile>
+    <Compile Include="SmokeTests.cs" />
+    <Compile Include="StructureAliasResolverTests.cs" />
+    <Compile Include="SyntheticDvhMetricsTests.cs" />
+    <Compile Include="SyntheticScenarioTests.cs" />
+    <Compile Include="TestAssert.cs" />
+    <Compile Include="WritablePathFallbackTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClearPlan.Core\ClearPlan.Core.csproj">
+      <Project>{3715B5CB-1DD0-4129-8CFD-662EF928043D}</Project>
+      <Name>ClearPlan.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Presentation\ClearPlan.Presentation.csproj">
+      <Project>{7A389754-42F7-4D79-AFE5-C351CB8C5AE0}</Project>
+      <Name>ClearPlan.Presentation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Reporting\ClearPlan.Reporting.csproj">
+      <Project>{9BB0CE8D-91C4-4E54-9AFA-EB8D9797E8EA}</Project>
+      <Name>ClearPlan.Reporting</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Reporting.MigraDoc\ClearPlan.Reporting.MigraDoc.csproj">
+      <Project>{C455FEC6-526D-4CC8-BF35-2B23137EF215}</Project>
+      <Name>ClearPlan.Reporting.MigraDoc</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Fixtures\excel-catalog-fixture.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Fixtures\excel-catalog-invalid-links.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Fixtures\excel-catalog-missing-header.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Fixtures\refdb-minimal.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

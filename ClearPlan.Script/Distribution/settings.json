@@ -1,0 +1,23 @@
+{
+  "_comment": "ClearPlan options. All file-system paths are stored in settings.ini.",
+  "constraintSource": {
+    "_comment": "Automatic uses RefDB first and falls back visibly to Excel.",
+    "mode": "Automatic",
+    "includeInactiveTables": false
+  },
+  "links": {
+    "_comment": "Optional web links opened from the Help menu. Leave blank to show the local markdown file instead.",
+    "feedbackUrl": "https://github.com/Kiragroh/ClearPlan-OpenSource/issues"
+  },
+  "checks": {
+    "_comment": "The starter profile keeps only general example checks in ErrorCalculator.",
+    "profile": "starter"
+  },
+  "privacy": {
+    "_comment": "Starter defaults avoid direct patient and user identifiers in logs and generated filenames. Set a site-specific hashSalt for stable pseudonyms across workstations.",
+    "logPatientIdentifiers": false,
+    "logUserIdentifiers": false,
+    "usePatientIdentifiersInFilenames": false,
+    "hashSalt": ""
+  }
+}

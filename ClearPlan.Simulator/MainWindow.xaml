@@ -1,0 +1,95 @@
+<Window x:Class="ClearPlan.Simulator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:presentation="clr-namespace:ClearPlan.Presentation.Views;assembly=ClearPlan.Presentation"
+        Title="ClearPlan Simulator"
+        WindowStartupLocation="CenterScreen"
+        HorizontalContentAlignment="Stretch"
+        VerticalContentAlignment="Stretch"
+        Background="#EEF3F7"
+        Loaded="OnLoaded"
+        Closed="OnClosed">
+    <Grid x:Name="SimulatorCaptureRoot"
+          Width="Auto"
+          Height="Auto"
+          Background="#EEF3F7">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="58"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Background="#0B2239"
+                BorderBrush="#19A7A0"
+                BorderThickness="0,0,0,3">
+            <Grid Margin="18,7">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="28"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="16"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="ClearPlan · Simulator"
+                               Foreground="White"
+                               FontSize="18"
+                               FontWeight="SemiBold"/>
+                    <TextBlock Text="Lokale, reproduzierbare Demonstration"
+                               Foreground="#B8C7D4"
+                               FontSize="10"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="2"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Szenario"
+                               Foreground="#B8C7D4"
+                               FontSize="10"
+                               Margin="0,0,0,2"/>
+                    <ComboBox x:Name="ScenarioSelector"
+                              Width="260"
+                              Height="28"
+                              SelectionChanged="OnScenarioSelectionChanged"/>
+                </StackPanel>
+
+                <TextBlock x:Name="SimulatorStatusText"
+                           Grid.Column="4"
+                           Text="Offline · keine TPS-Verbindung"
+                           Foreground="#CFE8E6"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+
+                <Border Grid.Column="6"
+                        Background="#FFF1B8"
+                        BorderBrush="#F0BE4A"
+                        BorderThickness="1"
+                        CornerRadius="13"
+                        Padding="11,4"
+                        VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="SYNTHETIC DEMONSTRATION"
+                                   Foreground="#6D4B00"
+                                   FontSize="10"
+                                   FontWeight="Bold"
+                                   HorizontalAlignment="Center"/>
+                        <TextBlock Text="NOT FOR CLINICAL USE"
+                                   Foreground="#6D4B00"
+                                   FontSize="9"
+                                   FontWeight="SemiBold"
+                                   HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <presentation:ReviewWorkspaceView
+            x:Name="ReviewWorkspace"
+            Grid.Row="1"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"/>
+    </Grid>
+</Window>

@@ -1,0 +1,129 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="RunnerNavigationBrush" Color="#12213A"/>
+    <SolidColorBrush x:Key="RunnerPrimaryBrush" Color="#1D4ED8"/>
+    <SolidColorBrush x:Key="RunnerPrimaryHoverBrush" Color="#1E40AF"/>
+    <SolidColorBrush x:Key="RunnerCanvasBrush" Color="#F2F5F9"/>
+    <SolidColorBrush x:Key="RunnerSurfaceBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="RunnerBorderBrush" Color="#CBD5E1"/>
+    <SolidColorBrush x:Key="RunnerTextBrush" Color="#24324A"/>
+    <SolidColorBrush x:Key="RunnerMutedBrush" Color="#64748B"/>
+    <SolidColorBrush x:Key="RunnerFocusBrush" Color="#F59E0B"/>
+
+    <Style TargetType="{x:Type Window}">
+        <Setter Property="Background" Value="{StaticResource RunnerCanvasBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource RunnerTextBrush}"/>
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display"/>
+    </Style>
+
+    <Style TargetType="{x:Type Button}">
+        <Setter Property="Background" Value="{StaticResource RunnerPrimaryBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="14,7"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type Button}">
+                    <Border x:Name="Chrome"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="5"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter
+                            HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Chrome" Property="Background"
+                                    Value="{StaticResource RunnerPrimaryHoverBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Chrome" Property="Opacity" Value="0.82"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter TargetName="Chrome" Property="BorderBrush"
+                                    Value="{StaticResource RunnerFocusBrush}"/>
+                            <Setter TargetName="Chrome" Property="BorderThickness" Value="2"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Chrome" Property="Opacity" Value="0.45"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="{x:Type TextBox}">
+        <Setter Property="Background" Value="{StaticResource RunnerSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource RunnerTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource RunnerBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Padding" Value="8,6"/>
+        <Setter Property="MinHeight" Value="34"/>
+        <Style.Triggers>
+            <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource RunnerFocusBrush}"/>
+                <Setter Property="BorderThickness" Value="2"/>
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style TargetType="{x:Type ComboBox}">
+        <Setter Property="Background" Value="{StaticResource RunnerSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource RunnerTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource RunnerBorderBrush}"/>
+        <Setter Property="Padding" Value="7,5"/>
+        <Setter Property="MinHeight" Value="34"/>
+    </Style>
+
+    <Style TargetType="{x:Type ListBox}">
+        <Setter Property="Background" Value="{StaticResource RunnerSurfaceBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource RunnerBorderBrush}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style TargetType="{x:Type ListBoxItem}">
+        <Setter Property="Padding" Value="9,7"/>
+        <Setter Property="Foreground" Value="{StaticResource RunnerTextBrush}"/>
+    </Style>
+
+    <Style TargetType="{x:Type DataGrid}">
+        <Setter Property="Background" Value="{StaticResource RunnerSurfaceBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource RunnerTextBrush}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource RunnerBorderBrush}"/>
+        <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="#E2E8F0"/>
+        <Setter Property="HeadersVisibility" Value="Column"/>
+        <Setter Property="RowBackground" Value="White"/>
+        <Setter Property="AlternatingRowBackground" Value="#F8FAFC"/>
+    </Style>
+
+    <Style TargetType="{x:Type DataGridColumnHeader}">
+        <Setter Property="Background" Value="#E8EEF6"/>
+        <Setter Property="Foreground" Value="#253858"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Padding" Value="8,7"/>
+    </Style>
+
+    <Style TargetType="{x:Type GroupBox}">
+        <Setter Property="Foreground" Value="#172554"/>
+        <Setter Property="BorderBrush" Value="{StaticResource RunnerBorderBrush}"/>
+        <Setter Property="Padding" Value="12"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+
+    <Style TargetType="{x:Type Label}">
+        <Setter Property="Foreground" Value="{StaticResource RunnerTextBrush}"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+</ResourceDictionary>

@@ -1,0 +1,33 @@
+# Synthetic simulator scenarios
+
+These checked-in review snapshots are analytically generated and deterministic.
+They contain no clinical source data, images, identifiers, or original dose
+distributions. Dose coordinates use Gy and cumulative volume uses relative
+volume percent.
+
+Displayed `Vx` values use linear interpolation, `Dx` values use inverse linear
+interpolation, and `Dmean` uses trapezoidal integration of the checked-in
+cumulative DVH. The synthetic near-maximum example is `D0.1%`, not a point
+maximum; displayed values are rounded to one decimal before threshold
+classification.
+
+| Scenario | Demonstration |
+| --- | --- |
+| `baseline-pass` | All PQM, PlanCheck, field, mapping, and DVH examples pass. |
+| `target-underdose` | A visibly shifted target DVH yields a variation and a failure. |
+| `oar-overdose` | Shifted organ-at-risk DVHs yield a variation and a failure. |
+| `metadata-plancheck` | Technical and metadata findings show observed and expected values. |
+| `field-and-mapping` | Correct IDs render as `ID okay`; incorrect names include `179-181 T30 UZ`, `UZa`/`UZb`, and `GUZa`, plus one ambiguous structure mapping. |
+| `optional-path-fallback` | A neutral optional-source finding activates embedded synthetic defaults without exposing a path. |
+| `mixed-review` | Publication scenario combining target underdose, OAR overdose, metadata findings, correct field IDs with incorrect names, one ambiguous mapping, and an optional-source fallback. |
+
+Regenerate the JSON from the repository root after building the core test
+harness:
+
+```powershell
+artifacts\bin\Debug\ClearPlan.Core.Tests.exe ExportScenarios ClearPlan.Simulator\Scenarios
+```
+
+Every simulator window and report must display:
+
+`SYNTHETIC DEMONSTRATION — NOT FOR CLINICAL USE`

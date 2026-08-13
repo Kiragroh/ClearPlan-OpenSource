@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0"
+         DefaultTargets="Build"
+         xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props"
+          Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{D98C93A5-79BB-4BCE-A05F-C7F41D3A9361}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>ClearPlan.Simulator</RootNamespace>
+    <AssemblyName>ClearPlan.Simulator</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60DC8134-EBA5-43B8-BCC9-BB4BC16C2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\artifacts\simulator\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\artifacts\simulator\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <PlatformTarget>x64</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\artifacts\simulator\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\artifacts\simulator\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="OxyPlot">
+      <HintPath>..\ClearPlan-DLLs\OxyPlot.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="OxyPlot.Wpf">
+      <HintPath>..\ClearPlan-DLLs\OxyPlot.Wpf.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ResponsiveLayoutProbeService.cs" />
+    <Compile Include="SimulatorArguments.cs" />
+    <Compile Include="SimulatorOutputPaths.cs" />
+    <Compile Include="SimulatorScenarioRepository.cs" />
+    <Compile Include="SimulatorSnapshotActions.cs" />
+    <Compile Include="SyntheticDvhPngService.cs" />
+    <Compile Include="SyntheticReportService.cs" />
+    <Compile Include="VisualCaptureService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Scenarios\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClearPlan.Core\ClearPlan.Core.csproj">
+      <Project>{3715B5CB-1DD0-4129-8CFD-662EF928043D}</Project>
+      <Name>ClearPlan.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Presentation\ClearPlan.Presentation.csproj">
+      <Project>{7A389754-42F7-4D79-AFE5-C351CB8C5AE0}</Project>
+      <Name>ClearPlan.Presentation</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Reporting\ClearPlan.Reporting.csproj">
+      <Project>{9BB0CE8D-91C4-4E54-9AFA-EB8D9797E8EA}</Project>
+      <Name>ClearPlan.Reporting</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Reporting.MigraDoc\ClearPlan.Reporting.MigraDoc.csproj">
+      <Project>{C455FEC6-526D-4CC8-BF35-2B23137EF215}</Project>
+      <Name>ClearPlan.Reporting.MigraDoc</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Target Name="SanitizePublicSimulatorOutput"
+          AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <PrivateSimulatorSymbols
+          Include="$(OutputPath)ClearPlan*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(PrivateSimulatorSymbols)" />
+  </Target>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

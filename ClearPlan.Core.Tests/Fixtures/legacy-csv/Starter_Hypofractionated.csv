@@ -1,0 +1,7 @@
+TemplateId,TemplateCodes,TemplateAliases,TemplateTypes,DVHObjective,Goal,Variation,Priority,Source,Notes
+Target,,PTV|CTV|GTV,PTV|CTV|GTV,D95%[%],>=95,>=92,1,Starter,Target coverage example
+Target,,PTV|CTV|GTV,PTV|CTV|GTV,D2%[%],<=110,<=115,1,Starter,Hypofractionated hotspot example
+Body,,BODY|External|Outer Contour|KORPER,External,GI50%[%],<=6,<=8,2,Starter,Gradient example
+Body,,BODY|External|Outer Contour|KORPER,External,D0.035cc[%],<=125,<=130,2,Starter,High-dose body example
+SpinalCord,,SpinalCord|Myelon|Spinalkanal|Spinalkanal OAR,,D0.035cc[Gy],<=25,<=30,1,Starter,Serial OAR example
+Brainstem,,Brainstem|Hirnstamm|Hirnstamm OAR,,D0.035cc[Gy],<=31,<=35,1,Starter,Serial OAR example

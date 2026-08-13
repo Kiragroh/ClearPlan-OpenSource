@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "auditDate": "2026-07-30",
+  "method": "Independent per-reference verification against primary or official sources",
+  "references": [
+    { "number": 1, "verdict": "fix-applied", "scope": "plan-chart-review-qc" },
+    { "number": 2, "verdict": "keep", "scope": "prospective-clinic-specific-risk-analysis" },
+    { "number": 3, "verdict": "fix-applied", "scope": "minimum-practice-plan-chart-review" },
+    { "number": 4, "verdict": "fix-applied", "scope": "observed-incident-and-near-miss-pathways" },
+    { "number": 5, "verdict": "fix-applied", "scope": "potential-detectability-and-check-value" },
+    { "number": 6, "verdict": "fix-applied", "scope": "quantitative-dosimetric-plan-quality" },
+    { "number": 7, "verdict": "keep", "scope": "single-clinic-automated-integrity-verification" },
+    { "number": 8, "verdict": "keep", "scope": "structure-and-dosimetric-nomenclature" },
+    { "number": 9, "verdict": "fix-applied", "scope": "implementation-specific-feasibility-and-workflow" },
+    { "number": 10, "verdict": "keep", "scope": "single-department-apc-implementation" },
+    { "number": 11, "verdict": "fix-applied", "scope": "single-institution-workflow-observation" },
+    { "number": 12, "verdict": "fix-applied", "scope": "tps-independent-knowledge-based-dvh-comparison" },
+    { "number": 13, "verdict": "fix-applied", "scope": "linac-software-alert-prevalence" },
+    { "number": 14, "verdict": "keep", "scope": "perspective-on-automation-and-human-oversight" },
+    { "number": 15, "verdict": "keep", "scope": "official-esapi-capabilities" },
+    { "number": 16, "verdict": "fix-applied", "scope": "plancheck-software-identity" },
+    { "number": 17, "verdict": "keep", "scope": "esapiessentials-runner-identity" },
+    { "number": 18, "verdict": "keep", "scope": "raystation-scripting-capability" },
+    { "number": 19, "verdict": "keep", "scope": "dicom-rt-information-objects" },
+    { "number": 20, "verdict": "keep", "scope": "online-first-open-source-framework" },
+    { "number": 21, "verdict": "keep", "scope": "tg201-data-transfer-quality-management" },
+    { "number": 22, "verdict": "keep", "scope": "automated-initial-chart-check-implementation" },
+    { "number": 23, "verdict": "keep", "scope": "longitudinal-plan-check-surveillance" },
+    { "number": 24, "verdict": "keep", "scope": "tg275-failure-mode-crosswalk" },
+    { "number": 25, "verdict": "keep", "scope": "hybrid-chart-check-platform" },
+    { "number": 26, "verdict": "keep", "scope": "verified-clearplan-v3.1.0-live-release" }
+  ]
+}

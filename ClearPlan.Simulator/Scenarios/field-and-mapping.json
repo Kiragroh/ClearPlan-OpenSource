@@ -1,0 +1,1832 @@
+{
+  "schemaVersion": 1,
+  "scenarioId": "field-and-mapping",
+  "scenarioTitle": "Field naming and structure mapping",
+  "scenarioDescription": "Correct synthetic field IDs are shown with incorrect names and an ambiguous structure alias.",
+  "seed": 1105,
+  "synthetic": true,
+  "generatedUtc": "2026-07-30T08:04:00.000+00:00",
+  "patientDisplayLabel": "Synthetic demonstration",
+  "planDisplayLabel": "Synthetic review plan",
+  "provenanceText": "Analytically generated deterministic synthetic data; no clinical source data or identifiers were used.",
+  "activePlanKey": "synthetic-plan",
+  "sources": [
+    {
+      "stableId": "source-scenario",
+      "sourceCode": "synthetic-scenario",
+      "sourceType": "embedded",
+      "status": "available",
+      "optional": false,
+      "usedFallback": false,
+      "pathDisplayLabel": "Embedded synthetic scenario",
+      "message": "Deterministic scenario data loaded."
+    },
+    {
+      "stableId": "source-constraints",
+      "sourceCode": "synthetic-constraints",
+      "sourceType": "embedded",
+      "status": "available",
+      "optional": false,
+      "usedFallback": false,
+      "pathDisplayLabel": "Embedded synthetic constraints",
+      "message": "Synthetic review constraints loaded."
+    }
+  ],
+  "plans": [
+    {
+      "planKey": "synthetic-plan",
+      "displayLabel": "Synthetic review plan",
+      "createdUtc": "2026-07-29T08:04:00.000+00:00",
+      "dosePerFractionGy": 2.0,
+      "totalDoseGy": 60.0,
+      "fractionCount": 30,
+      "targetDisplayLabel": "PTV_60",
+      "status": "pass"
+    }
+  ],
+  "pqmRows": [
+    {
+      "stableId": "pqm-target-d95",
+      "templateCode": "target-d95",
+      "templateStructure": "Target",
+      "resolvedStructureId": "PTV_60",
+      "structureOptions": [
+        "PTV_60"
+      ],
+      "objective": "D95",
+      "comparator": ">=",
+      "goal": 57.0,
+      "variation": 55.0,
+      "achievedValue": 58.3,
+      "unit": "Gy",
+      "status": "pass",
+      "severity": "none",
+      "explanation": "D95 is obtained by inverse linear interpolation of the sampled relative DVH. Result: pass."
+    },
+    {
+      "stableId": "pqm-target-v95",
+      "templateCode": "target-v95",
+      "templateStructure": "Target",
+      "resolvedStructureId": "PTV_60",
+      "structureOptions": [
+        "PTV_60"
+      ],
+      "objective": "V95",
+      "comparator": ">=",
+      "goal": 95.0,
+      "variation": 92.0,
+      "achievedValue": 99.1,
+      "unit": "%",
+      "status": "pass",
+      "severity": "none",
+      "explanation": "V95 is evaluated at 95 percent of the synthetic prescription dose. Result: pass."
+    },
+    {
+      "stableId": "pqm-target-d2",
+      "templateCode": "target-d2",
+      "templateStructure": "Target",
+      "resolvedStructureId": "PTV_60",
+      "structureOptions": [
+        "PTV_60"
+      ],
+      "objective": "D2",
+      "comparator": "<=",
+      "goal": 64.2,
+      "variation": 66.0,
+      "achievedValue": 64.0,
+      "unit": "Gy",
+      "status": "pass",
+      "severity": "none",
+      "explanation": "D2 is obtained by inverse linear interpolation of the sampled relative DVH. Result: pass."
+    },
+    {
+      "stableId": "pqm-cord-dmax",
+      "templateCode": "cord-dmax",
+      "templateStructure": "Spinal cord",
+      "resolvedStructureId": "SpinalCord",
+      "structureOptions": [
+        "SpinalCord"
+      ],
+      "objective": "D0.1%",
+      "comparator": "<=",
+      "goal": 45.0,
+      "variation": 48.0,
+      "achievedValue": 41.9,
+      "unit": "Gy",
+      "status": "pass",
+      "severity": "none",
+      "explanation": "D0.1 percent is a near-maximum dose surrogate obtained from the sampled relative DVH. Result: pass."
+    },
+    {
+      "stableId": "pqm-parotid-dmean",
+      "templateCode": "parotid-dmean",
+      "templateStructure": "Parotid left",
+      "resolvedStructureId": "Parotid_L",
+      "structureOptions": [
+        "Parotid_L"
+      ],
+      "objective": "Dmean",
+      "comparator": "<=",
+      "goal": 26.0,
+      "variation": 36.0,
+      "achievedValue": 22.5,
+      "unit": "Gy",
+      "status": "pass",
+      "severity": "none",
+      "explanation": "Dmean is the trapezoidal integral of the sampled cumulative relative DVH. Result: pass."
+    },
+    {
+      "stableId": "pqm-parotid-v30",
+      "templateCode": "parotid-v30",
+      "templateStructure": "Parotid left",
+      "resolvedStructureId": "Parotid_L",
+      "structureOptions": [
+        "Parotid_L"
+      ],
+      "objective": "V30",
+      "comparator": "<=",
+      "goal": 50.0,
+      "variation": 60.0,
+      "achievedValue": 26.9,
+      "unit": "%",
+      "status": "pass",
+      "severity": "none",
+      "explanation": "V30 is obtained by linear interpolation at 30 Gy. Result: pass."
+    }
+  ],
+  "planCheckRows": [
+    {
+      "checkCode": "appointment-present",
+      "category": "Metadata",
+      "status": "pass",
+      "severity": "none",
+      "observedValue": "Present",
+      "expectedValue": "Present",
+      "unit": "boolean",
+      "message": "Synthetic appointment metadata is present."
+    },
+    {
+      "checkCode": "ct-age-days",
+      "category": "Metadata",
+      "status": "pass",
+      "severity": "none",
+      "observedValue": "5",
+      "expectedValue": "<= 14",
+      "unit": "count",
+      "message": "Synthetic image age is within the configured interval."
+    },
+    {
+      "checkCode": "user-origin-set",
+      "category": "Geometry",
+      "status": "pass",
+      "severity": "none",
+      "observedValue": "Set",
+      "expectedValue": "Set",
+      "unit": "boolean",
+      "message": "Synthetic user origin is configured."
+    },
+    {
+      "checkCode": "hu-table",
+      "category": "Calculation",
+      "status": "pass",
+      "severity": "none",
+      "observedValue": "Synthetic default table",
+      "expectedValue": "Synthetic default table",
+      "unit": "text",
+      "message": "Synthetic calibration table conforms."
+    },
+    {
+      "checkCode": "treatment-approval",
+      "category": "Approval",
+      "status": "pass",
+      "severity": "none",
+      "observedValue": "Approved",
+      "expectedValue": "Approved",
+      "unit": "text",
+      "message": "Synthetic treatment approval is present."
+    },
+    {
+      "checkCode": "calculation-grid",
+      "category": "Calculation",
+      "status": "pass",
+      "severity": "none",
+      "observedValue": "2.5 mm",
+      "expectedValue": "<= 3.0 mm",
+      "unit": "text",
+      "message": "Synthetic calculation grid conforms."
+    },
+    {
+      "checkCode": "treatment-unit",
+      "category": "Technique",
+      "status": "pass",
+      "severity": "none",
+      "observedValue": "Synthetic treatment unit",
+      "expectedValue": "Synthetic treatment unit",
+      "unit": "text",
+      "message": "Synthetic treatment unit conforms."
+    },
+    {
+      "checkCode": "fractionation",
+      "category": "Prescription",
+      "status": "pass",
+      "severity": "none",
+      "observedValue": "30 x 2 Gy",
+      "expectedValue": "30 x 2 Gy",
+      "unit": "text",
+      "message": "Synthetic fractionation conforms."
+    }
+  ],
+  "fieldRows": [
+    {
+      "stableId": "field-01",
+      "treatmentOrder": 1,
+      "beamNumber": 1,
+      "currentId": "SYN01",
+      "expectedId": "SYN01",
+      "currentName": "Legacy label 01",
+      "suggestedName": "179-181 T30 UZ",
+      "idStatus": "pass",
+      "nameStatus": "fail"
+    },
+    {
+      "stableId": "field-02",
+      "treatmentOrder": 2,
+      "beamNumber": 2,
+      "currentId": "SYN02",
+      "expectedId": "SYN02",
+      "currentName": "Legacy label 02",
+      "suggestedName": "179-181 UZa",
+      "idStatus": "pass",
+      "nameStatus": "fail"
+    },
+    {
+      "stableId": "field-03",
+      "treatmentOrder": 3,
+      "beamNumber": 3,
+      "currentId": "SYN03",
+      "expectedId": "SYN03",
+      "currentName": "Legacy label 03",
+      "suggestedName": "179-181 UZb",
+      "idStatus": "pass",
+      "nameStatus": "fail"
+    },
+    {
+      "stableId": "field-04",
+      "treatmentOrder": 4,
+      "beamNumber": 4,
+      "currentId": "SYN04",
+      "expectedId": "SYN04",
+      "currentName": "Legacy label 04",
+      "suggestedName": "179-181 GUZa",
+      "idStatus": "pass",
+      "nameStatus": "fail"
+    },
+    {
+      "stableId": "field-05",
+      "treatmentOrder": 5,
+      "beamNumber": 5,
+      "currentId": "SYN05",
+      "expectedId": "SYN05",
+      "currentName": "Legacy label 05",
+      "suggestedName": "179-181 GUZb",
+      "idStatus": "pass",
+      "nameStatus": "fail"
+    }
+  ],
+  "structureMappings": [
+    {
+      "stableId": "mapping-target",
+      "templateStructure": "Target",
+      "selectedStructureId": "PTV_60",
+      "availableStructureIds": [
+        "PTV_60"
+      ],
+      "status": "pass",
+      "message": "Synthetic structure mapping conforms."
+    },
+    {
+      "stableId": "mapping-cord",
+      "templateStructure": "Spinal cord",
+      "selectedStructureId": "SpinalCord",
+      "availableStructureIds": [
+        "SpinalCord"
+      ],
+      "status": "pass",
+      "message": "Synthetic structure mapping conforms."
+    },
+    {
+      "stableId": "mapping-parotid-left",
+      "templateStructure": "Parotid",
+      "selectedStructureId": "Parotid_L",
+      "availableStructureIds": [
+        "Parotid_L",
+        "Parotid_R"
+      ],
+      "status": "variation",
+      "message": "Ambiguous synthetic alias; verify the selected structure."
+    },
+    {
+      "stableId": "mapping-parotid-right",
+      "templateStructure": "Parotid right",
+      "selectedStructureId": "Parotid_R",
+      "availableStructureIds": [
+        "Parotid_R"
+      ],
+      "status": "pass",
+      "message": "Synthetic structure mapping conforms."
+    }
+  ],
+  "dvhSeries": [
+    {
+      "stableId": "dvh-target",
+      "structureId": "PTV_60",
+      "displayName": "PTV 60 Gy",
+      "role": "target",
+      "colorHex": "#D1495B",
+      "lineStyle": "solid",
+      "selected": true,
+      "volumeCc": 182.0,
+      "points": [
+        {
+          "doseGy": 0.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 1.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 2.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 3.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 4.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 5.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 6.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 7.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 8.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 9.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 10.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 11.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 12.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 13.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 14.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 15.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 16.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 17.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 18.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 19.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 20.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 21.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 22.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 23.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 24.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 25.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 26.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 27.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 28.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 29.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 30.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 31.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 32.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 33.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 34.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 35.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 36.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 37.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 38.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 39.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 40.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 41.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 42.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 43.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 44.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 45.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 46.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 47.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 48.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 49.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 50.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 51.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 52.0,
+          "volumePercent": 99.998
+        },
+        {
+          "doseGy": 53.0,
+          "volumePercent": 99.994
+        },
+        {
+          "doseGy": 54.0,
+          "volumePercent": 99.98
+        },
+        {
+          "doseGy": 55.0,
+          "volumePercent": 99.929
+        },
+        {
+          "doseGy": 56.0,
+          "volumePercent": 99.753
+        },
+        {
+          "doseGy": 57.0,
+          "volumePercent": 99.142
+        },
+        {
+          "doseGy": 58.0,
+          "volumePercent": 97.069
+        },
+        {
+          "doseGy": 59.0,
+          "volumePercent": 90.465
+        },
+        {
+          "doseGy": 60.0,
+          "volumePercent": 73.106
+        },
+        {
+          "doseGy": 61.0,
+          "volumePercent": 43.782
+        },
+        {
+          "doseGy": 62.0,
+          "volumePercent": 18.243
+        },
+        {
+          "doseGy": 63.0,
+          "volumePercent": 6.009
+        },
+        {
+          "doseGy": 64.0,
+          "volumePercent": 1.799
+        },
+        {
+          "doseGy": 65.0,
+          "volumePercent": 0.522
+        },
+        {
+          "doseGy": 66.0,
+          "volumePercent": 0.15
+        },
+        {
+          "doseGy": 67.0,
+          "volumePercent": 0.043
+        },
+        {
+          "doseGy": 68.0,
+          "volumePercent": 0.012
+        },
+        {
+          "doseGy": 69.0,
+          "volumePercent": 0.004
+        },
+        {
+          "doseGy": 70.0,
+          "volumePercent": 0.001
+        }
+      ]
+    },
+    {
+      "stableId": "dvh-cord",
+      "structureId": "SpinalCord",
+      "displayName": "Spinal cord",
+      "role": "oar",
+      "colorHex": "#00798C",
+      "lineStyle": "solid",
+      "selected": true,
+      "volumeCc": 54.0,
+      "points": [
+        {
+          "doseGy": 0.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 1.0,
+          "volumePercent": 99.991
+        },
+        {
+          "doseGy": 2.0,
+          "volumePercent": 99.925
+        },
+        {
+          "doseGy": 3.0,
+          "volumePercent": 99.747
+        },
+        {
+          "doseGy": 4.0,
+          "volumePercent": 99.401
+        },
+        {
+          "doseGy": 5.0,
+          "volumePercent": 98.833
+        },
+        {
+          "doseGy": 6.0,
+          "volumePercent": 97.992
+        },
+        {
+          "doseGy": 7.0,
+          "volumePercent": 96.83
+        },
+        {
+          "doseGy": 8.0,
+          "volumePercent": 95.305
+        },
+        {
+          "doseGy": 9.0,
+          "volumePercent": 93.383
+        },
+        {
+          "doseGy": 10.0,
+          "volumePercent": 91.036
+        },
+        {
+          "doseGy": 11.0,
+          "volumePercent": 88.25
+        },
+        {
+          "doseGy": 12.0,
+          "volumePercent": 85.02
+        },
+        {
+          "doseGy": 13.0,
+          "volumePercent": 81.356
+        },
+        {
+          "doseGy": 14.0,
+          "volumePercent": 77.283
+        },
+        {
+          "doseGy": 15.0,
+          "volumePercent": 72.836
+        },
+        {
+          "doseGy": 16.0,
+          "volumePercent": 68.067
+        },
+        {
+          "doseGy": 17.0,
+          "volumePercent": 63.04
+        },
+        {
+          "doseGy": 18.0,
+          "volumePercent": 57.827
+        },
+        {
+          "doseGy": 19.0,
+          "volumePercent": 52.51
+        },
+        {
+          "doseGy": 20.0,
+          "volumePercent": 47.175
+        },
+        {
+          "doseGy": 21.0,
+          "volumePercent": 41.906
+        },
+        {
+          "doseGy": 22.0,
+          "volumePercent": 36.788
+        },
+        {
+          "doseGy": 23.0,
+          "volumePercent": 31.897
+        },
+        {
+          "doseGy": 24.0,
+          "volumePercent": 27.3
+        },
+        {
+          "doseGy": 25.0,
+          "volumePercent": 23.052
+        },
+        {
+          "doseGy": 26.0,
+          "volumePercent": 19.193
+        },
+        {
+          "doseGy": 27.0,
+          "volumePercent": 15.747
+        },
+        {
+          "doseGy": 28.0,
+          "volumePercent": 12.725
+        },
+        {
+          "doseGy": 29.0,
+          "volumePercent": 10.122
+        },
+        {
+          "doseGy": 30.0,
+          "volumePercent": 7.921
+        },
+        {
+          "doseGy": 31.0,
+          "volumePercent": 6.094
+        },
+        {
+          "doseGy": 32.0,
+          "volumePercent": 4.608
+        },
+        {
+          "doseGy": 33.0,
+          "volumePercent": 3.422
+        },
+        {
+          "doseGy": 34.0,
+          "volumePercent": 2.494
+        },
+        {
+          "doseGy": 35.0,
+          "volumePercent": 1.784
+        },
+        {
+          "doseGy": 36.0,
+          "volumePercent": 1.25
+        },
+        {
+          "doseGy": 37.0,
+          "volumePercent": 0.859
+        },
+        {
+          "doseGy": 38.0,
+          "volumePercent": 0.578
+        },
+        {
+          "doseGy": 39.0,
+          "volumePercent": 0.381
+        },
+        {
+          "doseGy": 40.0,
+          "volumePercent": 0.245
+        },
+        {
+          "doseGy": 41.0,
+          "volumePercent": 0.155
+        },
+        {
+          "doseGy": 42.0,
+          "volumePercent": 0.095
+        },
+        {
+          "doseGy": 43.0,
+          "volumePercent": 0.057
+        },
+        {
+          "doseGy": 44.0,
+          "volumePercent": 0.034
+        },
+        {
+          "doseGy": 45.0,
+          "volumePercent": 0.019
+        },
+        {
+          "doseGy": 46.0,
+          "volumePercent": 0.011
+        },
+        {
+          "doseGy": 47.0,
+          "volumePercent": 0.006
+        },
+        {
+          "doseGy": 48.0,
+          "volumePercent": 0.003
+        },
+        {
+          "doseGy": 49.0,
+          "volumePercent": 0.002
+        },
+        {
+          "doseGy": 50.0,
+          "volumePercent": 0.001
+        },
+        {
+          "doseGy": 51.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 52.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 53.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 54.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 55.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 56.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 57.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 58.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 59.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 60.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 61.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 62.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 63.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 64.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 65.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 66.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 67.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 68.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 69.0,
+          "volumePercent": 0.0
+        },
+        {
+          "doseGy": 70.0,
+          "volumePercent": 0.0
+        }
+      ]
+    },
+    {
+      "stableId": "dvh-parotid-left",
+      "structureId": "Parotid_L",
+      "displayName": "Parotid left",
+      "role": "oar",
+      "colorHex": "#EDA129",
+      "lineStyle": "solid",
+      "selected": true,
+      "volumeCc": 27.0,
+      "points": [
+        {
+          "doseGy": 0.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 1.0,
+          "volumePercent": 99.203
+        },
+        {
+          "doseGy": 2.0,
+          "volumePercent": 97.763
+        },
+        {
+          "doseGy": 3.0,
+          "volumePercent": 95.928
+        },
+        {
+          "doseGy": 4.0,
+          "volumePercent": 93.8
+        },
+        {
+          "doseGy": 5.0,
+          "volumePercent": 91.444
+        },
+        {
+          "doseGy": 6.0,
+          "volumePercent": 88.907
+        },
+        {
+          "doseGy": 7.0,
+          "volumePercent": 86.229
+        },
+        {
+          "doseGy": 8.0,
+          "volumePercent": 83.442
+        },
+        {
+          "doseGy": 9.0,
+          "volumePercent": 80.574
+        },
+        {
+          "doseGy": 10.0,
+          "volumePercent": 77.648
+        },
+        {
+          "doseGy": 11.0,
+          "volumePercent": 74.687
+        },
+        {
+          "doseGy": 12.0,
+          "volumePercent": 71.709
+        },
+        {
+          "doseGy": 13.0,
+          "volumePercent": 68.73
+        },
+        {
+          "doseGy": 14.0,
+          "volumePercent": 65.766
+        },
+        {
+          "doseGy": 15.0,
+          "volumePercent": 62.829
+        },
+        {
+          "doseGy": 16.0,
+          "volumePercent": 59.93
+        },
+        {
+          "doseGy": 17.0,
+          "volumePercent": 57.079
+        },
+        {
+          "doseGy": 18.0,
+          "volumePercent": 54.284
+        },
+        {
+          "doseGy": 19.0,
+          "volumePercent": 51.553
+        },
+        {
+          "doseGy": 20.0,
+          "volumePercent": 48.893
+        },
+        {
+          "doseGy": 21.0,
+          "volumePercent": 46.307
+        },
+        {
+          "doseGy": 22.0,
+          "volumePercent": 43.801
+        },
+        {
+          "doseGy": 23.0,
+          "volumePercent": 41.377
+        },
+        {
+          "doseGy": 24.0,
+          "volumePercent": 39.039
+        },
+        {
+          "doseGy": 25.0,
+          "volumePercent": 36.788
+        },
+        {
+          "doseGy": 26.0,
+          "volumePercent": 34.625
+        },
+        {
+          "doseGy": 27.0,
+          "volumePercent": 32.551
+        },
+        {
+          "doseGy": 28.0,
+          "volumePercent": 30.566
+        },
+        {
+          "doseGy": 29.0,
+          "volumePercent": 28.669
+        },
+        {
+          "doseGy": 30.0,
+          "volumePercent": 26.86
+        },
+        {
+          "doseGy": 31.0,
+          "volumePercent": 25.138
+        },
+        {
+          "doseGy": 32.0,
+          "volumePercent": 23.5
+        },
+        {
+          "doseGy": 33.0,
+          "volumePercent": 21.946
+        },
+        {
+          "doseGy": 34.0,
+          "volumePercent": 20.474
+        },
+        {
+          "doseGy": 35.0,
+          "volumePercent": 19.081
+        },
+        {
+          "doseGy": 36.0,
+          "volumePercent": 17.764
+        },
+        {
+          "doseGy": 37.0,
+          "volumePercent": 16.522
+        },
+        {
+          "doseGy": 38.0,
+          "volumePercent": 15.351
+        },
+        {
+          "doseGy": 39.0,
+          "volumePercent": 14.25
+        },
+        {
+          "doseGy": 40.0,
+          "volumePercent": 13.214
+        },
+        {
+          "doseGy": 41.0,
+          "volumePercent": 12.243
+        },
+        {
+          "doseGy": 42.0,
+          "volumePercent": 11.332
+        },
+        {
+          "doseGy": 43.0,
+          "volumePercent": 10.479
+        },
+        {
+          "doseGy": 44.0,
+          "volumePercent": 9.682
+        },
+        {
+          "doseGy": 45.0,
+          "volumePercent": 8.937
+        },
+        {
+          "doseGy": 46.0,
+          "volumePercent": 8.242
+        },
+        {
+          "doseGy": 47.0,
+          "volumePercent": 7.595
+        },
+        {
+          "doseGy": 48.0,
+          "volumePercent": 6.992
+        },
+        {
+          "doseGy": 49.0,
+          "volumePercent": 6.431
+        },
+        {
+          "doseGy": 50.0,
+          "volumePercent": 5.911
+        },
+        {
+          "doseGy": 51.0,
+          "volumePercent": 5.427
+        },
+        {
+          "doseGy": 52.0,
+          "volumePercent": 4.98
+        },
+        {
+          "doseGy": 53.0,
+          "volumePercent": 4.565
+        },
+        {
+          "doseGy": 54.0,
+          "volumePercent": 4.181
+        },
+        {
+          "doseGy": 55.0,
+          "volumePercent": 3.827
+        },
+        {
+          "doseGy": 56.0,
+          "volumePercent": 3.5
+        },
+        {
+          "doseGy": 57.0,
+          "volumePercent": 3.198
+        },
+        {
+          "doseGy": 58.0,
+          "volumePercent": 2.92
+        },
+        {
+          "doseGy": 59.0,
+          "volumePercent": 2.664
+        },
+        {
+          "doseGy": 60.0,
+          "volumePercent": 2.428
+        },
+        {
+          "doseGy": 61.0,
+          "volumePercent": 2.212
+        },
+        {
+          "doseGy": 62.0,
+          "volumePercent": 2.013
+        },
+        {
+          "doseGy": 63.0,
+          "volumePercent": 1.831
+        },
+        {
+          "doseGy": 64.0,
+          "volumePercent": 1.664
+        },
+        {
+          "doseGy": 65.0,
+          "volumePercent": 1.511
+        },
+        {
+          "doseGy": 66.0,
+          "volumePercent": 1.371
+        },
+        {
+          "doseGy": 67.0,
+          "volumePercent": 1.243
+        },
+        {
+          "doseGy": 68.0,
+          "volumePercent": 1.127
+        },
+        {
+          "doseGy": 69.0,
+          "volumePercent": 1.02
+        },
+        {
+          "doseGy": 70.0,
+          "volumePercent": 0.923
+        }
+      ]
+    },
+    {
+      "stableId": "dvh-parotid-right",
+      "structureId": "Parotid_R",
+      "displayName": "Parotid right",
+      "role": "oar",
+      "colorHex": "#6A4C93",
+      "lineStyle": "solid",
+      "selected": false,
+      "volumeCc": 26.0,
+      "points": [
+        {
+          "doseGy": 0.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 1.0,
+          "volumePercent": 99.098
+        },
+        {
+          "doseGy": 2.0,
+          "volumePercent": 97.468
+        },
+        {
+          "doseGy": 3.0,
+          "volumePercent": 95.398
+        },
+        {
+          "doseGy": 4.0,
+          "volumePercent": 93.004
+        },
+        {
+          "doseGy": 5.0,
+          "volumePercent": 90.361
+        },
+        {
+          "doseGy": 6.0,
+          "volumePercent": 87.525
+        },
+        {
+          "doseGy": 7.0,
+          "volumePercent": 84.544
+        },
+        {
+          "doseGy": 8.0,
+          "volumePercent": 81.454
+        },
+        {
+          "doseGy": 9.0,
+          "volumePercent": 78.288
+        },
+        {
+          "doseGy": 10.0,
+          "volumePercent": 75.075
+        },
+        {
+          "doseGy": 11.0,
+          "volumePercent": 71.839
+        },
+        {
+          "doseGy": 12.0,
+          "volumePercent": 68.601
+        },
+        {
+          "doseGy": 13.0,
+          "volumePercent": 65.381
+        },
+        {
+          "doseGy": 14.0,
+          "volumePercent": 62.195
+        },
+        {
+          "doseGy": 15.0,
+          "volumePercent": 59.056
+        },
+        {
+          "doseGy": 16.0,
+          "volumePercent": 55.978
+        },
+        {
+          "doseGy": 17.0,
+          "volumePercent": 52.97
+        },
+        {
+          "doseGy": 18.0,
+          "volumePercent": 50.041
+        },
+        {
+          "doseGy": 19.0,
+          "volumePercent": 47.198
+        },
+        {
+          "doseGy": 20.0,
+          "volumePercent": 44.447
+        },
+        {
+          "doseGy": 21.0,
+          "volumePercent": 41.793
+        },
+        {
+          "doseGy": 22.0,
+          "volumePercent": 39.239
+        },
+        {
+          "doseGy": 23.0,
+          "volumePercent": 36.788
+        },
+        {
+          "doseGy": 24.0,
+          "volumePercent": 34.441
+        },
+        {
+          "doseGy": 25.0,
+          "volumePercent": 32.199
+        },
+        {
+          "doseGy": 26.0,
+          "volumePercent": 30.062
+        },
+        {
+          "doseGy": 27.0,
+          "volumePercent": 28.03
+        },
+        {
+          "doseGy": 28.0,
+          "volumePercent": 26.101
+        },
+        {
+          "doseGy": 29.0,
+          "volumePercent": 24.273
+        },
+        {
+          "doseGy": 30.0,
+          "volumePercent": 22.545
+        },
+        {
+          "doseGy": 31.0,
+          "volumePercent": 20.914
+        },
+        {
+          "doseGy": 32.0,
+          "volumePercent": 19.377
+        },
+        {
+          "doseGy": 33.0,
+          "volumePercent": 17.931
+        },
+        {
+          "doseGy": 34.0,
+          "volumePercent": 16.574
+        },
+        {
+          "doseGy": 35.0,
+          "volumePercent": 15.302
+        },
+        {
+          "doseGy": 36.0,
+          "volumePercent": 14.111
+        },
+        {
+          "doseGy": 37.0,
+          "volumePercent": 12.998
+        },
+        {
+          "doseGy": 38.0,
+          "volumePercent": 11.959
+        },
+        {
+          "doseGy": 39.0,
+          "volumePercent": 10.992
+        },
+        {
+          "doseGy": 40.0,
+          "volumePercent": 10.091
+        },
+        {
+          "doseGy": 41.0,
+          "volumePercent": 9.255
+        },
+        {
+          "doseGy": 42.0,
+          "volumePercent": 8.478
+        },
+        {
+          "doseGy": 43.0,
+          "volumePercent": 7.759
+        },
+        {
+          "doseGy": 44.0,
+          "volumePercent": 7.094
+        },
+        {
+          "doseGy": 45.0,
+          "volumePercent": 6.478
+        },
+        {
+          "doseGy": 46.0,
+          "volumePercent": 5.911
+        },
+        {
+          "doseGy": 47.0,
+          "volumePercent": 5.387
+        },
+        {
+          "doseGy": 48.0,
+          "volumePercent": 4.905
+        },
+        {
+          "doseGy": 49.0,
+          "volumePercent": 4.462
+        },
+        {
+          "doseGy": 50.0,
+          "volumePercent": 4.055
+        },
+        {
+          "doseGy": 51.0,
+          "volumePercent": 3.681
+        },
+        {
+          "doseGy": 52.0,
+          "volumePercent": 3.339
+        },
+        {
+          "doseGy": 53.0,
+          "volumePercent": 3.026
+        },
+        {
+          "doseGy": 54.0,
+          "volumePercent": 2.739
+        },
+        {
+          "doseGy": 55.0,
+          "volumePercent": 2.478
+        },
+        {
+          "doseGy": 56.0,
+          "volumePercent": 2.239
+        },
+        {
+          "doseGy": 57.0,
+          "volumePercent": 2.021
+        },
+        {
+          "doseGy": 58.0,
+          "volumePercent": 1.823
+        },
+        {
+          "doseGy": 59.0,
+          "volumePercent": 1.643
+        },
+        {
+          "doseGy": 60.0,
+          "volumePercent": 1.48
+        },
+        {
+          "doseGy": 61.0,
+          "volumePercent": 1.331
+        },
+        {
+          "doseGy": 62.0,
+          "volumePercent": 1.196
+        },
+        {
+          "doseGy": 63.0,
+          "volumePercent": 1.074
+        },
+        {
+          "doseGy": 64.0,
+          "volumePercent": 0.964
+        },
+        {
+          "doseGy": 65.0,
+          "volumePercent": 0.864
+        },
+        {
+          "doseGy": 66.0,
+          "volumePercent": 0.774
+        },
+        {
+          "doseGy": 67.0,
+          "volumePercent": 0.693
+        },
+        {
+          "doseGy": 68.0,
+          "volumePercent": 0.62
+        },
+        {
+          "doseGy": 69.0,
+          "volumePercent": 0.554
+        },
+        {
+          "doseGy": 70.0,
+          "volumePercent": 0.494
+        }
+      ]
+    },
+    {
+      "stableId": "dvh-external",
+      "structureId": "External",
+      "displayName": "External",
+      "role": "external",
+      "colorHex": "#64748B",
+      "lineStyle": "solid",
+      "selected": false,
+      "volumeCc": 15600.0,
+      "points": [
+        {
+          "doseGy": 0.0,
+          "volumePercent": 100.0
+        },
+        {
+          "doseGy": 1.0,
+          "volumePercent": 99.763
+        },
+        {
+          "doseGy": 2.0,
+          "volumePercent": 99.232
+        },
+        {
+          "doseGy": 3.0,
+          "volumePercent": 98.476
+        },
+        {
+          "doseGy": 4.0,
+          "volumePercent": 97.527
+        },
+        {
+          "doseGy": 5.0,
+          "volumePercent": 96.407
+        },
+        {
+          "doseGy": 6.0,
+          "volumePercent": 95.134
+        },
+        {
+          "doseGy": 7.0,
+          "volumePercent": 93.723
+        },
+        {
+          "doseGy": 8.0,
+          "volumePercent": 92.187
+        },
+        {
+          "doseGy": 9.0,
+          "volumePercent": 90.54
+        },
+        {
+          "doseGy": 10.0,
+          "volumePercent": 88.792
+        },
+        {
+          "doseGy": 11.0,
+          "volumePercent": 86.955
+        },
+        {
+          "doseGy": 12.0,
+          "volumePercent": 85.038
+        },
+        {
+          "doseGy": 13.0,
+          "volumePercent": 83.053
+        },
+        {
+          "doseGy": 14.0,
+          "volumePercent": 81.008
+        },
+        {
+          "doseGy": 15.0,
+          "volumePercent": 78.912
+        },
+        {
+          "doseGy": 16.0,
+          "volumePercent": 76.775
+        },
+        {
+          "doseGy": 17.0,
+          "volumePercent": 74.603
+        },
+        {
+          "doseGy": 18.0,
+          "volumePercent": 72.406
+        },
+        {
+          "doseGy": 19.0,
+          "volumePercent": 70.19
+        },
+        {
+          "doseGy": 20.0,
+          "volumePercent": 67.962
+        },
+        {
+          "doseGy": 21.0,
+          "volumePercent": 65.73
+        },
+        {
+          "doseGy": 22.0,
+          "volumePercent": 63.499
+        },
+        {
+          "doseGy": 23.0,
+          "volumePercent": 61.275
+        },
+        {
+          "doseGy": 24.0,
+          "volumePercent": 59.064
+        },
+        {
+          "doseGy": 25.0,
+          "volumePercent": 56.87
+        },
+        {
+          "doseGy": 26.0,
+          "volumePercent": 54.7
+        },
+        {
+          "doseGy": 27.0,
+          "volumePercent": 52.556
+        },
+        {
+          "doseGy": 28.0,
+          "volumePercent": 50.444
+        },
+        {
+          "doseGy": 29.0,
+          "volumePercent": 48.366
+        },
+        {
+          "doseGy": 30.0,
+          "volumePercent": 46.326
+        },
+        {
+          "doseGy": 31.0,
+          "volumePercent": 44.327
+        },
+        {
+          "doseGy": 32.0,
+          "volumePercent": 42.371
+        },
+        {
+          "doseGy": 33.0,
+          "volumePercent": 40.462
+        },
+        {
+          "doseGy": 34.0,
+          "volumePercent": 38.6
+        },
+        {
+          "doseGy": 35.0,
+          "volumePercent": 36.788
+        },
+        {
+          "doseGy": 36.0,
+          "volumePercent": 35.027
+        },
+        {
+          "doseGy": 37.0,
+          "volumePercent": 33.318
+        },
+        {
+          "doseGy": 38.0,
+          "volumePercent": 31.662
+        },
+        {
+          "doseGy": 39.0,
+          "volumePercent": 30.06
+        },
+        {
+          "doseGy": 40.0,
+          "volumePercent": 28.512
+        },
+        {
+          "doseGy": 41.0,
+          "volumePercent": 27.019
+        },
+        {
+          "doseGy": 42.0,
+          "volumePercent": 25.58
+        },
+        {
+          "doseGy": 43.0,
+          "volumePercent": 24.196
+        },
+        {
+          "doseGy": 44.0,
+          "volumePercent": 22.865
+        },
+        {
+          "doseGy": 45.0,
+          "volumePercent": 21.588
+        },
+        {
+          "doseGy": 46.0,
+          "volumePercent": 20.365
+        },
+        {
+          "doseGy": 47.0,
+          "volumePercent": 19.193
+        },
+        {
+          "doseGy": 48.0,
+          "volumePercent": 18.072
+        },
+        {
+          "doseGy": 49.0,
+          "volumePercent": 17.002
+        },
+        {
+          "doseGy": 50.0,
+          "volumePercent": 15.982
+        },
+        {
+          "doseGy": 51.0,
+          "volumePercent": 15.009
+        },
+        {
+          "doseGy": 52.0,
+          "volumePercent": 14.084
+        },
+        {
+          "doseGy": 53.0,
+          "volumePercent": 13.204
+        },
+        {
+          "doseGy": 54.0,
+          "volumePercent": 12.368
+        },
+        {
+          "doseGy": 55.0,
+          "volumePercent": 11.576
+        },
+        {
+          "doseGy": 56.0,
+          "volumePercent": 10.825
+        },
+        {
+          "doseGy": 57.0,
+          "volumePercent": 10.114
+        },
+        {
+          "doseGy": 58.0,
+          "volumePercent": 9.442
+        },
+        {
+          "doseGy": 59.0,
+          "volumePercent": 8.807
+        },
+        {
+          "doseGy": 60.0,
+          "volumePercent": 8.208
+        },
+        {
+          "doseGy": 61.0,
+          "volumePercent": 7.644
+        },
+        {
+          "doseGy": 62.0,
+          "volumePercent": 7.112
+        },
+        {
+          "doseGy": 63.0,
+          "volumePercent": 6.612
+        },
+        {
+          "doseGy": 64.0,
+          "volumePercent": 6.143
+        },
+        {
+          "doseGy": 65.0,
+          "volumePercent": 5.702
+        },
+        {
+          "doseGy": 66.0,
+          "volumePercent": 5.288
+        },
+        {
+          "doseGy": 67.0,
+          "volumePercent": 4.9
+        },
+        {
+          "doseGy": 68.0,
+          "volumePercent": 4.538
+        },
+        {
+          "doseGy": 69.0,
+          "volumePercent": 4.198
+        },
+        {
+          "doseGy": 70.0,
+          "volumePercent": 3.881
+        }
+      ]
+    }
+  ],
+  "report": {
+    "title": "ClearPlan synthetic review",
+    "subtitle": "Field naming and structure mapping",
+    "modeLabel": "SYNTHETIC DEMONSTRATION — NOT FOR CLINICAL USE",
+    "watermark": "SYNTHETIC DEMONSTRATION — NOT FOR CLINICAL USE",
+    "outputFileLabel": "clearplan-field-and-mapping-report.pdf",
+    "notes": [
+      "Dose is expressed in Gy.",
+      "Cumulative volume is expressed as relative volume in percent."
+    ]
+  }
+}

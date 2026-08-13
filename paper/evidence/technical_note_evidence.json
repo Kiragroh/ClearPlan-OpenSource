@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "generatedUtc": "2026-07-30T15:48:56+00:00",
+  "scope": "Software verification and deterministic synthetic demonstration only; no patient or clinical outcome data.",
+  "repositoryRelease": "v3.1.0",
+  "softwareVerification": {
+    "csharpTests": {
+      "command": "artifacts/bin/<configuration>/ClearPlan.Core.Tests.exe",
+      "configuration": "Release",
+      "total": 125,
+      "failures": 0
+    },
+    "illustrativeRayStationAdapterTests": {
+      "command": "python -m unittest discover -s examples/raystation/tests -v",
+      "total": 20,
+      "failures": 0,
+      "runtimeValidation": false
+    }
+  },
+  "constraintWorkbook": {
+    "path": "ClearPlan.Script/Distribution/ConstraintTemplates/ClearPlan_DefaultConstraints.xlsx",
+    "sha256": "3ba779ce8e296b60619c349e74aca1d7356ac255eda0ec2ca9501d8fd3bd17fa",
+    "tables": 3,
+    "constraints": 19,
+    "structures": 7
+  },
+  "syntheticScenarios": {
+    "count": 7,
+    "scenarioIds": [
+      "baseline-pass",
+      "field-and-mapping",
+      "metadata-plancheck",
+      "mixed-review",
+      "oar-overdose",
+      "optional-path-fallback",
+      "target-underdose"
+    ],
+    "allExplicitlySynthetic": true,
+    "sourceFiles": [
+      "ClearPlan.Simulator/Scenarios/baseline-pass.json",
+      "ClearPlan.Simulator/Scenarios/field-and-mapping.json",
+      "ClearPlan.Simulator/Scenarios/metadata-plancheck.json",
+      "ClearPlan.Simulator/Scenarios/mixed-review.json",
+      "ClearPlan.Simulator/Scenarios/oar-overdose.json",
+      "ClearPlan.Simulator/Scenarios/optional-path-fallback.json",
+      "ClearPlan.Simulator/Scenarios/target-underdose.json"
+    ]
+  },
+  "mixedReviewScenario": {
+    "scenarioId": "mixed-review",
+    "seed": 1107,
+    "scenarioGeneratedUtc": "2026-07-30T08:06:00.000+00:00",
+    "sourceCount": 3,
+    "sourceStatusCounts": {
+      "available": 2,
+      "fallback": 1
+    },
+    "planCount": 1,
+    "pqm": {
+      "rowCount": 6,
+      "statusCounts": {
+        "fail": 2,
+        "pass": 2,
+        "variation": 2
+      },
+      "achievedValues": [
+        {
+          "templateCode": "target-d95",
+          "value": 56.3,
+          "unit": "Gy",
+          "status": "variation"
+        },
+        {
+          "templateCode": "target-v95",
+          "value": 90.5,
+          "unit": "%",
+          "status": "fail"
+        },
+        {
+          "templateCode": "target-d2",
+          "value": 62.0,
+          "unit": "Gy",
+          "status": "pass"
+        },
+        {
+          "templateCode": "cord-dmax",
+          "value": 60.9,
+          "unit": "Gy",
+          "status": "fail"
+        },
+        {
+          "templateCode": "parotid-dmean",
+          "value": 32.9,
+          "unit": "Gy",
+          "status": "variation"
+        },
+        {
+          "templateCode": "parotid-v30",
+          "value": 49.6,
+          "unit": "%",
+          "status": "pass"
+        }
+      ]
+    },
+    "planCheck": {
+      "rowCount": 8,
+      "statusCounts": {
+        "fail": 4,
+        "pass": 3,
+        "variation": 1
+      },
+      "injectedNonPassRows": 5
+    },
+    "fields": {
+      "rowCount": 5,
+      "idStatusCounts": {
+        "pass": 5
+      },
+      "nameStatusCounts": {
+        "fail": 5
+      },
+      "suggestedNames": [
+        "179-181 T30 UZ",
+        "179-181 UZa",
+        "179-181 UZb",
+        "179-181 GUZa",
+        "179-181 GUZb"
+      ]
+    },
+    "mappings": {
+      "rowCount": 4,
+      "statusCounts": {
+        "pass": 3,
+        "variation": 1
+      }
+    },
+    "dvh": {
+      "seriesCount": 5,
+      "selectedSeriesCount": 3,
+      "pointsPerSeries": {
+        "dvh-target": 71,
+        "dvh-cord": 71,
+        "dvh-parotid-left": 71,
+        "dvh-parotid-right": 71,
+        "dvh-external": 71
+      }
+    }
+  },
+  "figureInputs": {
+    "overview": "real simulator capture from mixed-review",
+    "architecture": "editable vector diagram generated from repository source",
+    "comparison": "derived only from checked-in synthetic scenarios"
+  }
+}

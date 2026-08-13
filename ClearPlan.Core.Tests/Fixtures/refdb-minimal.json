@@ -1,0 +1,169 @@
+{
+  "schema": "RSAlign.local_refdb_constraints.v1",
+  "authorized_at": "2026-07-28T08:00:00Z",
+  "exported_at": "2026-07-28T08:01:00Z",
+  "side_aliases": [
+    {
+      "id": 1,
+      "side": "L",
+      "alias": "Links"
+    },
+    {
+      "id": 2,
+      "side": "R",
+      "alias": "Rechts"
+    }
+  ],
+  "structures": [
+    {
+      "id": 101,
+      "canonical_name": "Kidney_L/R",
+      "status": "active",
+      "laterality": "L/R",
+      "aliases": [
+        {
+          "id": 1,
+          "alias": "Kidney"
+        }
+      ],
+      "side_aliases": {
+        "L": [
+          "Kidney_L",
+          "Niere_L"
+        ],
+        "R": [
+          "Kidney_R",
+          "Niere_R"
+        ]
+      }
+    },
+    {
+      "id": 102,
+      "canonical_name": "SpinalCord",
+      "status": "active",
+      "laterality": "",
+      "aliases": [
+        {
+          "id": 2,
+          "alias": "Rückenmark"
+        }
+      ],
+      "side_aliases": {}
+    },
+    {
+      "id": 103,
+      "canonical_name": "Inactive Example",
+      "status": "decommissioned",
+      "laterality": "",
+      "aliases": [],
+      "side_aliases": {}
+    }
+  ],
+  "tables": [
+    {
+      "id": 201,
+      "name": "table-active",
+      "status": "active",
+      "fx_min": 3,
+      "fx_max": 5,
+      "dpf_min": 5.0,
+      "dpf_max": 8.0,
+      "td_min": 24.0,
+      "td_max": 40.0,
+      "site": "Invented Site",
+      "regime": "Invented Regime",
+      "source_note": "Public-safe fixture",
+      "prescriptions": [
+        {
+          "id": 1,
+          "name": "Invented 3–5 fractions",
+          "status": "active"
+        }
+      ]
+    },
+    {
+      "id": 202,
+      "name": "table-inactive",
+      "status": "decommissioned",
+      "fx_min": 10,
+      "fx_max": 10,
+      "dpf_min": "",
+      "dpf_max": "",
+      "td_min": 30,
+      "td_max": 30,
+      "site": "Invented Site",
+      "regime": "Legacy",
+      "prescriptions": []
+    }
+  ],
+  "details": {
+    "201": {
+      "id": 201,
+      "name": "table-active",
+      "status": "active",
+      "fx_min": 3,
+      "fx_max": 5,
+      "dpf_min": 5.0,
+      "dpf_max": 8.0,
+      "td_min": 24.0,
+      "td_max": 40.0,
+      "site": "Invented Site",
+      "regime": "Invented Regime",
+      "source_note": "Public-safe fixture",
+      "prescriptions": [
+        {
+          "id": 1,
+          "name": "Invented 3–5 fractions",
+          "status": "active"
+        }
+      ],
+      "constraints": [
+        {
+          "id": 501,
+          "constraint_table_id": 201,
+          "metric": "D0.03cc",
+          "unit": "cm³",
+          "comparator": "≤",
+          "limit_optimal": "18,5",
+          "limit_maximal": null,
+          "priority": "2 – Important",
+          "source": "Invented source",
+          "comment": "Unicode: Größe",
+          "structure_id": 102,
+          "structure_name": "SpinalCord",
+          "oar_raw": "SpinalCord"
+        },
+        {
+          "id": 502,
+          "constraint_table_id": 201,
+          "metric": "CV21.5Gy",
+          "unit": "cc",
+          "comparator": "≥",
+          "limit_optimal": 700,
+          "limit_maximal": 650,
+          "priority": "3",
+          "source": "Invented source",
+          "comment": "Null structure ID remains explicit",
+          "structure_id": null,
+          "structure_name": null,
+          "oar_raw": "Invented Liver"
+        }
+      ]
+    },
+    "202": {
+      "id": 202,
+      "name": "table-inactive",
+      "status": "decommissioned",
+      "fx_min": 10,
+      "fx_max": 10,
+      "dpf_min": "",
+      "dpf_max": "",
+      "td_min": 30,
+      "td_max": 30,
+      "site": "Invented Site",
+      "regime": "Legacy",
+      "prescriptions": [],
+      "constraints": []
+    }
+  }
+}

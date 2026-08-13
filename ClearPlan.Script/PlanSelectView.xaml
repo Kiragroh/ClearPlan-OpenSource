@@ -1,0 +1,53 @@
+<UserControl x:Class="ClearPlan.PlanSelectView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/ClinicalBlueprint.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <Grid Background="{StaticResource ClinicalBlueprintCanvas}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Border Background="{StaticResource ClinicalBlueprintNavigation}" Padding="24,18">
+            <StackPanel>
+                <TextBlock Text="ClearPlan" Foreground="White" FontSize="24"
+                           FontWeight="SemiBold"/>
+                <TextBlock Text="Plan für die read-only Prüfung auswählen"
+                           Foreground="#C7D4E7" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Border>
+        <Border Grid.Row="1" Margin="24" Style="{StaticResource ClinicalBlueprintCard}">
+            <DataGrid x:Name="planningItemSummariesDataGrid"
+                      FontSize="14" AutoGenerateColumns="False"
+                      ItemsSource="{Binding PlanningItemSummaries}"
+                      IsReadOnly="True" SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Plan" Binding="{Binding PlanName}" Width="2.5*"/>
+                    <DataGridTextColumn Header="Erstellt" Binding="{Binding PlanCreated}" Width="1.5*"/>
+                    <DataGridTextColumn Header="Structure Set" Binding="{Binding PlanStructureSet}" Width="1.5*"/>
+                    <DataGridTextColumn Header="Felder" Binding="{Binding PlanNumFields}"/>
+                    <DataGridTextColumn Header="Dosis/Fx" Binding="{Binding PlanFxDose}"/>
+                    <DataGridTextColumn Header="Fx" Binding="{Binding PlanFractions}"/>
+                    <DataGridTextColumn Header="Gesamtdosis" Binding="{Binding PlanTotalDose}"/>
+                    <DataGridTextColumn Header="Ziel" Binding="{Binding PlanTarget}" Width="1.3*"/>
+                    <DataGridTextColumn Header="Dosisstatus" Binding="{Binding IsDoseValid}" Width="1.1*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right"
+                    Margin="24,0,24,24">
+            <Button Content="Beenden" IsCancel="True" Click="ExitButton_OnClick"
+                    Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+                    MinWidth="100" Margin="6,0"/>
+            <Button Content="Prüfung starten" IsDefault="True" Click="RunButton_OnClick"
+                    Style="{StaticResource ClinicalBlueprintPrimaryButton}"
+                    MinWidth="140" Margin="6,0"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

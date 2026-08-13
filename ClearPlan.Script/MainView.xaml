@@ -1,0 +1,759 @@
+<UserControl x:Class="ClearPlan.MainView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:oxy="http://oxyplot.org/wpf"
+        xmlns:views="clr-namespace:ClearPlan.Views"
+        xmlns:review="clr-namespace:ClearPlan.Presentation.Views;assembly=ClearPlan.Presentation"
+        HorizontalContentAlignment="Stretch"
+        VerticalContentAlignment="Stretch">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/ClinicalBlueprint.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="MetricNumber" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="22"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="{StaticResource ClinicalBlueprintText}"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="{StaticResource ClinicalBlueprintCanvas}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="70"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource ClinicalBlueprintSurface}"
+                BorderBrush="{StaticResource ClinicalBlueprintBorder}"
+                BorderThickness="0,0,0,1">
+            <Grid Margin="22,10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="300"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="ClearPlan · Clinical Blueprint" FontSize="21"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
+                    <TextBlock Text="{Binding ActivePlanningItem.PlanningItemIdWithCourseAndType}"
+                               Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+                    <TextBlock x:Name="SharedWorkspaceStatusText"
+                               Foreground="#B45309" FontSize="10"
+                               TextTrimming="CharacterEllipsis"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Margin="14,0"
+                            VerticalAlignment="Center">
+                    <TextBlock Text="Constraint-Tabelle"
+                               Foreground="{StaticResource ClinicalBlueprintTextMuted}"
+                               FontSize="10"/>
+                    <ComboBox x:Name="SharedConstraintComboBox"
+                              ItemsSource="{Binding ConstraintComboBoxList}"
+                              SelectedItem="{Binding ActiveConstraintPath}"
+                              DisplayMemberPath="ConstraintName"
+                              SelectionChanged="SharedConstraintComboBoxChanged"
+                              MinWidth="260"/>
+                </StackPanel>
+                <Border Grid.Column="2" Margin="0,0,14,0" Padding="12,7"
+                        Background="#E8EEF8" CornerRadius="5"
+                        VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ConstraintSourceStatus}"
+                                   FontWeight="SemiBold" Foreground="#1E3A8A"/>
+                        <TextBlock Text="{Binding ActiveConstraintPath.ConstraintName}"
+                                   Foreground="#475569" FontSize="11"/>
+                    </StackPanel>
+                </Border>
+                <Menu Grid.Column="3" VerticalAlignment="Center"
+                      Background="Transparent">
+                    <MenuItem Header="Extras">
+                        <MenuItem Header="Einstellungen …"
+                                  Click="SharedSettings_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Planübersicht"
+                                  Click="PlanSummary_Click"/>
+                        <MenuItem Header="Vergleichen"
+                                  Click="Compare_Click"/>
+                        <MenuItem Header="PQM als CSV speichern"
+                                  Click="CSV_Button_Click"/>
+                        <Separator/>
+                        <MenuItem Header="Bericht anonymisieren"
+                                  x:Name="Anonymize_CheckBox"
+                                  Click="Anonymize_Click"
+                                  IsCheckable="True" StaysOpenOnClick="True"/>
+                        <MenuItem Header="PlanCheck in Bericht"
+                                  IsCheckable="True"
+                                  StaysOpenOnClick="True"
+                                  IsChecked="{Binding IsChecked, ElementName=PrintPC_CB, Mode=TwoWay}"/>
+                        <MenuItem Header="DRRs erzeugen"
+                                  IsCheckable="True"
+                                  StaysOpenOnClick="True"
+                                  IsChecked="{Binding IsChecked, ElementName=DRR_CB, Mode=TwoWay}"/>
+                        <MenuItem Header="eDoc-Dokument erzeugen"
+                                  IsCheckable="True"
+                                  StaysOpenOnClick="True"
+                                  IsChecked="{Binding IsChecked, ElementName=eDoc_CB, Mode=TwoWay}"/>
+                    </MenuItem>
+                    <MenuItem Header="Hilfe">
+                        <MenuItem Header="Änderungsprotokoll" Click="ChangeLog_Click"/>
+                        <MenuItem Header="Feedback" Click="Feedback_Click"/>
+                    </MenuItem>
+                </Menu>
+                <TextBlock x:Name="NewID_TextBlock" Grid.Column="0"
+                           Visibility="Collapsed" Text="Neue ID:"/>
+                <TextBox x:Name="NewID_TextBox" Grid.Column="0"
+                         Visibility="Collapsed" Text="anonym"/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <review:ReviewWorkspaceView x:Name="SharedReviewWorkspace"
+                                        Visibility="Collapsed"/>
+            <Border x:Name="LegacyCompatibilitySurface">
+        <TabControl x:Name="MainNavigation"
+                    TabStripPlacement="Left" BorderThickness="0"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    Background="{StaticResource ClinicalBlueprintCanvas}">
+            <TabControl.Template>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="190"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Background="{StaticResource ClinicalBlueprintNavigation}">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Bottom" Margin="18,14">
+                                    <TextBlock Text="READ ONLY" Foreground="#93A7C4"
+                                               FontSize="10" FontWeight="Bold"/>
+                                    <TextBlock Text="ESAPI-Prüfung ohne Planänderung"
+                                               Foreground="#B9C7D9" FontSize="10"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <TabPanel IsItemsHost="True" Margin="0,14,0,0"/>
+                            </DockPanel>
+                        </Border>
+                        <Border Grid.Column="1" Background="{StaticResource ClinicalBlueprintCanvas}">
+                            <ContentPresenter x:Name="PART_SelectedContentHost"
+                                              ContentSource="SelectedContent"
+                                              HorizontalAlignment="Stretch"
+                                              VerticalAlignment="Stretch"
+                                              Margin="0"/>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </TabControl.Template>
+
+            <TabItem Header="Gesamtansicht" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="24">
+                        <DockPanel Margin="0,0,0,14">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Content="Planübersicht" Click="PlanSummary_Click"
+                                         Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+                                         Margin="6,0"/>
+                                <Button Content="Vergleichen" Click="Compare_Click"
+                                        Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+                                        Margin="6,0"/>
+                                <Button Content="PDF-Report" Click="PrintButtonClicked"
+                                        Style="{StaticResource ClinicalBlueprintPrimaryButton}"
+                                        Margin="6,0"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Gesamtansicht"
+                                           Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
+                                <TextBlock Text="Plan, PQM, PlanCheck, Feldlogik und DVH in einem durchgängigen Review."
+                                           Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+                            </StackPanel>
+                        </DockPanel>
+
+                        <Border Background="{StaticResource ClinicalBlueprintSurface}"
+                                BorderBrush="{StaticResource ClinicalBlueprintBorder}"
+                                BorderThickness="1" CornerRadius="6"
+                                Padding="12,9" Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="2.2*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding ActiveConstraintPath.ConstraintName}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource ClinicalBlueprintCobaltDark}"
+                                               TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding ConstraintSourceStatus}"
+                                               Foreground="{StaticResource ClinicalBlueprintTextMuted}"
+                                               FontSize="11"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="PQM erfüllt" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding Overview.PqmPassed}"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{StaticResource ClinicalBlueprintGreen}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="PQM offen" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding Overview.PqmFailed}"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{StaticResource ClinicalBlueprintRed}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="3">
+                                    <TextBlock Text="PlanCheck Fehler" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding Overview.PlanCheckErrors}"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{StaticResource ClinicalBlueprintRed}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="4">
+                                    <TextBlock Text="Felder passend" Foreground="#64748B"/>
+                                    <TextBlock Text="{Binding Overview.FieldNamesConforming}"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{StaticResource ClinicalBlueprintGreen}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource ClinicalBlueprintCard}"
+                                Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="Pläne" FontSize="17"
+                                           FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <DataGrid x:Name="OverviewPlanGrid" Grid.Row="1"
+                                          AutoGenerateColumns="False" IsReadOnly="True"
+                                          ItemsSource="{Binding PlanningItemSummaries}"
+                                          MaxHeight="190" MinHeight="108">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Plan" Binding="{Binding PlanName}" Width="2.5*"/>
+                                        <DataGridTemplateColumn Header="" Width="70">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Content="Öffnen" Click="PlanOpen_Button_Click"
+                                                            Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+                                                            Padding="7,3"/>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="Erstellt" Binding="{Binding PlanCreated}" Width="1.5*"/>
+                                        <DataGridTextColumn Header="Dosis/Fx" Binding="{Binding PlanFxDose}"/>
+                                        <DataGridTextColumn Header="Gesamtdosis" Binding="{Binding PlanTotalDose}"/>
+                                        <DataGridTextColumn Header="Fx" Binding="{Binding PlanFractions}"/>
+                                        <DataGridTextColumn Header="Behandelt" Binding="{Binding TreatedSessions}"/>
+                                        <DataGridTextColumn Header="Ziel" Binding="{Binding PlanTarget}" Width="1.3*"/>
+                                        <DataGridTextColumn Header="PQM" Binding="{Binding PQMResult}"/>
+                                        <DataGridTextColumn Header="PC" Binding="{Binding PCResult}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource ClinicalBlueprintCard}"
+                                Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="PQM-Details"
+                                            Click="NavigateToPqmClicked"
+                                            Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+                                            Padding="9,4"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Plan Quality Metrics" FontSize="17"
+                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Text="Die aufgelöste Struktur ist dauerhaft sichtbar."
+                                                   Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <DataGrid x:Name="OverviewPqmGrid" Grid.Row="1"
+                                          AutoGenerateColumns="False" IsReadOnly="True"
+                                          ItemsSource="{Binding PqmSummaries}"
+                                          MaxHeight="235" MinHeight="120">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Vorlage" Binding="{Binding TemplateId}" Width="1.2*"/>
+                                        <DataGridTextColumn Header="Zuordnung" Binding="{Binding MappedStructureDisplay}" Width="1.7*"/>
+                                        <DataGridTextColumn Header="Objective" Binding="{Binding DVHObjective}" Width="1.1*"/>
+                                        <DataGridTextColumn Header="Goal" Binding="{Binding Goal}"/>
+                                        <DataGridTextColumn Header="Erreicht" Binding="{Binding Achieved}" Width="1.1*"/>
+                                        <DataGridTextColumn Header="Status" Binding="{Binding Met}"/>
+                                    </DataGrid.Columns>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Met}" Value="Goal">
+                                                    <Setter Property="Background" Value="#DCFCE7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Met}" Value="Variation">
+                                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Met}" Value="Not met">
+                                                    <Setter Property="Background" Value="#FEE2E2"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource ClinicalBlueprintCard}"
+                                Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="PlanCheck-Details"
+                                            Click="NavigateToPlanCheckClicked"
+                                            Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+                                            Padding="9,4"/>
+                                    <TextBlock Text="PlanCheck" FontSize="17"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center"/>
+                                </DockPanel>
+                                <DataGrid x:Name="OverviewPlanCheckGrid" Grid.Row="1"
+                                          AutoGenerateColumns="False" IsReadOnly="True"
+                                          ItemsSource="{Binding ErrorGrid}"
+                                          MaxHeight="225" MinHeight="115">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Prüfung" Binding="{Binding Description}" Width="6*"/>
+                                        <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="1.5*"/>
+                                        <DataGridTextColumn Header="Schweregrad" Binding="{Binding Severity}" Width="1.1*"/>
+                                    </DataGrid.Columns>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Status}" Value="1 - Deviation">
+                                                    <Setter Property="Background" Value="#FEE2E2"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="2 - Variation">
+                                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Status}" Value="3 - OK">
+                                                    <Setter Property="Background" Value="#DCFCE7"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource ClinicalBlueprintCard}"
+                                Margin="0,0,0,12">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="Feldnamen-Details"
+                                            Click="NavigateToFieldNamesClicked"
+                                            Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+                                            Padding="9,4"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Feldlogik" FontSize="17"
+                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Text="Planpräfix für IDs; PlanFieldNamer-Logik für Namen."
+                                                   Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <DataGrid x:Name="OverviewFieldGrid" Grid.Row="1"
+                                          AutoGenerateColumns="False" IsReadOnly="True"
+                                          ItemsSource="{Binding FieldNamePreviews}"
+                                          MaxHeight="220" MinHeight="112">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="#" Binding="{Binding Order}" Width="45"/>
+                                        <DataGridTextColumn Header="Aktuelle ID" Binding="{Binding CurrentId}" Width="1.1*"/>
+                                        <DataGridTextColumn Header="Erwartete ID" Binding="{Binding ExpectedId}" Width="1.1*"/>
+                                        <DataGridTextColumn Header="Aktueller Name" Binding="{Binding CurrentName}" Width="1.6*"/>
+                                        <DataGridTextColumn Header="Namensvorschlag" Binding="{Binding SuggestedName}" Width="1.8*"/>
+                                        <DataGridTextColumn Header="ID-Status" Binding="{Binding IdStatus}" Width="0.9*"/>
+                                        <DataGridTextColumn Header="Name-Status" Binding="{Binding NameStatus}" Width="1.1*"/>
+                                    </DataGrid.Columns>
+                                    <DataGrid.RowStyle>
+                                        <Style TargetType="DataGridRow">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding WouldChange}" Value="True">
+                                                    <Setter Property="Background" Value="#FEF3C7"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding WouldChange}" Value="False">
+                                                    <Setter Property="Background" Value="#DCFCE7"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </DataGrid.RowStyle>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+
+                        <Border Style="{StaticResource ClinicalBlueprintCard}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="350"/>
+                                </Grid.RowDefinitions>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button DockPanel.Dock="Right" Content="DVH-Details"
+                                            Click="NavigateToDvhClicked"
+                                            Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+                                            Padding="9,4"/>
+                                    <StackPanel>
+                                        <TextBlock Text="Dosis-Volumen-Histogramm" FontSize="17"
+                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Text="Auswahl und Kurven sind mit der Detailansicht synchron."
+                                                   Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+                                    </StackPanel>
+                                </DockPanel>
+                                <Grid Grid.Row="1">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="210"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Background="#F8FAFC"
+                                            BorderBrush="{StaticResource ClinicalBlueprintBorder}"
+                                            BorderThickness="1" CornerRadius="4"
+                                            Margin="0,0,10,0" Padding="8">
+                                        <ListBox ItemsSource="{Binding DvhStructures}"
+                                                 BorderThickness="0"
+                                                 Background="Transparent"
+                                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <CheckBox Content="{Binding Id}"
+                                                              IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                              Margin="3"/>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+                                    </Border>
+                                    <Border Grid.Column="1"
+                                            BorderBrush="{StaticResource ClinicalBlueprintBorder}"
+                                            BorderThickness="1" CornerRadius="4"
+                                            Background="White" Padding="4">
+                                        <oxy:PlotView x:Name="OverviewDvhPlot"
+                                                      Model="{Binding OverviewPlotModel}"/>
+                                    </Border>
+                                </Grid>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <TabItem Header="PQM" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+                <Grid x:Name="PqmDetailPage" Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,12">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <CheckBox x:Name="eDoc_CB" Content="eDoc" Margin="8,0"
+                                      VerticalAlignment="Center"/>
+                            <CheckBox x:Name="DRR_CB" Content="DRRs" Margin="8,0"
+                                      VerticalAlignment="Center"/>
+                            <Button Content="CSV speichern" Click="CSV_Button_Click"
+                                    Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="6,0"/>
+                            <Button Content="PDF drucken" Click="PrintButtonClicked"
+                                    Style="{StaticResource ClinicalBlueprintPrimaryButton}" Margin="6,0"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="Plan Quality Metrics"
+                                       Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,7,0,0">
+                                <TextBlock Text="Constraint-Tabelle:" VerticalAlignment="Center"
+                                           Foreground="#475569"/>
+                                <ComboBox x:Name="ConstraintComboBox" Width="320" Margin="10,0"
+                                          ItemsSource="{Binding ConstraintComboBoxList}"
+                                          SelectedItem="{Binding ActiveConstraintPath}"
+                                          DisplayMemberPath="ConstraintName"
+                                          SelectionChanged="ConstraintComboBoxChanged"/>
+                                <TextBlock Text="{Binding ConstraintSourceStatus}"
+                                           VerticalAlignment="Center" Foreground="#1D4ED8"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </DockPanel>
+                    <DataGrid x:Name="pqmDataGrid" Grid.Row="1"
+                              EnableRowVirtualization="False" IsReadOnly="True"
+                              AutoGenerateColumns="False" ItemsSource="{Binding PqmSummaries}"
+                              CanUserSortColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Template" Binding="{Binding TemplateId}" Width="1.6*"/>
+                            <DataGridTemplateColumn Header="Gefundene Struktur" Width="2*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <ComboBox x:Name="StructureComboBox"
+                                                      ItemsSource="{Binding StructureList}"
+                                                      DisplayMemberPath="StructureNameWithCode"
+                                                      SelectedItem="{Binding Structure, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                      DropDownClosed="StructureChanged"/>
+                                            <TextBlock Text="{Binding MappedStructureDisplay}"
+                                                       IsHitTestVisible="False"
+                                                       VerticalAlignment="Center"
+                                                       Margin="8,0,28,0"
+                                                       Background="White"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Volumen" Binding="{Binding StructVolume}"/>
+                            <DataGridTextColumn Header="Objective" Binding="{Binding DVHObjective}" Width="1.3*"/>
+                            <DataGridTextColumn Header="Goal" Binding="{Binding Goal}"/>
+                            <DataGridTextColumn Header="Variation" Binding="{Binding Variation}"/>
+                            <DataGridTextColumn Header="Erreicht" Binding="{Binding Achieved}" Width="1.3*"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Met}"/>
+                            <DataGridTextColumn Header="Quelle" Binding="{Binding Source}"/>
+                            <DataGridTemplateColumn Header="Akzeptieren" Width="76">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox x:Name="checkboxinstance" HorizontalAlignment="Center"
+                                                  IsChecked="{Binding Accept, Mode=TwoWay}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Ignorieren" Width="76">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox x:Name="checkboxinstance2" HorizontalAlignment="Center"
+                                                  IsChecked="{Binding Ignore, Mode=TwoWay}"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Met}" Value="Goal">
+                                        <Setter Property="Background" Value="#DCFCE7"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Met}" Value="Variation">
+                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Met}" Value="Not met">
+                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                    </DataGrid>
+                    <Border Grid.Row="2" Background="{StaticResource ClinicalBlueprintSurface}"
+                            BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="1"
+                            CornerRadius="5" Padding="10" Margin="0,10,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="80"/><ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="75"/><ColumnDefinition Width="120"/>
+                                <ColumnDefinition Width="55"/><ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="55"/><ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="80"/><ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Struktur:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="AddConstraintComboBox" Grid.Column="1"
+                                      ItemsSource="{Binding StructureList}"
+                                      DisplayMemberPath="StructureNameWithCode"/>
+                            <TextBlock Grid.Column="2" Text="Objective:" VerticalAlignment="Center"/>
+                            <ComboBox x:Name="DVHObjective1ComboBox" Grid.Column="3" SelectedIndex="0">
+                                <ComboBoxItem Content="Mean[Gy]"/><ComboBoxItem Content="Max[Gy]"/>
+                                <ComboBoxItem Content="Min[Gy]"/><ComboBoxItem Content="D_%[%]"/>
+                                <ComboBoxItem Content="D_cc[Gy]"/><ComboBoxItem Content="V_Gy[%]"/>
+                                <ComboBoxItem Content="CV_Gy[%]"/><ComboBoxItem Content="DC_%[Gy]"/>
+                            </ComboBox>
+                            <TextBox x:Name="DVHObjective2TextBox" Grid.Column="4" Margin="4,0"/>
+                            <ComboBox x:Name="Goal1ComboBox" Grid.Column="5" SelectedIndex="0">
+                                <ComboBoxItem Content="&lt;="/><ComboBoxItem Content=">="/>
+                            </ComboBox>
+                            <TextBlock Grid.Column="6" Text="Goal:" VerticalAlignment="Center"/>
+                            <TextBox x:Name="Goal2TextBox" Grid.Column="7" Margin="4,0"/>
+                            <TextBlock Grid.Column="8" Text="Variation:" VerticalAlignment="Center"/>
+                            <TextBox x:Name="VariationTextBox" Grid.Column="9" Margin="4,0"/>
+                            <Button Grid.Column="10" Content="Constraint ergänzen"
+                                    Click="AddConstraintButtonClicked"
+                                    HorizontalAlignment="Right"
+                                    Style="{StaticResource ClinicalBlueprintPrimaryButton}"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="PlanCheck" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+                <Grid x:Name="PlanCheckDetailPage" Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,12">
+                        <CheckBox x:Name="PrintPC_CB" DockPanel.Dock="Right"
+                                  Content="PlanCheck im Bericht" VerticalAlignment="Center"/>
+                        <StackPanel>
+                            <TextBlock Text="PlanCheck"
+                                       Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
+                            <TextBlock Text="Vollständige klinische Prüflogik des vorhandenen ErrorCalculator."
+                                       Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <DataGrid x:Name="errorDataGrid" Grid.Row="1"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              ItemsSource="{Binding ErrorGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Prüfung" Binding="{Binding Description}" Width="6*"/>
+                            <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="1.6*"/>
+                            <DataGridTextColumn Header="Schweregrad" Binding="{Binding Severity}" Width="1.2*"/>
+                        </DataGrid.Columns>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Status}" Value="1 - Deviation">
+                                        <Setter Property="Background" Value="#FEE2E2"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="2 - Variation">
+                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="3 - OK">
+                                        <Setter Property="Background" Value="#DCFCE7"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                    </DataGrid>
+                    <TextBlock Grid.Row="2" Text="Referenzpunkte" FontSize="16"
+                               FontWeight="SemiBold" Margin="0,14,0,7"
+                               Foreground="#1E3A8A"/>
+                    <DataGrid x:Name="refDataGrid" Grid.Row="3"
+                              AutoGenerateColumns="False" IsReadOnly="True"
+                              ItemsSource="{Binding RefGrid}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Referenz" Binding="{Binding RefPointId}" Width="1.4*"/>
+                            <DataGridTextColumn Header="Verordnung" Binding="{Binding Prescription}" Width="1.5*"/>
+                            <DataGridTextColumn Header="Sitzung" Binding="{Binding Session}"/>
+                            <DataGridTextColumn Header="Fx" Binding="{Binding Fractions}"/>
+                            <DataGridTextColumn Header="D50" Binding="{Binding D50}"/>
+                            <DataGridTextColumn Header="D95" Binding="{Binding D95}"/>
+                            <DataGridTextColumn Header="D2" Binding="{Binding D2}"/>
+                            <DataGridTextColumn Header="D98" Binding="{Binding D98}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Feldnamen" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+                <Grid x:Name="FieldNamesDetailPage" Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <StackPanel Margin="0,0,0,12">
+                        <TextBlock Text="Feldnamen-Vorschau"
+                                   Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
+                        <TextBlock Text="PlanFieldNamer-kompatible Vorschläge in Behandlungsreihenfolge. Diese Seite verändert weder ID noch Name."
+                                   Foreground="{StaticResource ClinicalBlueprintTextMuted}"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <DataGrid Grid.Row="1" ItemsSource="{Binding FieldNamePreviews}"
+                              AutoGenerateColumns="False" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="#" Binding="{Binding Order}" Width="55"/>
+                            <DataGridTextColumn Header="Beam #" Binding="{Binding BeamNumber}" Width="75"/>
+                            <DataGridTextColumn Header="Aktuelle ID" Binding="{Binding CurrentId}" Width="1.2*"/>
+                            <DataGridTextColumn Header="Erwartete ID" Binding="{Binding ExpectedId}" Width="1.2*"/>
+                            <DataGridTextColumn Header="Aktueller Name" Binding="{Binding CurrentName}" Width="1.6*"/>
+                            <DataGridTextColumn Header="Vorschlag" Binding="{Binding SuggestedName}" Width="2*"/>
+                            <DataGridTextColumn Header="ID-Status" Binding="{Binding IdStatus}" Width="1.1*"/>
+                            <DataGridTextColumn Header="Name-Status" Binding="{Binding NameStatus}" Width="1.2*"/>
+                        </DataGrid.Columns>
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding WouldChange}" Value="True">
+                                        <Setter Property="Background" Value="#FEF3C7"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding WouldChange}" Value="False">
+                                        <Setter Property="Background" Value="#DCFCE7"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DataGrid.RowStyle>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="DVH" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+                <Grid x:Name="DvhDetailPage" Margin="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="0,0,0,12">
+                        <Button DockPanel.Dock="Right" Content="DVH zurücksetzen"
+                                Click="RefreshDVHClicked"
+                                Style="{StaticResource ClinicalBlueprintSecondaryButton}"/>
+                        <StackPanel>
+                            <TextBlock Text="Dosis-Volumen-Histogramm"
+                                       Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
+                            <TextBlock Text="Strukturen auswählen und Kurven gemeinsam prüfen."
+                                       Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+                        </StackPanel>
+                    </DockPanel>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="210"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource ClinicalBlueprintCard}" Margin="0,0,12,0">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <ListBox x:Name="DVHstrucListBox" ItemsSource="{Binding DvhStructures}"
+                                         BorderThickness="0">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <CheckBox x:Name="DVHstrucCBs" Content="{Binding Id}"
+                                                      IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                      Margin="3"/>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </ScrollViewer>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource ClinicalBlueprintCard}">
+                            <oxy:PlotView Model="{Binding PlotModel}">
+                                <oxy:PlotView.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Header="Als PDF exportieren …"
+                                                  Click="ExportPlotAsPdf"/>
+                                    </ContextMenu>
+                                </oxy:PlotView.ContextMenu>
+                            </oxy:PlotView>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <TabItem x:Name="LegacySettingsTab"
+                     Header="Einstellungen"
+                     GotFocus="LegacySettingsTab_Selected"
+                     Style="{StaticResource ClinicalBlueprintNavigationTab}">
+                <Grid x:Name="SettingsDetailPage">
+                </Grid>
+            </TabItem>
+        </TabControl>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
