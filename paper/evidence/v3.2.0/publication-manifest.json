@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "release": "v3.2.0",
+  "evaluatedSoftwareCommit": "ca3e381813489542bae4551db9db23c8c3da23d8",
+  "scope": "Patient-free synthetic publication artifacts and reviewed software inputs; not clinical validation.",
+  "publicationState": "Local artifact freeze before remote publication; see separate release-verification.json release asset for remote readback.",
+  "supplementS1Sha256": "503295a385ba953d9cd17a1f490a61e9e16d051a8d2dc6d5babae6de734ab3d5",
+  "manuscriptPdfPages": 14,
+  "supplementPdfPages": 11,
+  "rawSnapshotRepeat": "Both compiled-factory raw JSON snapshots repeated with identical bytes.",
+  "inventory": [
+    {
+      "path": "ClearPlan.Core/Simulation/SyntheticPublicationScenarioFactory.cs",
+      "bytes": 27796,
+      "sha256": "8c79a39c4a861b5a830f2cc028eae31850da0e2ecc548c991c310e638a6fd7b8"
+    },
+    {
+      "path": "ClearPlan.Core/Simulation/SyntheticScenarioFactory.cs",
+      "bytes": 34193,
+      "sha256": "6b62aac4611f2421152f07bc2dc7f7f99616c11ceeb8ab9fba412a0e5e9c5210"
+    },
+    {
+      "path": "ClearPlan.Script/Distribution/ConstraintTemplates/ClearPlan_DefaultConstraints.xlsx",
+      "bytes": 10041,
+      "sha256": "3ba779ce8e296b60619c349e74aca1d7356ac255eda0ec2ca9501d8fd3bd17fa"
+    },
+    {
+      "path": "ClearPlan.Script/Distribution/DefaultReviewRules.json",
+      "bytes": 499,
+      "sha256": "f764fd9575d38220d84c4fd4dc00a7a63ccad1b00ca7e71aeda9b7f381c32a70"
+    },
+    {
+      "path": "ClearPlan.Script/Distribution/FieldNamingRules.json",
+      "bytes": 293,
+      "sha256": "de7c186a6d2782eda92d9385e5406a46d49bbc97c8eba84fcd3d4ee66ef717b5"
+    },
+    {
+      "path": "ClearPlan.Script/Distribution/MachineGeometry/DoseRateProfiles.example.json",
+      "bytes": 2304,
+      "sha256": "db03618e9fedec544225159e8cfa5090c77fce97a89709a6b2cbfa0ec062be5f"
+    },
+    {
+      "path": "ClearPlan.Script/Distribution/MachineGeometry/MlcGeometryProfiles.example.json",
+      "bytes": 8399,
+      "sha256": "7f29d71804fcb64a686b00b03c8b860a3de2c7b0ffac478762eaeba837f4a4ce"
+    },
+    {
+      "path": "paper/ClearPlan_ZMP_short_communication.docx",
+      "bytes": 1363330,
+      "sha256": "a8291e2c098e239dfe9f36b8df2ad2cb0c59b018da7578bd55332eec1729f96a"
+    },
+    {
+      "path": "paper/ClearPlan_ZMP_short_communication.md",
+      "bytes": 37863,
+      "sha256": "c32a2627c27c8e960ddaa2c99e6eae7a43051596a02266bef6e8ecaa0b57585b"
+    },
+    {
+      "path": "paper/ClearPlan_ZMP_technical_note.pdf",
+      "bytes": 769443,
+      "sha256": "f706b7a185acfef05e3bb58771627c4369f2ccc1bdfb70f7a88e6b3d9e0575b9"
+    },
+    {
+      "path": "paper/evidence/technical_note_evidence.json",
+      "bytes": 28319,
+      "sha256": "a2494dc6c86ff3d2b2a6c90e09986ca8035a62e9048bb650c1985843e559810f"
+    },
+    {
+      "path": "paper/evidence/v3.2.0/publication-dual-layer.json",
+      "bytes": 2736447,
+      "sha256": "46e01eefa148c6a4dff35463f654d64105b4b9e81247d3913ac6fa2304711496"
+    },
+    {
+      "path": "paper/evidence/v3.2.0/publication-single-layer.json",
+      "bytes": 2736241,
+      "sha256": "eaedc48a4b5b32ef2fab1e29b056bcba78dfdf4672b75eb4a21c08585e5a6866"
+    },
+    {
+      "path": "paper/evidence/v3.2.0/README.md",
+      "bytes": 5164,
+      "sha256": "9858fcef7dcfed26e49ea5cb83bfff61c8618a0a1f6a4a5f465e11b12291a9a9"
+    },
+    {
+      "path": "paper/figures/v3.2.0/bev.png",
+      "bytes": 343213,
+      "sha256": "c2cd70af54c03ed29e9d5355de755eddb7d0bb13f2f896d2dc4e0c0191810347"
+    },
+    {
+      "path": "paper/figures/v3.2.0/Figure_1_ClearPlan_architecture.html",
+      "bytes": 4884,
+      "sha256": "79fd5fc10a1432dd998df8a8093000e6a53e8d9b2019a45ad6c63c5e7a6fe69c"
+    },
+    {
+      "path": "paper/figures/v3.2.0/Figure_1_ClearPlan_architecture.pdf",
+      "bytes": 34840,
+      "sha256": "bfccbbefd99bd5ea7524aebc75b1c011db0ce27aa88fa8bf818fa1feabb0f3b7"
+    },
+    {
+      "path": "paper/figures/v3.2.0/Figure_1_ClearPlan_architecture.png",
+      "bytes": 334472,
+      "sha256": "6fc5b2607738bdbc838088ca26c0b4d672d0a8c50bf207fd33453de3fdb8b780"
+    },
+    {
+      "path": "paper/figures/v3.2.0/Figure_1_ClearPlan_architecture.svg",
+      "bytes": 4635,
+      "sha256": "c3cf88552f57587c0e44a8440b7418c43232b3ab57a2f124600be5ee3b03bbc5"
+    },
+    {
+      "path": "paper/figures/v3.2.0/Figure_2_ClearPlan_workspace.html",
+      "bytes": 661184,
+      "sha256": "f931efe3cada005538bcc528a9f0b9988772ae2959f9a2c11366db28c1e934e6"
+    },
+    {
+      "path": "paper/figures/v3.2.0/Figure_2_ClearPlan_workspace.manifest.json",
+      "bytes": 1538,
+      "sha256": "c267fedc927c92bcc2295999ceef15e4fa75fab25ca9e77b46933935b7507a23"
+    },
+    {
+      "path": "paper/figures/v3.2.0/Figure_2_ClearPlan_workspace.pdf",
+      "bytes": 508043,
+      "sha256": "843bdc3a01bfc021e81ccbd7258562686bedd823fc2806fbb07a943562917e32"
+    },
+    {
+      "path": "paper/figures/v3.2.0/Figure_2_ClearPlan_workspace.png",
+      "bytes": 1020092,
+      "sha256": "0a1a5f40a2d9028e41de80c664a5f81d2a3f2ae3bbb88da206db904d86e3feb6"
+    },
+    {
+      "path": "paper/figures/v3.2.0/parameters.png",
+      "bytes": 150533,
+      "sha256": "e1f570c267a2a08b2019b02bb40d963de4c6eef0f365d0d91f6fc352ac45fd69"
+    },
+    {
+      "path": "paper/supplement/ClearPlan_Supplement_S1_DVH.png",
+      "bytes": 131060,
+      "sha256": "8feadccbd631807c61ff67bb9da88efb184f229fa812e62200d80c43a292dd99"
+    },
+    {
+      "path": "paper/supplement/ClearPlan_Supplement_S1.html",
+      "bytes": 1753887,
+      "sha256": "950ab373492984a1cb1ab03c72c19eab88afc1d9c123a73c8de8c81b7ad06018"
+    },
+    {
+      "path": "paper/supplement/ClearPlan_Supplement_S1.pdf",
+      "bytes": 1285399,
+      "sha256": "503295a385ba953d9cd17a1f490a61e9e16d051a8d2dc6d5babae6de734ab3d5"
+    }
+  ]
+}

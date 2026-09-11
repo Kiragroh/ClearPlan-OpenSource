@@ -1,0 +1,51 @@
+{
+  "status": "generated-requires-separate-source-and-visual-verification",
+  "fixture": "publication-dual-layer",
+  "composition": "two-vertically-stacked-CSS-crops",
+  "canvasWidthPx": 1080,
+  "canvasHeightPx": 1538.203125,
+  "rasterScale": 2,
+  "printWidthInches": 6.5,
+  "printHeightInches": 9.270833333333334,
+  "sourcePixelTreatment": "original embedded PNGs; CSS crop and uniform scale only; no repainting, translated pixels, or generated UI",
+  "sources": {
+    "parameters": {
+      "filename": "parameters.png",
+      "sha256": "e1f570c267a2a08b2019b02bb40d963de4c6eef0f365d0d91f6fc352ac45fd69",
+      "width": 1600,
+      "height": 1000,
+      "crop": {
+        "x": 220,
+        "y": 584,
+        "width": 660,
+        "height": 364
+      }
+    },
+    "bev": {
+      "filename": "bev.png",
+      "sha256": "c2cd70af54c03ed29e9d5355de755eddb7d0bb13f2f896d2dc4e0c0191810347",
+      "width": 1600,
+      "height": 1000,
+      "crop": {
+        "x": 388,
+        "y": 232,
+        "width": 1020,
+        "height": 684
+      }
+    }
+  },
+  "outputs": {
+    "html": {
+      "filename": "Figure_2_ClearPlan_workspace.html",
+      "sha256": "f931efe3cada005538bcc528a9f0b9988772ae2959f9a2c11366db28c1e934e6"
+    },
+    "png": {
+      "filename": "Figure_2_ClearPlan_workspace.png",
+      "sha256": "0a1a5f40a2d9028e41de80c664a5f81d2a3f2ae3bbb88da206db904d86e3feb6"
+    },
+    "pdf": {
+      "filename": "Figure_2_ClearPlan_workspace.pdf",
+      "sha256": "843bdc3a01bfc021e81ccbd7258562686bedd823fc2806fbb07a943562917e32"
+    }
+  }
+}

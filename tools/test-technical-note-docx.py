@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from docx import Document
 from docx.oxml.ns import qn
 from docx.shared import Inches
@@ -156,6 +157,62 @@ class ManuscriptBuilderTests(unittest.TestCase):
         paragraph = builder.add_paragraph(Document(), "A 10^−9 absolute tolerance.")
         self.assertEqual(paragraph.text, "A 10−9 absolute tolerance.")
         self.assertTrue(next(run for run in paragraph.runs if run.text == "−9").font.superscript)
+
+    def test_workspace_panels_use_full_text_width_without_stretching(self):
+        with tempfile.TemporaryDirectory(prefix="ClearPlan-docx-panel-test-") as directory:
+            image = Path(directory) / "Figure_2_ClearPlan_workspace.png"
+            Image.new("RGB", (2160, 3078), "white").save(image)
+            doc = Document()
+            builder.set_cell_margins(doc.sections[0])
+            builder.configure_styles(doc)
+            builder.add_figure(doc, image)
+            self.assertEqual(len(doc.inline_shapes), 2)
+            section = doc.sections[0]
+            text_width = section.page_width - section.left_margin - section.right_margin
+            for shape, crop_height in zip(doc.inline_shapes, (1400, 1638)):
+                self.assertEqual(shape.width, text_width)
+                self.assertAlmostEqual(shape.width / shape.height, 2064 / crop_height, places=5)
+                self.assertIsNotNone(shape._inline.find(".//" + qn("a:srcRect")))
+
+    def test_workspace_panels_embed_the_unchanged_original_image(self):
+        with tempfile.TemporaryDirectory(prefix="ClearPlan-docx-panel-test-") as directory:
+            image = Path(directory) / "Figure_2_ClearPlan_workspace.png"
+            Image.new("RGB", (2160, 3078), "#abcdef").save(image)
+            original_bytes = image.read_bytes()
+            doc = Document()
+            builder.configure_styles(doc)
+            builder.add_figure(doc, image)
+            self.assertEqual(len(doc.inline_shapes), 2)
+            output = Path(directory) / "panels.docx"
+            doc.save(output)
+            with zipfile.ZipFile(output) as archive:
+                media = [name for name in archive.namelist() if name.startswith("word/media/")]
+                self.assertEqual(len(media), 1)
+                self.assertEqual(archive.read(media[0]), original_bytes)
+            self.assertEqual(image.read_bytes(), original_bytes)
+
+    def test_workspace_continuation_keeps_original_caption_once(self):
+        with tempfile.TemporaryDirectory(prefix="ClearPlan-docx-panel-test-") as directory:
+            root = Path(directory)
+            Image.new("RGB", (2160, 3078), "white").save(root / "Figure_2_ClearPlan_workspace.png")
+            source = root / "figure.md"
+            caption = "**Figure 2. Original caption.** A and B are synthetic."
+            source.write_text("![Figure 2](Figure_2_ClearPlan_workspace.png)\n\n" + caption + "\n", encoding="utf-8")
+            doc = Document()
+            builder.configure_styles(doc)
+            builder.render_markdown(doc, source)
+            self.assertEqual(sum(p.text == "Figure 2. Original caption. A and B are synthetic." for p in doc.paragraphs), 1)
+            self.assertTrue(any("Figure 2 (continued)" in p.text for p in doc.paragraphs))
+            self.assertEqual(sum(p.paragraph_format.page_break_before is True for p in doc.paragraphs), 2)
+
+    def test_workspace_split_rejects_unreviewed_image_dimensions(self):
+        with tempfile.TemporaryDirectory(prefix="ClearPlan-docx-panel-test-") as directory:
+            image = Path(directory) / "Figure_2_ClearPlan_workspace.png"
+            Image.new("RGB", (800, 1200), "white").save(image)
+            doc = Document()
+            builder.configure_styles(doc)
+            with self.assertRaises(ValueError):
+                builder.add_figure(doc, image)
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

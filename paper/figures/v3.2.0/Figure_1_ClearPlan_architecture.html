@@ -1,0 +1,67 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><title>ClearPlan architecture</title><style>*{box-sizing:border-box}html,body{margin:0;background:white}svg{display:block;width:1200px;height:820px}@page{size:1200px 820px;margin:0}</style><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 820" role="img" aria-labelledby="title desc">
+  <title id="title">ClearPlan shared review and controlled integration</title>
+  <desc id="desc">Read-only ESAPI acquisition and synthetic scenarios feed detached review data. An illustrative RayStation producer is dashed. Versioned local rules feed the same review. Shared UI and active-plan PDF and HTML use one report mapper. A separately confirmed native-only action stores a preliminary FHIR document in ARIA.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7Z" fill="#667585"/></marker>
+    <marker id="write" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto"><path d="M0 0 L9 3.5 L0 7Z" fill="#946218"/></marker>
+    <style>
+      text { font-family: 'Segoe UI', Arial, sans-serif; fill:#202B38; }
+      .head { font-size:25px; font-weight:600; }
+      .sub { font-size:21px; fill:#536575; }
+      .label { font-size:19px; fill:#536575; }
+      .node { fill:#fff; stroke:#D6DDE4; stroke-width:2; rx:6; }
+      .shared { fill:#EFF7F5; stroke:#0F766E; }
+      .line { fill:none; stroke:#667585; stroke-width:2.2; stroke-linejoin:round; marker-end:url(#arrow); }
+      .example { stroke-dasharray:8 6; }
+    </style>
+  </defs>
+  <rect width="1200" height="820" fill="white"/>
+  <!-- Orthogonal links sit below nodes. No acquisition path is bidirectional. -->
+  <path class="line" d="M300 152 H340 Q352 152 352 164 V268 Q352 280 364 280 H400"/>
+  <path class="line" d="M300 312 H400"/>
+  <path class="line example" d="M300 472 H340 Q352 472 352 460 V344 Q352 332 364 332 H400"/>
+  <path class="line" d="M556 164 V228"/>
+  <path class="line" d="M712 296 H864"/>
+  <path class="line" d="M556 368 V456"/>
+  <path class="line" d="M712 512 H864"/>
+  <path d="M1016 568 V648" fill="none" stroke="#946218" stroke-width="2.2" marker-end="url(#write)"/>
+  <text class="label" x="576" y="207">apply revision</text>
+  <text class="label" x="576" y="418">active plan</text>
+  <text class="label" x="1036" y="603">confirm</text>
+  <text class="label" x="1036" y="630">native only</text>
+  <rect class="node" x="32" y="96" width="268" height="112"/>
+  <text class="head" x="52" y="136">Eclipse / ESAPI</text>
+  <text class="sub" x="52" y="172">Read-only acquisition</text>
+  <rect class="node" x="32" y="256" width="268" height="112"/>
+  <text class="head" x="52" y="296">Synthetic scenarios</text>
+  <text class="sub" x="52" y="332">Patient-free execution</text>
+  <rect class="node example" x="32" y="416" width="268" height="112"/>
+  <text class="head" x="52" y="456">RayStation example</text>
+  <text class="sub" x="52" y="492">Not runtime-validated</text>
+  <rect class="node" x="400" y="40" width="312" height="124"/>
+  <text class="head" x="420" y="78">Versioned local rules</text>
+  <text class="sub" x="420" y="114">JSON / Excel · aliases</text>
+  <text class="sub" x="420" y="142">Checks · fields · profiles</text>
+  <rect class="node shared" x="400" y="228" width="312" height="140"/>
+  <text class="head" x="420" y="270">Detached review data</text>
+  <text class="sub" x="420" y="310">Goals · checks · metrics</text>
+  <text class="sub" x="420" y="340">DVHs · image geometry</text>
+  <rect class="node shared" x="400" y="456" width="312" height="112"/>
+  <text class="head" x="420" y="496">Shared report model</text>
+  <text class="sub" x="420" y="534">Current review selections</text>
+  <rect class="node" x="864" y="228" width="304" height="140"/>
+  <text class="head" x="884" y="270">Review workspace</text>
+  <text class="sub" x="884" y="310">Overview + focused views</text>
+  <text class="sub" x="884" y="340">Separate plan comparison</text>
+  <rect class="node" x="864" y="456" width="304" height="112"/>
+  <text class="head" x="884" y="496">Active-plan PDF / HTML</text>
+  <text class="sub" x="884" y="534">Same data and renderers</text>
+  <rect x="864" y="648" width="304" height="112" rx="6" fill="#FFF8EA" stroke="#D99B36" stroke-width="2"/>
+  <text class="head" x="884" y="688">Optional ARIA storage</text>
+  <text class="sub" x="884" y="726">Preliminary FHIR document</text>
+  <path class="line" d="M32 608 H88"/><text class="label" x="104" y="615">Implemented data path</text>
+  <path class="line example" d="M32 656 H88"/><text class="label" x="104" y="663">Illustrative producer</text>
+  <text class="sub" x="32" y="732">No TPS modification or approval.</text>
+  <text class="label" x="32" y="796">Synthetic mode cannot upload. The optional document write is separate from read-only plan review.</text>
+</svg>
+</html>

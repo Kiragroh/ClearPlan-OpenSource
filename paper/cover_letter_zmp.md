@@ -1,43 +1,38 @@
+# Cover-letter draft — not sent
+
+Confirm the portal category, coauthor approval, originality, and absence of
+simultaneous submission before using this draft.
+
 Dear Editors,
 
-We are pleased to submit the Short Communication (technical note) entitled
-“ClearPlan: a simulator-backed contract for reproducible verification of
-radiotherapy plan-review software” for consideration in
-*Zeitschrift für Medizinische Physik*.
+Please consider our Technical Note, “ClearPlan configurable radiotherapy plan
+review with reproducible synthetic verification,” for *Zeitschrift für
+Medizinische Physik*.
 
-ClearPlan addresses a practical reproducibility problem in radiotherapy
-software: local review rules and treatment-planning-system interfaces vary,
-whereas software verification and training material should be shareable
-without patient data. The framework separates read-only TPS acquisition,
-external RefDB JSON or Excel rule sources, a validated vendor-neutral review
-snapshot, and a shared interface and report layer. It combines plan quality
-metrics, PlanCheck findings, structure mappings, field-identifier and
-field-name conformance, source status, and dose-volume histograms.
+ClearPlan combines read-only TPS acquisition, editable review rules, and a
+patient-free execution path with shared review and reporting components. The
+workspace brings together DVH goals, plan checks, target-quality indices,
+target-specific aperture modulation with single- and dual-layer MLC geometry,
+and explicitly estimated control-point dose-rate trajectories. Configuration
+history makes local aliases, constraints, nomenclature, and machine assumptions
+inspectable. An optional ARIA document-transfer action is explicitly separate
+from treatment-plan access.
 
-The public release includes a standalone vendor-free simulator with seven
-versioned deterministic scenarios. The manuscript reports only synthetic
-software verification: 125 C# tests and 20 tests of an illustrative,
-unvalidated RayStation adapter. It does not claim clinical sensitivity,
-specificity, workflow improvement, error reduction, or safety benefit.
-RayStation is presented only as an example of the adapter boundary, not as a
-commissioned clinical implementation.
+The contribution is this configurable, reproducible engineering integration,
+not priority for automated plan checking or a new dose-quality metric. The
+study reports fixed synthetic software cases and tests, including two analytical
+phantoms with shared numerical and image definitions. It does not establish
+clinical error-detection performance, dose accuracy, delivery feasibility, or
+workflow benefit. The apertures do not generate the phantom dose. An
+illustrative RayStation adapter demonstrates a boundary for future adaptation,
+not validated cross-TPS equivalence.
 
-We believe the manuscript is relevant to the journal because it provides a
-clinically grounded, open, and reproducible method for inspecting and
-regression-testing multi-domain plan-review software while retaining local
-commissioning and human oversight. The manuscript and figures contain
-exclusively analytically generated synthetic data; no patient data,
-patient-derived values, human participants, or patient-identifiable information were
-used. Ethics approval and informed consent were therefore not applicable.
-
-The reproducible software version corresponding to the manuscript is ClearPlan
-v3.1.0:
-https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.1.0
-
-The authors declare no competing interests and received no funding for this
-work. The corresponding author will confirm final approval from all coauthors
-before submission. The manuscript is not currently under consideration
-elsewhere.
+The accompanying synthetic PDF/HTML supplement shows the active-plan output.
+Versioned source and reproducibility materials are associated with
+[ClearPlan v3.2.0](https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.2.0).
+The manuscript contains no clinical dataset or patient-derived study values.
+The authors declare no competing interests and no specific funding for this
+work; the manuscript includes author-contribution and AI-assistance statements.
 
 Sincerely,
 

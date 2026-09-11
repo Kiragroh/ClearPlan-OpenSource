@@ -33,6 +33,10 @@ SHORT_MATH_PATTERN = re.compile(
 TABLE_SEPARATOR_PATTERN = re.compile(
     r"^\|\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|$"
 )
+WORKSPACE_FIGURE_STEM = "Figure_2_ClearPlan_workspace"
+# Reviewed whitespace boundaries in the unchanged 2160 x 3078 source figure.
+# Word crops the embedded original; no replacement raster or GUI is generated.
+WORKSPACE_PANEL_CROPS = ((48, 0, 2064, 1400), (48, 1440, 2064, 1638))
 
 
 def set_cell_margins(section):
@@ -211,7 +215,45 @@ def add_rate_equation(document):
     return paragraph
 
 
+def add_workspace_panels(document, image_path):
+    image = DocxImage.from_file(str(image_path))
+    if (image.px_width, image.px_height) != (2160, 3078):
+        raise ValueError("Workspace panel crops require the reviewed 2160 x 3078 figure.")
+    section = document.sections[-1]
+    width = section.page_width - section.left_margin - section.right_margin
+    for index, (left, top, crop_width, crop_height) in enumerate(WORKSPACE_PANEL_CROPS):
+        heading = document.add_paragraph(style="Figure Caption")
+        heading.add_run("Figure 2 (panel A)" if index == 0 else "Figure 2 (continued): panel B").bold = True
+        heading.paragraph_format.page_break_before = True
+        heading.paragraph_format.keep_with_next = True
+        paragraph = document.add_paragraph()
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        paragraph.paragraph_format.space_before = Pt(4)
+        paragraph.paragraph_format.space_after = Pt(3)
+        paragraph.paragraph_format.keep_with_next = True
+        paragraph.paragraph_format.keep_together = True
+        shape = paragraph.add_run().add_picture(
+            str(image_path), width=int(width), height=round(width * crop_height / crop_width)
+        )
+        crop = OxmlElement("a:srcRect")
+        for edge, pixels, dimension in (
+            ("l", left, image.px_width),
+            ("t", top, image.px_height),
+            ("r", image.px_width - left - crop_width, image.px_width),
+            ("b", image.px_height - top - crop_height, image.px_height),
+        ):
+            crop.set(edge, str(round(100000 * pixels / dimension)))
+        fill = shape._inline.xpath(".//pic:blipFill")[0]
+        fill.insert(1, crop)  # a:blip, a:srcRect, a:stretch (schema order)
+        if index == 0:
+            document.add_paragraph("Figure 2 continued on the next page.", style="Figure Caption")
+    # The original full caption follows panel B in the Markdown source.
+
+
 def add_figure(document, image_path):
+    if image_path.stem == WORKSPACE_FIGURE_STEM:
+        add_workspace_panels(document, image_path)
+        return
     paragraph = document.add_paragraph()
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     paragraph.paragraph_format.space_before = Pt(4)
@@ -489,11 +531,15 @@ def validate_docx(path, source):
     if "\ufffd" in text:
         raise RuntimeError("DOCX contains the Unicode replacement character.")
     source_text = source.read_text(encoding="utf-8")
-    figure_count = sum(bool(IMAGE_PATTERN.match(line)) for line in source_text.splitlines())
+    figure_matches = [match for line in source_text.splitlines() if (match := IMAGE_PATTERN.match(line))]
+    figure_count = len(figure_matches)
+    expected_panels = figure_count + sum(
+        Path(match.group("path")).stem == WORKSPACE_FIGURE_STEM for match in figure_matches
+    )
     table_count = sum(bool(TABLE_SEPARATOR_PATTERN.match(line)) for line in source_text.splitlines())
-    if len(document.inline_shapes) != figure_count:
+    if len(document.inline_shapes) != expected_panels:
         raise RuntimeError(
-            f"DOCX figure count differs from source: {len(document.inline_shapes)} versus {figure_count}."
+            f"DOCX panel count differs from source: {len(document.inline_shapes)} versus {expected_panels}."
         )
     if len(document.tables) != table_count:
         raise RuntimeError(
@@ -502,7 +548,7 @@ def validate_docx(path, source):
     if len(document.sections) != 1:
         raise RuntimeError("The submission DOCX must remain single-section/single-column.")
     print(
-        f"Reopened DOCX: figures={len(document.inline_shapes)}, "
+        f"Reopened DOCX: figures={figure_count}, panels={len(document.inline_shapes)}, "
         f"tables={len(document.tables)}, sections={len(document.sections)}."
     )
 

@@ -6,7 +6,7 @@ The public package is an institution-neutral baseline. Clinical constraint sets,
 
 ## What is included
 
-This tree targets **v3.2.0, currently an unpublished release candidate**. It adds
+This tree contains the **v3.2.0 software and Technical Note materials**. It adds
 target-specific PAM with physical single-/dual-layer MLC geometry, Paddick CI and
 its reciprocal, GI/HI, total MU, explicitly estimated dose-rate trajectories,
 plan comparison, shared structure visibility and a TG-263-oriented alias editor.
@@ -16,9 +16,10 @@ See the [analysis method](docs/plan-analysis-method.md),
 [dose-rate limitations](docs/DOSE_RATE_ESTIMATE.md),
 [review controls](docs/review-controls/README.md) and
 [alias configuration](docs/STRUCTURE_ALIASES.md).
-These changes require final public-release evidence and local clinical
-commissioning; neither a version label nor a passing software test constitutes
-treatment approval. The technical-note manuscript remains in preparation.
+Local clinical commissioning remains necessary; neither a version label nor a
+passing software test constitutes treatment approval. The Technical Note is an
+author-review manuscript, not an accepted publication. See the
+[paper and synthetic supplement](paper/README.md) for current files and evidence.
 
 - `ClearPlan.Core`: ESAPI-independent constraint, settings, alias, table-selection, and field-naming logic
 - `ClearPlan.Presentation`: vendor-neutral shared WPF review workspace and DVH presentation
@@ -39,6 +40,11 @@ treatment approval. The technical-note manuscript remains in preparation.
 The open-source starter PlanCheck contains general examples. A clinical deployment can preserve its own complete `ErrorCalculator.cs`; the supplied deployment tooling explicitly excludes that file from replacement.
 
 ## Quick start: patient-free simulator
+
+For a downloaded simulator ZIP, extract it into a local folder and start
+`ClearPlan.Simulator.exe` from that folder. Keep its accompanying DLLs and
+`Scenarios` directory together. Windows and .NET Framework 4.8 are required.
+The executable is a synthetic demonstration, not a clinical TPS connection.
 
 The simulator does not require Eclipse, ESAPI, a patient, or proprietary TPS
 assemblies. Build and start the integrated publication scenario:
@@ -282,11 +288,13 @@ Use a trusted checkout under your institution's execution/signature policy; do n
 
 - Use GitHub Issues for anonymized bugs, onboarding problems, and feature requests.
 - See `CONTRIBUTING.md` before changing sources, aliases, PlanCheck, or ESAPI adapters.
-- The technical-note manuscript in preparation is in `paper\ClearPlan_ZMP_short_communication.md`.
+- The author-review Technical Note and exclusively synthetic supplement are
+  indexed in [paper/README.md](paper/README.md).
 - A proposed, nonuniversal local transfer checklist is in
   `docs\local-commissioning-scaffold.md`.
-- The intended release location is [v3.2.0](https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.2.0).
-  It is prospective until the release and its assets have been published and
-  independently verified; this README does not assert that those assets exist.
+- Versioned software, downloadable artifacts, and publication/readback manifests:
+  [v3.2.0](https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.2.0).
+  Test execution, public artifact verification, and local clinical acceptance are
+  separate evidence scopes; the software collector does not verify publication.
 
 ClearPlan is a framework; each institution remains responsible for its clinical rules, validation, deployment, and governance.
