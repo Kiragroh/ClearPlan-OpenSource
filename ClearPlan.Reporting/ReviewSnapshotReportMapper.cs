@@ -26,6 +26,7 @@ namespace ClearPlan.Reporting
                 ScenarioTitle = snapshot.ScenarioTitle,
                 ScenarioDescription = snapshot.ScenarioDescription,
                 Seed = snapshot.Seed,
+                DisabledCheckCount = snapshot.DisabledCheckCount,
                 Synthetic = snapshot.Synthetic,
                 GeneratedUtc = snapshot.GeneratedUtc,
                 PatientDisplayLabel = snapshot.PatientDisplayLabel,
@@ -46,6 +47,7 @@ namespace ClearPlan.Reporting
                     .Select(MapSource)
                     .ToList(),
                 Plans = (snapshot.Plans ?? new List<ReviewPlanRow>())
+                    .Where(plan => string.Equals(plan.PlanKey, snapshot.ActivePlanKey, StringComparison.Ordinal))
                     .Select(MapPlan)
                     .ToList(),
                 PqmRows = (snapshot.PqmRows ?? new List<ReviewPqmRow>())
@@ -65,11 +67,50 @@ namespace ClearPlan.Reporting
                     .ToList(),
                 DvhSeries =
                     (snapshot.DvhSeries ?? new List<ReviewDvhSeries>())
-                    .Select(MapDvh)
-                    .ToList()
+                    .Where(series => series != null)
+                    .Select(series => MapDvh(series, snapshot.Synthetic))
+                    .ToList(),
+                PlanImages = (snapshot.PlanImages ?? new List<ReviewPlanImage>())
+                    .Where(image => image != null && string.Equals(image.PlanKey, snapshot.ActivePlanKey, StringComparison.Ordinal))
+                    .Select(MapImage).ToList(),
+                PlanAnalysis = snapshot.PlanAnalysis == null ? null : ClearPlan.Core.PlanAnalysis.PlanAnalysisSnapshot.Copy(snapshot.PlanAnalysis)
             };
 
             return report;
+        }
+
+        private static ReviewPlanImage MapImage(ReviewPlanImage source)
+        {
+            return new ReviewPlanImage
+            {
+                PlanKey = source.PlanKey, Kind = source.Kind, Title = source.Title,
+                Caption = source.Caption, SourceStatus = source.SourceStatus,
+                UnavailableReason = source.UnavailableReason, Synthetic = source.Synthetic,
+                WidthPixels = source.WidthPixels, HeightPixels = source.HeightPixels,
+                PixelSpacingXMillimeters = source.PixelSpacingXMillimeters,
+                PixelSpacingYMillimeters = source.PixelSpacingYMillimeters,
+                GrayscalePixels = source.GrayscalePixels == null ? null : (byte[])source.GrayscalePixels.Clone(),
+                LeftOrientation = source.LeftOrientation, RightOrientation = source.RightOrientation,
+                TopOrientation = source.TopOrientation, BottomOrientation = source.BottomOrientation,
+                IsocenterPixelX = source.IsocenterPixelX, IsocenterPixelY = source.IsocenterPixelY,
+                OverlaySummary = source.OverlaySummary,
+                DoseFocusRegion = source.DoseFocusRegion == null ? null : new ReviewImageDoseRegion {
+                    PrescriptionPercent = source.DoseFocusRegion.PrescriptionPercent, ThresholdGy = source.DoseFocusRegion.ThresholdGy,
+                    MinPixelX = source.DoseFocusRegion.MinPixelX, MaxPixelX = source.DoseFocusRegion.MaxPixelX,
+                    MinPixelY = source.DoseFocusRegion.MinPixelY, MaxPixelY = source.DoseFocusRegion.MaxPixelY,
+                    CoverageLimited = source.DoseFocusRegion.CoverageLimited },
+                Overlays = (source.Overlays ?? new List<ReviewImageOverlay>()).Where(item => item != null).Select(item => new ReviewImageOverlay
+                {
+                    Kind = item.Kind, Label = item.Label, ColorHex = item.ColorHex, Source = item.Source,
+                    SourceStatus = item.SourceStatus, UnavailableReason = item.UnavailableReason, DoseGy = item.DoseGy,
+                    Paths = (item.Paths ?? new List<ReviewImagePath>()).Where(path => path != null).Select(path => new ReviewImagePath
+                    {
+                        Closed = path.Closed,
+                        Points = (path.Points ?? new List<ReviewImagePoint>()).Where(point => point != null)
+                            .Select(point => new ReviewImagePoint { X = point.X, Y = point.Y }).ToList()
+                    }).ToList()
+                }).ToList()
+            };
         }
 
         private static ReviewReportSourceRow MapSource(
@@ -120,7 +161,7 @@ namespace ClearPlan.Reporting
                 Unit = pqm.Unit,
                 Status = pqm.Status,
                 Severity = pqm.Severity,
-                Explanation = pqm.Explanation
+                Explanation = pqm.Explanation, SourceLabel = pqm.SourceLabel, MappingDescription = pqm.MappingDescription
             };
         }
 
@@ -169,8 +210,14 @@ namespace ClearPlan.Reporting
             };
         }
 
-        private static ReviewReportDvhSeries MapDvh(ReviewDvhSeries series)
+        private static ReviewReportDvhSeries MapDvh(ReviewDvhSeries series, bool synthetic)
         {
+            var statistics = ReviewDvhStatisticsCalculator.Calculate(
+                series.Points, series.MinimumDoseGy, series.MeanDoseGy,
+                series.MaximumDoseGy, allowCurveEstimates: synthetic);
+            if (series.D98DoseGy.HasValue && !double.IsNaN(series.D98DoseGy.Value) &&
+                !double.IsInfinity(series.D98DoseGy.Value) && series.D98DoseGy.Value >= 0)
+                statistics.D98Gy = series.D98DoseGy;
             return new ReviewReportDvhSeries
             {
                 StableId = series.StableId,
@@ -179,11 +226,16 @@ namespace ClearPlan.Reporting
                 Role = series.Role,
                 ColorHex = series.ColorHex,
                 LineStyle = series.LineStyle,
-                Selected = series.Selected,
+                Selected = series.Selected || series.RequiredForTargetReview,
+                TargetKind = series.TargetKind,
+                RequiredForTargetReview = series.RequiredForTargetReview,
+                TargetSelectionReason = series.TargetSelectionReason,
                 VolumeCc = series.VolumeCc,
                 DoseUnit = ReviewUnitCodes.Gray,
                 VolumeUnit = ReviewUnitCodes.Percent,
+                Statistics = statistics,
                 Points = (series.Points ?? new List<ReviewDvhPoint>())
+                    .Where(point => point != null)
                     .Select(point => new ReviewReportDvhPoint
                     {
                         DoseGy = point.DoseGy,

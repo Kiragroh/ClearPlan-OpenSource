@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace ClearPlan.Core.Constraints
 {
@@ -12,41 +13,83 @@ namespace ClearPlan.Core.Constraints
         {
             context = context ?? new PlanConstraintContext();
             var selection = new ConstraintTableSelection();
-            foreach (ConstraintTableDefinition table in (tables ??
+            var activeTables = (tables ??
                 Enumerable.Empty<ConstraintTableDefinition>())
-                .Where(item => item != null && item.Active))
+                .Where(item => item != null && item.Active).ToList();
+            var labels = new HashSet<string>((context.PrescriptionLabels ?? new List<string>())
+                .Where(label => !string.IsNullOrWhiteSpace(label)).Select(label => label.Trim()), StringComparer.OrdinalIgnoreCase);
+            var linked = activeTables.Where(table => (table.PrescriptionLabels ?? new List<string>())
+                .Any(label => label != null && labels.Contains(label.Trim())) ||
+                (!string.IsNullOrEmpty(TableCode(table.DisplayName)) && labels.Any(label => TableCode(label) == TableCode(table.DisplayName)))).ToList();
+            foreach (ConstraintTableDefinition table in activeTables)
             {
                 ConstraintTableSelectionCandidate candidate = Score(table, context);
                 if (candidate != null)
                 {
+                    if (linked.Contains(table)) { candidate.Score += 200; candidate.Reasons.Add("exact linked prescription label or anchored RefDB table code"); }
                     selection.Candidates.Add(candidate);
                 }
             }
 
             selection.Candidates = selection.Candidates
-                .OrderByDescending(candidate => candidate.Score)
+                .OrderByDescending(candidate => candidate.HasMatchingFractionScope)
+                .ThenByDescending(candidate => candidate.StructureHits)
+                .ThenByDescending(candidate => candidate.Score)
                 .ThenBy(candidate => candidate.Table.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(candidate => candidate.Table.TableId, StringComparer.OrdinalIgnoreCase)
                 .ToList();
             if (selection.Candidates.Count == 0)
             {
-                selection.Reason = "No compatible constraint table was found.";
+                selection.RequiresConfirmation = true;
+                selection.Reason = linked.Count > 0
+                    ? "The linked prescription matches RefDB, but its table is incompatible with the active plan fractionation/dose. No full-course goals were applied to a partial plan."
+                    : "No compatible constraint table was found.";
                 return selection;
             }
 
             ConstraintTableSelectionCandidate best = selection.Candidates[0];
+            if (!context.FractionCount.HasValue &&
+                (best.Table.FractionCountMinimum.HasValue || best.Table.FractionCountMaximum.HasValue))
+            {
+                selection.RequiresConfirmation = true;
+                selection.Reason = "Fraction count unavailable: confirm treatment scope before using a fraction-specific table.";
+                return selection;
+            }
+            if (linked.Count > 0 && !selection.Candidates.Any(candidate => linked.Contains(candidate.Table)))
+            {
+                selection.RequiresConfirmation = true;
+                selection.Reason = "The linked prescription table is incompatible with the active plan. Confirm scope before evaluating an alternative.";
+                return selection;
+            }
+            if (linked.Count > 0 && context.FractionCount.HasValue && context.PrescriptionFractionCount.HasValue &&
+                context.FractionCount.Value != context.PrescriptionFractionCount.Value)
+            {
+                selection.RequiresConfirmation = true;
+                selection.Reason = "The linked prescription identifies " + best.Table.DisplayName +
+                    ", but prescription fractions (" + context.PrescriptionFractionCount + ") differ from active-plan fractions (" + context.FractionCount +
+                    "). Confirm the assessment scope; no full-course limits are automatically applied to a partial plan.";
+                return selection;
+            }
             IList<ConstraintTableSelectionCandidate> tied = selection.Candidates
-                .Where(candidate => candidate.Score == best.Score)
+                .Where(candidate => candidate.HasMatchingFractionScope == best.HasMatchingFractionScope &&
+                    candidate.StructureHits == best.StructureHits && candidate.Score == best.Score)
                 .ToList();
             int margin = selection.Candidates.Count == 1
                 ? int.MaxValue
                 : best.Score - selection.Candidates[1].Score;
             bool highConfidence = selection.Candidates.Count == 1 ||
+                                  best.StructureHits > selection.Candidates[1].StructureHits ||
                                   margin >= 10 ||
                                   best.Reasons.Any(reason =>
                                       reason.IndexOf("exact fraction", StringComparison.OrdinalIgnoreCase) >= 0);
             if (tied.Count == 1 && highConfidence)
             {
+                if (best.Table.RequiresConfirmation)
+                {
+                    selection.RequiresConfirmation = true;
+                    selection.Reason = "The configured table requires explicit confirmation of its clinical scope. " + string.Join("; ", best.Reasons);
+                    return selection;
+                }
                 selection.SelectedTable = best.Table;
                 selection.Reason = string.Join("; ", best.Reasons);
                 return selection;
@@ -57,6 +100,12 @@ namespace ClearPlan.Core.Constraints
                 ? "Multiple constraint tables have the same score."
                 : "The best constraint table has low confidence.";
             return selection;
+        }
+
+        private static string TableCode(string label)
+        {
+            var match = Regex.Match(label ?? string.Empty, @"^\s*([A-Za-z][A-Za-z0-9_+\-]{1,31}):");
+            return match.Success ? match.Groups[1].Value.ToUpperInvariant() : string.Empty;
         }
 
         private static ConstraintTableSelectionCandidate Score(
@@ -88,6 +137,8 @@ namespace ClearPlan.Core.Constraints
             {
                 return null;
             }
+            candidate.HasMatchingFractionScope = context.FractionCount.HasValue &&
+                (table.FractionCountMinimum.HasValue || table.FractionCountMaximum.HasValue);
 
             if (!ScoreDecimalRange(
                 context.DosePerFractionGy,
@@ -199,27 +250,40 @@ namespace ClearPlan.Core.Constraints
             PlanConstraintContext context,
             ConstraintTableSelectionCandidate candidate)
         {
-            var required = new HashSet<string>(
-                table.Constraints
-                    .Select(constraint => constraint.StructureId)
-                    .Where(value => !string.IsNullOrWhiteSpace(value))
-                    .Select(StructureAliasResolver.NormalizeName),
-                StringComparer.Ordinal);
+            var required = (table.Constraints ?? new List<ConstraintDefinition>())
+                .Where(constraint => constraint != null)
+                .GroupBy(constraint => StructureAliasResolver.NormalizeName(
+                    new[] { constraint.StructureName, constraint.RawStructureName, constraint.StructureId }
+                        .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))))
+                .Where(group => !string.IsNullOrWhiteSpace(group.Key)).Select(group => group.First()).ToList();
             if (required.Count == 0)
             {
                 return;
             }
 
-            var available = new HashSet<string>(
-                (context.StructureIds ?? new List<string>())
-                    .Where(value => !string.IsNullOrWhiteSpace(value))
-                    .Select(StructureAliasResolver.NormalizeName),
-                StringComparer.Ordinal);
-            int matches = required.Count(available.Contains);
-            int coverageScore = (int)Math.Round(20.0 * matches / required.Count);
-            candidate.Score += coverageScore;
+            var available = (context.StructureIds ?? new List<string>())
+                .Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.OrdinalIgnoreCase)
+                .Select(id => new StructureCandidate { Id = id }).ToList();
+            var hits = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var constraint in required)
+            {
+                var match = StructureAliasResolver.Resolve(constraint, context.StructureDefinitions, available);
+                if (!match.IsAmbiguous && !string.IsNullOrWhiteSpace(match.CandidateId)) hits.Add(match.CandidateId);
+                // Legacy tables can specify an ID without a display name or catalog definition.
+                if (!match.IsAmbiguous && string.IsNullOrWhiteSpace(match.CandidateId) &&
+                    string.IsNullOrWhiteSpace(constraint.StructureName) && string.IsNullOrWhiteSpace(constraint.RawStructureName) &&
+                    !(context.StructureDefinitions ?? new List<StructureDefinition>()).Any(definition => definition != null &&
+                        string.Equals(definition.StructureId, constraint.StructureId, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var exact = available.Where(item => StructureAliasResolver.NormalizeName(item.Id) ==
+                        StructureAliasResolver.NormalizeName(constraint.StructureId)).ToList();
+                    if (exact.Count == 1) hits.Add(exact[0].Id);
+                }
+            }
+            int matches = hits.Count;
+            candidate.StructureHits = matches;
             candidate.Reasons.Add(string.Format(
-                "structure coverage {0}/{1}",
+                "distinct structure hits {0}/{1}",
                 matches,
                 required.Count));
         }

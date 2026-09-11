@@ -23,6 +23,10 @@ namespace ClearPlan.Reporting.MigraDoc.Internal
 
         private void AddFooter(Section section, ReportPatient patient)
         {
+            var identity = section.Footers.Primary.AddParagraph(
+                $"Patient: {patient.LastName}, {patient.FirstName} | ID: {patient.Id}");
+            identity.Format.Font.Size = 8;
+            identity.Format.Font.Bold = true;
             var footer = section.Footers.Primary.AddParagraph();
             footer.Format.AddTabStop(Size.GetWidth(section), TabAlignment.Right);
 

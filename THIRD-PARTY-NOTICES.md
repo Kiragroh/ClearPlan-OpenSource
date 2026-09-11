@@ -37,3 +37,19 @@ Each of these libraries is distributed under the MIT License:
 The Eclipse/ESAPI mode additionally depends on locally supplied licensed vendor
 assemblies and EsapiEssentials. Those components are not included in the
 public simulator archive.
+
+## Optional RTPLAN adapter
+
+Distributions containing `ClearPlan.Dicom` additionally include fo-dicom 5.2.6,
+copyright (c) fo-dicom contributors 2012-2026, under the Microsoft Public License
+(MS-PL). Its complete upstream license and attribution notices are retained in
+`licenses/fo-dicom-5.2.6-LICENSE.txt` and must accompany such distributions.
+The official project is https://github.com/fo-dicom/fo-dicom.
+
+Its managed dependency set includes CommunityToolkit.HighPerformance,
+copyright (c) .NET Foundation and contributors, and Microsoft .NET libraries,
+copyright (c) .NET Foundation and contributors / Microsoft Corporation.
+These packages use the MIT license reproduced above. The exact versioned
+inventory is `docs/DICOM_DEPENDENCIES.md`; package content hashes are pinned in
+the adapter and adapter-test `packages.lock.json` files. Native image codec
+packages are not included. Existing ClearPlan and vendor licensing is unchanged.

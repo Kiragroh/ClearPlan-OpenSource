@@ -12,6 +12,7 @@ if ([string]::IsNullOrWhiteSpace($Root)) {
 $repositoryRoot = [System.IO.Path]::GetFullPath($Root)
 $projectPaths = @(
     (Join-Path $repositoryRoot 'ClearPlan.Core\ClearPlan.Core.csproj'),
+    (Join-Path $repositoryRoot 'ClearPlan.Rendering\ClearPlan.Rendering.csproj'),
     (Join-Path $repositoryRoot 'ClearPlan.Presentation\ClearPlan.Presentation.csproj'),
     (Join-Path $repositoryRoot 'ClearPlan.Reporting\ClearPlan.Reporting.csproj'),
     (Join-Path $repositoryRoot 'ClearPlan.Reporting.MigraDoc\ClearPlan.Reporting.MigraDoc.csproj'),
@@ -80,6 +81,7 @@ foreach ($projectPath in $projectPaths) {
 
 $assemblyNames = @(
     'ClearPlan.Core.dll',
+    'ClearPlan.Rendering.dll',
     'ClearPlan.Presentation.dll',
     'ClearPlan.Reporting.dll',
     'ClearPlan.Reporting.MigraDoc.dll',

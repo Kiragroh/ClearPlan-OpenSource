@@ -26,7 +26,12 @@ namespace ClearPlan.Simulator
                 { "pqm", "PqmTab" },
                 { "plancheck", "PlanCheckTab" },
                 { "fields", "FieldsTab" },
-                { "dvh", "DvhTab" }
+                { "dvh", "DvhTab" },
+                { "images", "PlanImagesTab" },
+                { "parameters", "PlanParametersTab" },
+                { "comparison", "ComparisonTab" },
+                { "bev", "BevTab" },
+                { "warnings", "WarningsTab" }
             };
 
         public async Task CaptureAsync(
@@ -55,6 +60,10 @@ namespace ClearPlan.Simulator
                 ".png",
                 "PNG capture");
             SelectTab(workspace, tabId);
+            var activeWorkspace = workspace.DataContext as ReviewWorkspaceViewModel;
+            if (tabId == "bev" && activeWorkspace != null) await activeWorkspace.Analysis.ActivateBevAsync();
+            if (tabId == "comparison" && activeWorkspace != null && activeWorkspace.IsSynthetic && !activeWorkspace.Comparison.HasReference)
+                activeWorkspace.Comparison.LoadExampleCommand.Execute(null);
             Keyboard.ClearFocus();
             PreparePlotModels(workspace);
             captureRoot.UpdateLayout();
@@ -93,6 +102,7 @@ namespace ClearPlan.Simulator
                 96.0,
                 PixelFormats.Pbgra32);
             bitmap.Render(captureRoot);
+            CapturePixelValidator.AssertNonBlank(bitmap);
 
             var encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(bitmap));
@@ -137,6 +147,9 @@ namespace ClearPlan.Simulator
 
             viewModel.OverviewPlotModel.InvalidatePlot(true);
             viewModel.DetailPlotModel.InvalidatePlot(true);
+            viewModel.Analysis.DoseRatePlotModel.InvalidatePlot(true);
+            viewModel.Analysis.AperturePlotModel.InvalidatePlot(true);
+            viewModel.Comparison.DvhPlotModel.InvalidatePlot(true);
         }
 
         private static void AssertOverviewTablesFillViewport(

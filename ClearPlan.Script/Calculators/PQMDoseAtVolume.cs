@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
+using ClearPlan.Core.Constraints;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
@@ -8,62 +10,42 @@ namespace ClearPlan.Calculators
     {
         public static string GetDoseAtVolume(StructureSet structureSet, PlanningItemViewModel planningItem, Structure evalStructure, MatchCollection testMatch, Group evalunit)
         {
-            //check for sufficient dose and sampling coverage
+            Group eval = testMatch[0].Groups["evalpt"];
+            Group unit = testMatch[0].Groups["unit"];
+            double volume;
+            if (!PqmNumericEvaluator.TryParseNumber(eval.Value, out volume) || volume < 0 ||
+                (unit.Value == "%" && volume > 100) ||
+                (unit.Value != "%" && unit.Value != "cc") ||
+                (evalunit.Value != "%" && evalunit.Value != "Gy" && evalunit.Value != "cGy"))
+                return "Unable to calculate - invalid parameter or unit";
+            if (planningItem.PlanningItemObject is PlanSum && evalunit.Value == "%")
+                return "Unable to calculate - relative dose for plan sum is unsupported";
+
             DVHData dvh = planningItem.PlanningItemObject.GetDVHCumulativeData(evalStructure, DoseValuePresentation.Absolute, VolumePresentation.Relative, 0.1);
-            if (dvh != null && planningItem.PlanningItemType.ToString() != "PlanSum")
-            {
-                if ((dvh.SamplingCoverage < 0.9) || (dvh.Coverage < 0.9))
-                    return "insufficient dose or sampling coverage";
-                Group eval = testMatch[0].Groups["evalpt"];
-                Group unit = testMatch[0].Groups["unit"];
-                DoseValue.DoseUnit du = (unit.Value.CompareTo("%") == 0) ? DoseValue.DoseUnit.Percent :
-                        (unit.Value.CompareTo("Gy") == 0) ? DoseValue.DoseUnit.Gy : DoseValue.DoseUnit.Unknown;
-                VolumePresentation vp = (unit.Value.CompareTo("%") == 0) ? VolumePresentation.Relative : VolumePresentation.AbsoluteCm3;
-                DoseValue dv = new DoseValue(double.Parse(eval.Value), du);
-                double volume = double.Parse(eval.Value);
-                VolumePresentation vpFinal = (evalunit.Value.CompareTo("%") == 0) ? VolumePresentation.Relative : VolumePresentation.AbsoluteCm3;
-                DoseValuePresentation dvpFinal = (evalunit.Value.CompareTo("%") == 0) ? DoseValuePresentation.Relative : DoseValuePresentation.Absolute;
-                DoseValue dvAchieved = planningItem.PlanningItemObject.GetDoseAtVolume(evalStructure, volume, vp, dvpFinal);
-                //checking dose output unit and adapting to template
-                if (dvAchieved.UnitAsString.CompareTo(evalunit.Value.ToString()) != 0)
-                {
-                    if ((evalunit.Value.CompareTo("Gy") == 0) && (dvAchieved.Unit.CompareTo(DoseValue.DoseUnit.Gy) == 0))
-                        dvAchieved = new DoseValue(dvAchieved.Dose / 100, DoseValue.DoseUnit.Gy);
-                    else
-                        return "Unable to calculate";
-                }
+            if (dvh == null) return "Unable to calculate - structure is empty";
+            if (dvh.SamplingCoverage < 0.9 || dvh.Coverage < 0.9)
+                return "insufficient dose or sampling coverage";
+            VolumePresentation volumePresentation = unit.Value == "%" ? VolumePresentation.Relative : VolumePresentation.AbsoluteCm3;
+            DoseValuePresentation dosePresentation = evalunit.Value == "%" ? DoseValuePresentation.Relative : DoseValuePresentation.Absolute;
+            DoseValue achieved = planningItem.PlanningItemObject.GetDoseAtVolume(evalStructure, volume, volumePresentation, dosePresentation);
+            return FormatDoseValue(achieved, evalunit.Value);
+        }
 
-                return dvAchieved.ToString();
-            }
-            else if (dvh != null && planningItem.PlanningItemType.ToString() == "PlanSum")
+        // Never interpret Unknown or convert relative dose without an explicit prescription.
+        public static string FormatDoseValue(DoseValue achieved, string requestedUnit)
+        {
+            string actualUnit;
+            switch (achieved.Unit)
             {
-                if ((dvh.SamplingCoverage < 0.9) || (dvh.Coverage < 0.9))
-                    return "insufficient dose or sampling coverage";
-                Group eval = testMatch[0].Groups["evalpt"];
-                Group unit = testMatch[0].Groups["unit"];
-                DoseValue.DoseUnit du = (unit.Value.CompareTo("%") == 0) ? DoseValue.DoseUnit.Percent :
-                        (unit.Value.CompareTo("Gy") == 0) ? DoseValue.DoseUnit.Gy : DoseValue.DoseUnit.Unknown;
-                VolumePresentation vp = (unit.Value.CompareTo("%") == 0) ? VolumePresentation.Relative : VolumePresentation.AbsoluteCm3;
-                DoseValue dv = new DoseValue(double.Parse(eval.Value), du);
-                double volume = double.Parse(eval.Value);
-                //VolumePresentation vpFinal = (evalunit.Value.CompareTo("%") == 0) ? VolumePresentation.Relative : VolumePresentation.AbsoluteCm3;
-                DoseValuePresentation dvpFinal = DoseValuePresentation.Absolute;
-                DoseValue dvAchieved = planningItem.PlanningItemObject.GetDoseAtVolume(evalStructure, volume, vp, dvpFinal);
-                //checking dose output unit and adapting to template
-                if (dvAchieved.UnitAsString.CompareTo(evalunit.Value.ToString()) != 0)
-                {
-                    if ((evalunit.Value.CompareTo("Gy") == 0) && (dvAchieved.Unit.CompareTo(DoseValue.DoseUnit.Gy) == 0))
-                        dvAchieved = new DoseValue(dvAchieved.Dose / 100, DoseValue.DoseUnit.Gy);
-                    else
-                        return "Unable to calculate";
-                }
-
-                return dvAchieved.ToString();
+                case DoseValue.DoseUnit.Gy: actualUnit = "Gy"; break;
+                case DoseValue.DoseUnit.cGy: actualUnit = "cGy"; break;
+                case DoseValue.DoseUnit.Percent: actualUnit = "%"; break;
+                default: return "Unable to calculate - unknown dose unit";
             }
-            else
-            {
-                return "Unable to calculate - structure is empty";
-            }
+            double value;
+            if (!PqmNumericEvaluator.TryConvertDose(achieved.Dose, actualUnit, requestedUnit, out value))
+                return "Unable to calculate - incompatible dose units";
+            return value.ToString("0.00", CultureInfo.InvariantCulture) + " " + requestedUnit;
         }
     }
 }

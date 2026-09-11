@@ -53,6 +53,8 @@ namespace ClearPlan.Core.Review
 
         [JsonProperty("explanation", Order = 13)]
         public string Explanation { get; set; }
+        [JsonProperty("sourceLabel")] public string SourceLabel { get; set; }
+        [JsonProperty("mappingDescription")] public string MappingDescription { get; set; }
 
         [OnDeserialized]
         internal void RestoreOptionalCollections(StreamingContext context)

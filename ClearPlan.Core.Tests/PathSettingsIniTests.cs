@@ -6,11 +6,15 @@ namespace ClearPlan.Core.Tests
     {
         public static void RoundTripsEveryConfiguredPath()
         {
+            var ratePath = typeof(ClearPlanPathOptions).GetProperty("DoseRateProfilesJsonPath");
+            TestAssert.NotNull(ratePath, "Dose-rate assumptions require an editable external profile path.");
             ClearPlanSettingsModel source = SettingsWithUniquePaths();
+            ratePath.SetValue(source.Paths, "MachineGeometry/rate-estimates.json");
 
             string ini = PathSettingsIni.Serialize(source);
             var restored = new ClearPlanSettingsModel();
             PathSettingsIni.Apply(restored, ini);
+            TestAssert.Equal("MachineGeometry/rate-estimates.json", (string)ratePath.GetValue(restored.Paths));
 
             TestAssert.Equal(
                 source.ConstraintSource.RefDbJsonPath,
@@ -67,6 +71,10 @@ namespace ClearPlan.Core.Tests
 
         public static void ReadsLegacyPathAliases()
         {
+            var aria=new ClearPlanSettingsModel();
+            aria.Paths.AriaUploadConfigJsonPath="Local/aria-connection.json";
+            var ariaRestored=new ClearPlanSettingsModel(); PathSettingsIni.Apply(ariaRestored,PathSettingsIni.Serialize(aria));
+            TestAssert.Equal(aria.Paths.AriaUploadConfigJsonPath,ariaRestored.Paths.AriaUploadConfigJsonPath);
             var settings = new ClearPlanSettingsModel();
             const string ini =
                 "[Paths]\n" +

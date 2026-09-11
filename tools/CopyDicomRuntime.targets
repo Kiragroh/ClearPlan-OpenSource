@@ -1,0 +1,12 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Old-style WPF project references do not propagate the SDK project's
+       complete PackageReference runtime closure. Keep both launch layouts whole. -->
+  <Target Name="CopyClearPlanDicomRuntime" AfterTargets="Build">
+    <ItemGroup>
+      <ClearPlanDicomRuntime Include="$(MSBuildThisFileDirectory)..\artifacts\dicom\$(Configuration)\*.dll"
+        Exclude="$(MSBuildThisFileDirectory)..\artifacts\dicom\$(Configuration)\ClearPlan.Core.dll;$(MSBuildThisFileDirectory)..\artifacts\dicom\$(Configuration)\Newtonsoft.Json.dll" />
+    </ItemGroup>
+    <Error Condition="'@(ClearPlanDicomRuntime)' == ''" Text="The locked RTPLAN runtime must be built before packaging ClearPlan." />
+    <Copy SourceFiles="@(ClearPlanDicomRuntime)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

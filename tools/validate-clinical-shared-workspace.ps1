@@ -33,6 +33,10 @@ foreach ($requiredPattern in @(
     'x:Name="LegacyCompatibilitySurface"',
     'review:ReviewWorkspaceView',
     'x:Name="SharedConstraintComboBox"',
+    'x:Name="SyntheticDemoToggle"',
+    'x:Name="ClinicalExtrasMenuItem"',
+    'Click="SyntheticDemoToggle_Click"',
+    'SYNTHETIC DEMONSTRATION — NOT FOR CLINICAL USE',
     'Click="SharedSettings_Click"'
 )) {
     if ($mainXaml -notmatch $requiredPattern) {
@@ -50,6 +54,10 @@ foreach ($requiredPattern in @(
     'HandleSharedDvhReset\s*\(',
     'HandleSharedDvhExport\s*\(',
     'HandleSharedStructureMapping\s*\(',
+    'HandleSharedSyntheticReport\s*\(',
+    'SetSyntheticDemoPresentation\s*\(',
+    'ClinicalExtrasMenuItem\.Visibility\s*=\s*enabled',
+    'window\.Title\s*=\s*"ClearPlan .* Synthetische Demonstration"',
     'HandleSharedSettings\s*\(',
     'SyncSharedDvhSelections\s*\(',
     'OpenPlanningItem\s*\('
@@ -63,6 +71,9 @@ foreach ($requiredPattern in @(
     'ReviewWorkspaceHostController',
     'EsapiReviewSnapshotBuilder',
     'TryRefresh\s*\(',
+    'TrySetSyntheticDemo\s*\(',
+    'SyntheticScenarioFactory\.Create\("mixed-review"\)',
+    'controller\.TryShowSnapshot\s*\(',
     'Dispose\s*\(',
     'OnReportRequested',
     'OnOpenPlanRequested',
@@ -78,6 +89,8 @@ foreach ($requiredPattern in @(
 
 foreach ($requiredPattern in @(
     'ReviewSnapshotValidator\.Validate\s*\(',
+    'TryShowSnapshot\s*\(',
+    'CurrentSnapshot\s*=\s*snapshot',
     'ReviewWorkspaceViewModel\s+previous\s*=\s*CurrentViewModel',
     'CurrentViewModel\s*=\s*next',
     'Unsubscribe\s*\(\s*previous\s*\)',
@@ -114,7 +127,43 @@ foreach ($relativePath in @(
     }
 }
 
-$clinicalCode = $hostSource + [Environment]::NewLine + $controller
+# File parsing is the single reviewed worker exception in the host. Its lambda
+# receives a detached path only, never PlanSetup/Beam/Structure. Preserve the
+# blanket rejection for any other worker added to this clinical controller.
+$safeReadPattern = 'Task\.Run\(\(\) => RtPlanReader\.Read\(selectedPath\), analysisCancellation\.Token\)'
+if ([regex]::Matches($hostSource, $safeReadPattern).Count -ne 1) {
+    throw "Clinical host must contain exactly one detached RTPLAN read worker."
+}
+foreach ($requiredPattern in @(
+    'Task\.WhenAny\(readTask, Task\.Delay\(-1, analysisCancellation\.Token\)\)',
+    'RtPlanReader\.MatchAndApply',
+    'AnalysisContextIsCurrent\(original, expectedUid\)',
+    'analysisCancellation\.Token\.ThrowIfCancellationRequested\(\)',
+    'controller\.TryShowSnapshot\(updated, out failure\)',
+    'ReferenceEquals\(controller\.CurrentSnapshot, original\)',
+    'PlanningItemUID != expectedUid'
+)) {
+    if ($hostSource -notmatch $requiredPattern) {
+        throw "RTPLAN worker lacks a reviewed timeout/staleness/transaction guard: $requiredPattern"
+    }
+}
+if ($hostSource -match 'original\.PlanAnalysis\s*=') {
+    throw "An optional analysis must not mutate the last valid snapshot before validation."
+}
+$clinicalCode = [regex]::Replace($hostSource, $safeReadPattern, 'ReviewedDetachedFileRead') + [Environment]::NewLine + $controller
+if ($mainCode -match '_vm\.ActivePlanningItem\s*=\s*selectedPlanningItem') {
+    throw "Plan replacement must not mutate the previous live context before construction succeeds."
+}
+foreach ($pattern in @(
+    'new MainView\(mainViewModel, comparisonReference\)',
+    'window\.Content\s*=\s*replacement',
+    'CanExportCurrentSnapshot\(snapshot\)'
+)) {
+    if ($mainCode -notmatch $pattern) { throw "Clinical plan replacement/report guard missing: $pattern" }
+}
+foreach ($pattern in @('ReviewPlanContextGuard', 'planContext\.Matches', 'planContext\.Commit\(updated, expectedUid, source\.ActivePlanningItem\.PlanningItemObject\)')) {
+    if ($hostSource -notmatch $pattern) { throw "Host-only committed plan identity guard missing: $pattern" }
+}
 foreach ($forbidden in @(
     '\bBeginModifications\s*\(',
     '\bSaveModifications\s*\(',

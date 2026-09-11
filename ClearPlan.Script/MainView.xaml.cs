@@ -59,8 +59,10 @@ namespace ClearPlan
         private ClearPlan.Views.SettingsView _legacySettingsView;
         private bool _constraintSelectionInProgress;
         private bool _clinicalDefaultsInitialized;
+        private string _clinicalWindowTitle;
+        private bool _clinicalWindowTitleCaptured;
 
-        public MainView(MainViewModel mainViewModel)
+        public MainView(MainViewModel mainViewModel, ReviewSnapshot comparisonReference = null)
         {
             
             _vm = mainViewModel;
@@ -84,7 +86,8 @@ namespace ClearPlan
                 this,
                 _vm,
                 () => _settings,
-                SharedReviewWorkspace);
+                SharedReviewWorkspace,
+                comparisonReference);
 
             Loaded += MainView_Loaded;
             Unloaded += MainView_Unloaded;
@@ -95,12 +98,104 @@ namespace ClearPlan
             SharedReviewWorkspace.Visibility = Visibility.Visible;
             LegacyCompatibilitySurface.Visibility = Visibility.Collapsed;
             SharedWorkspaceStatusText.Text = string.Empty;
+            SharedWorkspaceStatusText.Tag = AnalysisStatusSeverity.Info.ToString();
+            SharedWorkspaceStatusText.ToolTip = null;
+        }
+
+        private void SyntheticDemoToggle_Click(
+            object sender,
+            RoutedEventArgs eventArgs)
+        {
+            bool requested = SyntheticDemoToggle.IsChecked == true;
+            if (_clinicalReviewHost == null ||
+                !_clinicalReviewHost.TrySetSyntheticDemo(requested))
+            {
+                SyntheticDemoToggle.IsChecked =
+                    _clinicalReviewHost != null &&
+                    _clinicalReviewHost.IsSyntheticDemo;
+                return;
+            }
+
+            SetSyntheticDemoPresentation(requested);
+        }
+
+        private void SetSyntheticDemoPresentation(bool enabled)
+        {
+            var pseudonymVisibility = !enabled && Anonymize_CheckBox.IsChecked == true
+                ? Visibility.Visible : Visibility.Collapsed;
+            NewID_TextBox.Visibility = pseudonymVisibility;
+            NewID_TextBlock.Visibility = pseudonymVisibility;
+            ClinicalContextText.Visibility = enabled
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            SyntheticContextText.Visibility = enabled
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            ClinicalConstraintPanel.Visibility = enabled
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            ClinicalConstraintStatus.Visibility = enabled
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            HeaderConstraintRow.Visibility = enabled
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            SwitchPlanButton.Visibility = enabled
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            ClinicalExtrasMenuItem.Visibility = enabled
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+            SharedWorkspaceStatusText.Text = enabled
+                ? "Sandbox aktiv · GUI und PDF ausschließlich mit synthetischen Beispieldaten"
+                : string.Empty;
+            SharedWorkspaceStatusText.Tag = AnalysisStatusSeverity.Info.ToString();
+            SharedWorkspaceStatusText.ToolTip = enabled
+                ? "Der Schalter gilt nur für dieses Fenster und wird nicht gespeichert."
+                : null;
+            UpdateWindowTitleForSyntheticDemo(enabled);
+        }
+
+        private void UpdateWindowTitleForSyntheticDemo(bool enabled)
+        {
+            Window window = Window.GetWindow(this);
+            if (window == null)
+            {
+                return;
+            }
+
+            if (enabled)
+            {
+                if (!_clinicalWindowTitleCaptured)
+                {
+                    _clinicalWindowTitle = window.Title;
+                    _clinicalWindowTitleCaptured = true;
+                }
+
+                window.Title =
+                    "ClearPlan · Synthetische Demonstration";
+                return;
+            }
+
+            if (_clinicalWindowTitleCaptured)
+            {
+                window.Title = _clinicalWindowTitle ?? string.Empty;
+                _clinicalWindowTitle = null;
+                _clinicalWindowTitleCaptured = false;
+            }
         }
 
         internal void ShowSharedWorkspaceFailure(
             Exception failure,
             bool keepLastGoodWorkspace)
         {
+            if (_clinicalReviewHost != null && _clinicalReviewHost.IsSyntheticDemo)
+            {
+                SharedWorkspaceStatusText.Text = "Sandbox konnte nicht aktualisiert werden; synthetische Ansicht bleibt sichtbar.";
+                SharedWorkspaceStatusText.Tag = AnalysisStatusSeverity.Error.ToString();
+                SharedWorkspaceStatusText.ToolTip = "Sandbox bleibt aktiv; interne Fehlerdetails sind ausgeblendet.";
+                return;
+            }
             if (!keepLastGoodWorkspace)
             {
                 SharedReviewWorkspace.Visibility = Visibility.Collapsed;
@@ -112,6 +207,7 @@ namespace ClearPlan
                 (keepLastGoodWorkspace
                     ? "letzter gültiger Stand bleibt sichtbar."
                     : "sichere Einzelansicht ist aktiv.");
+            SharedWorkspaceStatusText.Tag = AnalysisStatusSeverity.Error.ToString();
             SharedWorkspaceStatusText.ToolTip =
                 failure == null
                     ? "Unbekannter Snapshot-Fehler."
@@ -142,6 +238,7 @@ namespace ClearPlan
             object sender,
             RoutedEventArgs eventArgs)
         {
+            UpdateWindowTitleForSyntheticDemo(false);
             Loaded -= MainView_Loaded;
             Unloaded -= MainView_Unloaded;
             if (_clinicalReviewHost != null)
@@ -376,12 +473,17 @@ namespace ClearPlan
                     ConstraintViewModel);
         }
 
+        private void ConfirmConstraintTableClicked(object sender, RoutedEventArgs e)
+        {
+            ApplyConstraintSelection(SharedConstraintComboBox.SelectedItem as ConstraintViewModel, true);
+        }
+
         private void ApplyConstraintSelection(
-            ConstraintViewModel selection)
+            ConstraintViewModel selection, bool force = false)
         {
             if (_constraintSelectionInProgress ||
                 selection == null ||
-                (_vm.ActiveConstraintPath != null &&
+                (!force && _vm.ActiveConstraintPath != null &&
                  _vm.ActiveConstraintPath.ConstraintId ==
                  selection.ConstraintId))
             {
@@ -393,8 +495,12 @@ namespace ClearPlan
                 _vm.ActiveConstraintPath;
             PqmReviewState previousReviewState =
                 _vm.CapturePqmReviewState();
+            bool previousConfirmation = _vm.ConstraintSelectionRequiresConfirmation;
+            bool selectionConfirmation = selection.RequiresConfirmation;
+            string selectionReason = selection.SelectionReason;
             try
             {
+                _vm.ConfirmConstraintSelection(selection);
                 _vm.GetPQMSummaries(
                     selection,
                     _vm.ActivePlanningItem,
@@ -414,6 +520,9 @@ namespace ClearPlan
             }
             catch (Exception exception)
             {
+                selection.RequiresConfirmation = selectionConfirmation;
+                selection.SelectionReason = selectionReason;
+                _vm.RestoreConstraintConfirmation(previousConfirmation);
                 _vm.ActiveConstraintPath = previousSelection;
                 RestorePqmReviewState(previousReviewState);
                 ConstraintComboBox.SelectedItem =
@@ -482,6 +591,7 @@ namespace ClearPlan
 
             _legacySettingsView =
                 new ClearPlan.Views.SettingsView();
+            _legacySettingsView.InitializeCheckSelection(CheckRowsForSettings());
             _legacySettingsView.SettingsChanged +=
                 SettingsView_SettingsChanged;
             SettingsDetailPage.Children.Add(_legacySettingsView);
@@ -496,7 +606,13 @@ namespace ClearPlan
 
         internal void HandleSharedSettings()
         {
+            if (_clinicalReviewHost != null && _clinicalReviewHost.IsSyntheticDemo)
+            {
+                ShowSyntheticDemoActionNotice("Lokale Konfiguration ist im Manuskript-Sandbox-Modus ausgeblendet.");
+                return;
+            }
             var settingsView = new ClearPlan.Views.SettingsView();
+            settingsView.InitializeCheckSelection(CheckRowsForSettings());
             settingsView.SettingsChanged +=
                 SettingsView_SettingsChanged;
             var settingsWindow = new Window
@@ -537,15 +653,222 @@ namespace ClearPlan
         internal void HandleSharedReport(
             ReviewWorkspaceViewModel workspace)
         {
-            SyncSharedDvhSelections(workspace);
             PrintButtonClicked(this, new RoutedEventArgs());
+        }
+
+        private IEnumerable<ReviewCheckRow> CheckRowsForSettings()
+        {
+            var workspace = _clinicalReviewHost == null ? null : _clinicalReviewHost.CurrentViewModel;
+            return workspace == null ? Enumerable.Empty<ReviewCheckRow>() : workspace.PlanCheckRows.Select(row =>
+                new ReviewCheckRow { CheckCode = row.CheckCode, Category = row.Category, Message = row.Message });
+        }
+
+        internal void HandleSharedHtmlReport(
+            ReviewSnapshot snapshot, ReviewWorkspaceViewModel workspace)
+        {
+            HtmlReportDiagnostic = null;
+            if (snapshot == null || workspace == null) return;
+            if (!snapshot.Synthetic && (_clinicalReviewHost == null || !_clinicalReviewHost.CanExportCurrentSnapshot(snapshot)))
+            {
+                ShowAnalysisStatus("HTML-Quicklook nicht verfügbar: Ansicht und aktiver Plan stimmen nicht überein.", AnalysisStatusSeverity.Error);
+                return;
+            }
+            try
+            {
+                // Map/copy first; preview selection must never mutate the clinical snapshot.
+                var document = new ReviewSnapshotReportMapper().Map(snapshot);
+                ApplyReportOptions(document, workspace);
+                foreach (var series in document.DvhSeries)
+                {
+                    var selection = workspace.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
+                    if (selection != null) series.Selected = selection.IsSelected;
+                }
+                if (!snapshot.Synthetic)
+                    document.PatientDisplayLabel = Anonymize_CheckBox.IsChecked == true
+                        ? "Pseudonym: " + NewID_TextBox.Text
+                        : (_vm.Patient == null ? "Name / ID unavailable" : _vm.Patient.LastName + ", " + _vm.Patient.FirstName + " | ID: " + _vm.Patient.Id);
+                var html = new HtmlReviewReportRenderer().Render(document);
+                new ClearPlan.Presentation.Views.HtmlReportPreviewWindow(html, _settings.ResolvePath(_settings.Paths.ReportsDirectory))
+                { Owner = Window.GetWindow(this) }.Show();
+            }
+            catch (Exception exception)
+            {
+                HtmlReportDiagnostic = ClinicalReviewWorkspaceHost.ReportDiagnostic(exception);
+                ShowAnalysisStatus("HTML-Quicklook konnte nicht erstellt werden. Die aktuelle Planansicht bleibt unverändert.", AnalysisStatusSeverity.Error);
+            }
+        }
+
+        internal string HtmlReportDiagnostic { get; private set; }
+
+        internal void HandleSharedSyntheticReport(
+            ReviewSnapshot snapshot, ReviewWorkspaceViewModel workspace)
+        {
+            if (snapshot == null || !snapshot.Synthetic)
+            {
+                throw new InvalidOperationException(
+                    "A synthetic report requires a validated synthetic snapshot.");
+            }
+
+            var dialog = new SaveFileDialog
+            {
+                Title = "Synthetischen ClearPlan-Report speichern",
+                InitialDirectory = _settings.ResolvePath(_settings.Paths.ReportsDirectory),
+                Filter = "PDF Files (*.pdf)|*.pdf",
+                FileName = snapshot.Report == null
+                    ? "clearplan-synthetic-report.pdf"
+                    : snapshot.Report.OutputFileLabel
+            };
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            try
+            {
+                snapshot.PlanImages = ClearPlan.Core.Simulation.SyntheticPlanImageFactory.Create(snapshot.ActivePlanKey);
+                foreach (var series in snapshot.DvhSeries)
+                {
+                    var selection = workspace.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
+                    if (selection != null) series.Selected = selection.IsSelected;
+                }
+                var document =
+                    new ReviewSnapshotReportMapper().Map(snapshot);
+                ApplyReportOptions(document, workspace);
+                new ReportPdf().Export(dialog.FileName, document);
+                ShowSavedReportStatus(dialog.FileName, document);
+            }
+            catch (Exception exception)
+            {
+                ShowSharedWorkspaceFailure(exception, true);
+                MessageBox.Show(
+                    "Der synthetische Report konnte nicht gespeichert werden.",
+                    "ClearPlan · Demodaten",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+
+        private bool sharedReportExportRunning;
+        internal async void HandleSharedPlanReport(ReviewSnapshot snapshot, ReviewWorkspaceViewModel workspace)
+        {
+            if (sharedReportExportRunning) return;
+            if (snapshot == null || snapshot.Synthetic)
+                throw new InvalidOperationException("A clinical plan report requires a clinical snapshot.");
+            if (_clinicalReviewHost == null || !_clinicalReviewHost.CanExportCurrentSnapshot(snapshot))
+            {
+                ShowAnalysisStatus("Report abgebrochen: Ansicht und aktiver Plan stimmen nicht überein.", AnalysisStatusSeverity.Error);
+                return;
+            }
+            var dialog = new SaveFileDialog
+            {
+                Title = "ClearPlan · Aktuellen Plan als PDF speichern",
+                InitialDirectory = _settings.ResolvePath(_settings.Paths.ReportsDirectory),
+                Filter = "PDF (*.pdf)|*.pdf",
+                FileName = "ClearPlan-plan-review.pdf"
+            };
+            if (dialog.ShowDialog() != true) return;
+            sharedReportExportRunning = true;
+            try
+            {
+                if (!_clinicalReviewHost.CanExportCurrentSnapshot(snapshot))
+                    throw new InvalidOperationException("Plan context changed while selecting the report destination.");
+                var reportAnalysis = workspace.IncludeBeamEyeViews
+                    ? await _clinicalReviewHost.PrepareReportBevsAsync(snapshot) : snapshot.PlanAnalysis;
+                if (!_clinicalReviewHost.CanExportCurrentSnapshot(snapshot))
+                    throw new InvalidOperationException("Plan context changed while preparing report images.");
+                // GUI and PDF share current-plan images, including the same dose/contour geometry.
+                await _clinicalReviewHost.PreparePlanImagesAsync(snapshot);
+                if (!_clinicalReviewHost.CanExportCurrentSnapshot(snapshot))
+                    throw new InvalidOperationException("Plan context changed while capturing CT images.");
+                foreach (var series in snapshot.DvhSeries)
+                {
+                    var selection = workspace.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
+                    if (selection != null) series.Selected = selection.IsSelected;
+                }
+                var document = new ReviewSnapshotReportMapper().Map(snapshot);
+                document.PlanAnalysis = reportAnalysis;
+                ApplyReportOptions(document, workspace);
+                document.PatientDisplayLabel = Anonymize_CheckBox.IsChecked == true
+                    ? "Pseudonym: " + NewID_TextBox.Text
+                    : (_vm.Patient == null ? "Name / ID unavailable" : _vm.Patient.LastName + ", " + _vm.Patient.FirstName + " | ID: " + _vm.Patient.Id);
+                new ReportPdf().Export(dialog.FileName, document);
+                ShowSavedReportStatus(dialog.FileName, document);
+            }
+            catch (Exception exception)
+            {
+                ShowSharedWorkspaceFailure(exception, true);
+                MessageBox.Show("Der Planreport konnte nicht vollständig gespeichert werden. Bitte Speicherort und Datenverfügbarkeit prüfen.",
+                    "ClearPlan · Planreport", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                // Keep the in-memory current-plan cache for Schnittbilder and HTML Quicklook.
+                // A refresh, plan replacement, or mode change creates a fresh snapshot.
+                sharedReportExportRunning = false;
+            }
+        }
+
+        private static void ApplyReportOptions(ReviewReportDocument document, ReviewWorkspaceViewModel workspace)
+        {
+            document.IncludeBeamEyeViews = workspace.IncludeBeamEyeViews;
+            document.HideUnmatched = workspace.HideUnmatched;
+            document.HiddenStructureIds = workspace.HiddenStructureIds.ToList();
+        }
+
+        private void ShowSavedReportStatus(string pdfPath, ReviewReportDocument document)
+        {
+            try
+            {
+                string htmlPath = new HtmlReviewReportRenderer().ExportCompanion(pdfPath, document);
+                ShowAnalysisStatus("PDF und HTML-Report gespeichert.", AnalysisStatusSeverity.Success);
+                SharedWorkspaceStatusText.ToolTip = pdfPath + Environment.NewLine + htmlPath;
+            }
+            catch (Exception)
+            {
+                ShowAnalysisStatus("PDF gespeichert; die zusätzliche HTML-Fassung konnte nicht gespeichert werden.", AnalysisStatusSeverity.Warning);
+                SharedWorkspaceStatusText.ToolTip = pdfPath;
+            }
+        }
+
+        internal void ShowSyntheticDemoActionNotice(string message)
+        {
+            SharedWorkspaceStatusText.Text = message ?? string.Empty;
+            SharedWorkspaceStatusText.Tag = AnalysisStatusSeverity.Info.ToString();
+            SharedWorkspaceStatusText.ToolTip =
+                "Synthetische Demodaten; keine klinische Aktion wurde ausgeführt.";
+        }
+
+        internal enum AnalysisStatusSeverity { Info, Success, Warning, Error }
+
+        internal void ShowAnalysisStatus(string message,
+            AnalysisStatusSeverity severity = AnalysisStatusSeverity.Info, string details = null)
+        {
+            SharedWorkspaceStatusText.Text = message ?? string.Empty;
+            SharedWorkspaceStatusText.Tag = severity.ToString();
+            const string readOnlyNotice = "Read-only Plananalyse; keine Änderungen an Plan, Dosis oder Patientenakte.";
+            SharedWorkspaceStatusText.ToolTip = string.IsNullOrWhiteSpace(details)
+                ? readOnlyNotice : details + "\n\n" + readOnlyNotice;
+        }
+
+        internal void ShowCompletedAnalysis(string message,
+            ClearPlan.Core.PlanAnalysis.ReviewPlanAnalysis analysis, string details)
+        {
+            bool limited = analysis == null || analysis.PamStatus != "available" ||
+                analysis.Beams.Any(beam => beam.GeometryStatus != "available");
+            ShowAnalysisStatus(limited
+                ? message + " Geometrie/PAM eingeschränkt – siehe Planparameter."
+                : message,
+                limited ? AnalysisStatusSeverity.Warning : AnalysisStatusSeverity.Success,
+                details);
         }
 
         internal void HandleSharedDvhReset(
             ReviewWorkspaceViewModel workspace)
         {
-            _vm.ApplyDefaultDvhSelections();
-            RefreshClinicalReviewWorkspace();
+            // This is a view reset, not a native plan refresh. Reuse the captured
+            // curves and selection defaults; a rebuild also discards plan analysis.
+            if (workspace != null)
+                workspace.ResetDvhSelections();
         }
 
         internal void HandleSharedDvhExport(
@@ -893,6 +1216,17 @@ namespace ClearPlan
 
         
         private void PrintButtonClicked(object sender, RoutedEventArgs e)
+        {
+            if (_clinicalReviewHost == null)
+            {
+                ShowAnalysisStatus("Report nicht verfügbar: aktuelle Gesamtansicht konnte nicht geladen werden.");
+                return;
+            }
+            _clinicalReviewHost.RequestCurrentReport();
+        }
+
+        // Retained for migration reference only; no GUI action routes here.
+        private void PrintLegacyReportClicked(object sender, RoutedEventArgs e)
         {
             SelectedDVHs = _vm.DvhStructures
                 .Where(item => item.IsSelected)
@@ -2057,9 +2391,80 @@ namespace ClearPlan
 
        
 
+        private void SwitchPlanClicked(object sender, RoutedEventArgs e)
+        {
+            if (_clinicalReviewHost != null && _clinicalReviewHost.IsSyntheticDemo)
+            {
+                ShowSyntheticDemoActionNotice("Synthetische Pläne werden nicht in Eclipse geöffnet.");
+                return;
+            }
+
+            var selector = new ListBox
+            {
+                ItemsSource = _vm.PlanningItemList,
+                DisplayMemberPath = "PlanningItemIdWithCourseAndType",
+                SelectedItem = _vm.ActivePlanningItem,
+                Margin = new Thickness(0, 12, 0, 12),
+                MinHeight = 160
+            };
+            var accept = new Button { Content = "Plan prüfen", IsDefault = true,
+                MinHeight = 36, Padding = new Thickness(14, 6, 14, 6),
+                Style = (Style)FindResource("ClinicalBlueprintPrimaryButton") };
+            var cancel = new Button { Content = "Abbrechen", IsCancel = true,
+                MinHeight = 36, Margin = new Thickness(10, 0, 0, 0),
+                Style = (Style)FindResource("ClinicalBlueprintSecondaryButton") };
+            var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            actions.Children.Add(accept);
+            actions.Children.Add(cancel);
+            var content = new DockPanel { Margin = new Thickness(18) };
+            var explanation = new TextBlock
+            {
+                Text = "Plan oder Plansumme des geöffneten Patienten auswählen. Die Prüfung wird neu geladen; Eclipse bleibt unverändert.",
+                TextWrapping = TextWrapping.Wrap
+            };
+            DockPanel.SetDock(explanation, Dock.Top);
+            DockPanel.SetDock(actions, Dock.Bottom);
+            content.Children.Add(explanation);
+            content.Children.Add(actions);
+            content.Children.Add(selector);
+            var dialog = new Window { Title = "ClearPlan · Plan wechseln", Owner = Window.GetWindow(this),
+                Width = 660, Height = 400, MinWidth = 480, MinHeight = 300,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner, Content = content,
+                Background = (System.Windows.Media.Brush)FindResource("ClinicalBlueprintSurface") };
+            accept.Click += (buttonSender, buttonArgs) =>
+            {
+                if (selector.SelectedItem is PlanningItemViewModel)
+                    dialog.DialogResult = true;
+            };
+            if (dialog.ShowDialog() != true)
+                return;
+
+            try
+            {
+                OpenPlanningItem(selector.SelectedItem as PlanningItemViewModel);
+            }
+            catch (Exception)
+            {
+                MessageBox.Show("Der Plan konnte nicht geladen werden. Die bisherige Prüfung bleibt geöffnet.",
+                    "ClearPlan · Plan wechseln", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         private void PlanOpen_Button_Click(object sender, RoutedEventArgs e)
         {
             OpenPlanningItem(GetPlan(sender));
+        }
+
+        internal PlanningItemViewModel FindSharedPlanningItem(ReviewPlanRowViewModel selectedRow)
+        {
+            if (selectedRow == null) return null;
+            var matches = (_vm.PlanningItemList ?? new System.Collections.ObjectModel.ObservableCollection<PlanningItemViewModel>())
+                .Where(item => item != null && string.Equals(
+                    ClinicalReviewValueMapper.SanitizeClinicalLabel(item.PlanningItemCourse, "Course") + " · " +
+                    ClinicalReviewValueMapper.SanitizeClinicalLabel(item.PlanningItemId, "Planning item") + " (" +
+                    ClinicalReviewValueMapper.SanitizeClinicalLabel(item.PlanningItemType, "Planning item") + ")",
+                    selectedRow.DisplayLabel, StringComparison.Ordinal)).ToList();
+            return matches.Count == 1 ? matches[0] : null;
         }
 
         internal void HandleSharedOpenPlan(
@@ -2134,7 +2539,11 @@ namespace ClearPlan
                 return;
             }
 
-            _vm.ActivePlanningItem = selectedPlanningItem;
+            // Preserve the displayed plan and its committed snapshot if creating
+            // the replacement fails (for example, an unavailable optional path).
+            var comparisonReference = _clinicalReviewHost == null || _clinicalReviewHost.IsSyntheticDemo ||
+                _clinicalReviewHost.CurrentViewModel == null ? null :
+                _clinicalReviewHost.CurrentViewModel.Comparison.ReferenceSnapshot;
             System.Reflection.Assembly assembly = Assembly.GetExecutingAssembly();
             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
             string scriptVersion = fvi.FileVersion;
@@ -2146,8 +2555,9 @@ namespace ClearPlan
                 selectedPlanningItem,
                 selectedPlanningItem.PlanningItemObject);
 
+            var replacement = new MainView(mainViewModel, comparisonReference);
+            window.Content = replacement;
             window.Title = mainViewModel.Title;
-            window.Content = new MainView(mainViewModel);
             window.WindowStartupLocation =
                 WindowStartupLocation.CenterScreen;
         }
@@ -2559,6 +2969,8 @@ namespace ClearPlan
 
         private void Anonymize_Click(object sender, RoutedEventArgs e)
         {
+            CancelAriaPreparation();
+            if(_clinicalReviewHost!=null) RefreshAriaAvailability(_clinicalReviewHost.CurrentViewModel);
             if (Anonymize_CheckBox.IsChecked == true)
             {
                 NewID_TextBox.Visibility = Visibility.Visible;

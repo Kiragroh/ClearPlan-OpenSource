@@ -17,10 +17,24 @@ namespace ClearPlan.Core.Settings
 
             EnsureSections(settings);
             IDictionary<string, string> values = ParsePaths(iniText);
+            Apply(values, "MlcGeometryProfilesJsonPath",
+                value => settings.Paths.MlcGeometryProfilesJsonPath = value);
+            Apply(values, "DoseRateProfilesJsonPath",
+                value => settings.Paths.DoseRateProfilesJsonPath = value);
+            Apply(values, "AriaUploadConfigJsonPath",
+                value => settings.Paths.AriaUploadConfigJsonPath = value);
+            Apply(values, "DefaultReviewRulesJsonPath",
+                value => settings.Paths.DefaultReviewRulesJsonPath = value);
+            Apply(values, "PlanCheckSelectionJsonPath",
+                value => settings.Paths.PlanCheckSelectionJsonPath = value);
+            Apply(values, "FieldNamingRulesJsonPath",
+                value => settings.Paths.FieldNamingRulesJsonPath = value);
             Apply(values, "RefDbJsonPath",
                 value => settings.ConstraintSource.RefDbJsonPath = value);
             Apply(values, "ExcelWorkbookPath",
                 value => settings.ConstraintSource.ExcelWorkbookPath = value);
+            Apply(values, "StructureAliasesJsonPath",
+                value => settings.ConstraintSource.StructureAliasesJsonPath = value);
             Apply(values, "ConstraintTemplatesDirectory",
                 value => settings.Paths.ConstraintTemplatesDirectory = value);
             Apply(values, "DefaultConventionalTemplate",
@@ -37,6 +51,8 @@ namespace ClearPlan.Core.Settings
                 value => settings.Paths.CsvExportDirectory = value);
             Apply(values, "StateDirectory",
                 value => settings.Paths.StateDirectory = value);
+            Apply(values, "ConfigurationDirectory",
+                value => settings.Paths.ConfigurationDirectory = value);
             Apply(values, "UsageLogFile",
                 value => settings.Paths.UsageLogFile = value);
             Apply(values, "ActivityLogFile",
@@ -68,10 +84,18 @@ namespace ClearPlan.Core.Settings
             builder.AppendLine("; Relative paths are resolved from the build folder.");
             builder.AppendLine();
             builder.AppendLine("[Paths]");
+            Append(builder, "MlcGeometryProfilesJsonPath", settings.Paths.MlcGeometryProfilesJsonPath);
+            Append(builder, "DoseRateProfilesJsonPath", settings.Paths.DoseRateProfilesJsonPath);
+            Append(builder, "AriaUploadConfigJsonPath", settings.Paths.AriaUploadConfigJsonPath);
+            Append(builder, "DefaultReviewRulesJsonPath", settings.Paths.DefaultReviewRulesJsonPath);
+            Append(builder, "PlanCheckSelectionJsonPath", settings.Paths.PlanCheckSelectionJsonPath);
+            Append(builder, "FieldNamingRulesJsonPath", settings.Paths.FieldNamingRulesJsonPath);
             Append(builder, "RefDbJsonPath",
                 settings.ConstraintSource.RefDbJsonPath);
             Append(builder, "ExcelWorkbookPath",
                 settings.ConstraintSource.ExcelWorkbookPath);
+            Append(builder, "StructureAliasesJsonPath",
+                settings.ConstraintSource.StructureAliasesJsonPath);
             Append(builder, "ConstraintTemplatesDirectory",
                 settings.Paths.ConstraintTemplatesDirectory);
             Append(builder, "DefaultConventionalTemplate",
@@ -85,6 +109,7 @@ namespace ClearPlan.Core.Settings
             Append(builder, "CsvExportDirectory",
                 settings.Paths.CsvExportDirectory);
             Append(builder, "StateDirectory", settings.Paths.StateDirectory);
+            Append(builder, "ConfigurationDirectory", settings.Paths.ConfigurationDirectory);
             Append(builder, "UsageLogFile", settings.Paths.UsageLogFile);
             Append(builder, "ActivityLogFile", settings.Paths.ActivityLogFile);
             Append(builder, "VersionSeenUsersFile",

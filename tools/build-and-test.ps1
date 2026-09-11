@@ -4,16 +4,29 @@ param(
     [string]$Configuration = "Debug",
 
     [ValidateSet("x64", "AnyCPU")]
-    [string]$Platform = "x64"
+    [string]$Platform = "x64",
+
+    [switch]$SkipPaperArtifacts,
+    [string]$PublicationCaptureDirectory = "",
+    [string]$NodeExecutable = "node"
 )
 
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot "..")).ProviderPath
+if ($Configuration -eq 'Release' -and -not $SkipPaperArtifacts -and
+    [string]::IsNullOrWhiteSpace($PublicationCaptureDirectory)) {
+    throw 'Paper figures require -PublicationCaptureDirectory with reviewed publication-dual-layer captures, or use -SkipPaperArtifacts.'
+}
 $msbuild = & (Join-Path $PSScriptRoot "resolve-msbuild.ps1")
 
 if ([string]::IsNullOrWhiteSpace($msbuild) -or
     -not (Test-Path -LiteralPath $msbuild -PathType Leaf)) {
     throw "The MSBuild resolver did not return an existing executable."
+}
+
+& (Join-Path $PSScriptRoot "build-and-test-dicom.ps1") -Configuration $Configuration -Platform $Platform
+if ($LASTEXITCODE -ne 0) {
+    throw "Locked RTPLAN build and tests failed with exit code $LASTEXITCODE."
 }
 
 & $msbuild `
@@ -155,12 +168,15 @@ if ($Configuration -eq "Release") {
         throw "Simulator smoke test failed with exit code $LASTEXITCODE."
     }
 
+    if (-not $SkipPaperArtifacts) {
     & python (Join-Path $PSScriptRoot "collect-paper-evidence.py")
     if ($LASTEXITCODE -ne 0) {
         throw "Paper evidence collection failed with exit code $LASTEXITCODE."
     }
 
-    & python (Join-Path $PSScriptRoot "build-paper-figures.py")
+    & python (Join-Path $PSScriptRoot "build-paper-figures.py") `
+        --capture-dir $PublicationCaptureDirectory --output-dir (Join-Path $root 'paper\figures') `
+        --node-executable $NodeExecutable
     if ($LASTEXITCODE -ne 0) {
         throw "Paper figure build failed with exit code $LASTEXITCODE."
     }
@@ -169,8 +185,9 @@ if ($Configuration -eq "Release") {
     if ($LASTEXITCODE -ne 0) {
         throw "Technical-note DOCX build failed with exit code $LASTEXITCODE."
     }
+    }
 
-    & (Join-Path $PSScriptRoot "validate-release-version.ps1") -Root $root
+    & (Join-Path $PSScriptRoot "validate-release-version.ps1") -Root $root -DevelopmentPreview
     if ($LASTEXITCODE -ne 0) {
         throw "Release version validation failed with exit code $LASTEXITCODE."
     }
@@ -178,7 +195,8 @@ if ($Configuration -eq "Release") {
 else {
     & (Join-Path $PSScriptRoot "validate-release-version.ps1") `
         -Root $root `
-        -SkipBinaries
+        -SkipBinaries `
+        -DevelopmentPreview
     if ($LASTEXITCODE -ne 0) {
         throw "Source version validation failed with exit code $LASTEXITCODE."
     }

@@ -4,27 +4,27 @@
 from __future__ import annotations
 
 import subprocess
-import sys
+import argparse
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_DIR = ROOT / "tools" / "paper_figures"
-SCRIPTS = (
-    "capture_figure_1.py",
-    "generate_figure_2_architecture.py",
-    "generate_figure_3_comparison.py",
-)
-
-
 def main() -> None:
-    for script_name in SCRIPTS:
-        subprocess.run(
-            [sys.executable, str(SCRIPT_DIR / script_name)],
-            cwd=ROOT,
-            check=True,
-        )
-    print("Built three ClearPlan Technical Note figures.")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--capture-dir", type=Path, required=True,
+                        help="Verified 1600 x 1000 publication-dual-layer application captures.")
+    parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--node-executable", default="node")
+    args = parser.parse_args()
+    captures = args.capture_dir.resolve(strict=True)
+    output = args.output_dir.resolve()
+    subprocess.run([args.node_executable, str(SCRIPT_DIR / "compose_workspace.cjs"),
+                    "--capture-dir", str(captures), "--output-dir", str(output)],
+                   cwd=ROOT, check=True)
+    subprocess.run([args.node_executable, str(SCRIPT_DIR / "generate_architecture.cjs"),
+                    str(output)], cwd=ROOT, check=True)
+    print("Built two Technical Note figures. Final release provenance and visual inspection remain separate gates.")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {
+      "id": "target-d98-rx",
+      "enabled": true,
+      "targetTypes": ["PTV"],
+      "metric": "D98%",
+      "comparator": ">",
+      "reference": "target-prescription",
+      "prescriptionPercent": 95
+    },
+    {
+      "id": "target-d98-rx-other",
+      "enabled": true,
+      "targetTypes": ["CTV", "GTV", "ITV"],
+      "metric": "D98%",
+      "comparator": ">",
+      "reference": "target-prescription",
+      "prescriptionPercent": 100
+    }
+  ]
+}

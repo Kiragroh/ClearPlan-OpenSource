@@ -1,0 +1,47 @@
+<UserControl x:Class="ClearPlan.Presentation.Views.PlanComparisonView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:oxy="http://oxyplot.org/wpf" FontFamily="Segoe UI" FontWeight="Normal" Foreground="{DynamicResource ClinicalBlueprintText}">
+ <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../Styles/ClinicalBlueprint.xaml"/></ResourceDictionary.MergedDictionaries><BooleanToVisibilityConverter x:Key="VisibleIfTrue"/></ResourceDictionary></UserControl.Resources>
+ <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+  <StackPanel Margin="24,22">
+   <DockPanel Margin="0,0,0,18">
+    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+     <Button Content="Referenz merken" Command="{Binding Comparison.PinReferenceCommand}" Style="{StaticResource ClinicalBlueprintPrimaryButton}" Margin="0,0,8,0"/>
+     <Button Content="Zurücksetzen" Command="{Binding Comparison.ClearReferenceCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}"/>
+    </StackPanel>
+    <StackPanel><TextBlock Text="Planvergleich" Style="{StaticResource ClinicalBlueprintSectionTitle}"/><TextBlock Text="DVH, Constraints und Planparameter nebeneinander" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,5,0,0"/></StackPanel>
+   </DockPanel>
+   <Border Background="White" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="0,1" Padding="16" Margin="0,0,0,14">
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+     <StackPanel><TextBlock Text="Referenz · gestrichelt" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{Binding Comparison.ReferenceLabel}" FontSize="16" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+     <StackPanel Grid.Column="2"><TextBlock Text="Aktueller Plan · durchgezogen" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintTeal}"/><TextBlock Text="{Binding Comparison.CurrentLabel}" FontSize="16" Margin="0,5,0,0" TextWrapping="Wrap"/></StackPanel>
+    </Grid>
+   </Border>
+   <DockPanel Margin="0,0,0,12">
+    <Button DockPanel.Dock="Right" Content="Synthetische Referenz laden" Command="{Binding Comparison.LoadExampleCommand}" Visibility="{Binding IsSynthetic, Converter={StaticResource VisibleIfTrue}}" Style="{StaticResource ClinicalBlueprintSecondaryButton}"/>
+    <StackPanel Orientation="Horizontal" Visibility="{Binding IsSynthetic, Converter={StaticResource VisibleIfTrue}}"><TextBlock Text="Beispiel: Baseline gegen aktuelles Fehlerszenario" VerticalAlignment="Center" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/></StackPanel>
+   </DockPanel>
+   <DockPanel Margin="0,0,0,12">
+    <DockPanel.Style><Style TargetType="DockPanel"><Style.Triggers><DataTrigger Binding="{Binding IsSynthetic}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></DockPanel.Style>
+    <Button DockPanel.Dock="Right" Content="Als Referenz laden" Command="{Binding SelectComparisonPlanCommand}" CommandParameter="{Binding SelectedItem, ElementName=ComparisonPlanSelector}" Style="{StaticResource ClinicalBlueprintPrimaryButton}" Margin="12,0,0,0"/>
+    <TextBlock DockPanel.Dock="Left" Text="Vergleichsplan" VerticalAlignment="Center" Margin="0,0,12,0"/>
+    <ComboBox x:Name="ComparisonPlanSelector" ItemsSource="{Binding Plans}" DisplayMemberPath="DisplayLabel" Padding="8,5" AutomationProperties.Name="Referenzplan auswählen"/>
+   </DockPanel>
+   <TextBlock Text="{Binding Comparison.ContextText}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,0,0,16"/>
+   <Border Background="White" Padding="12" Height="355"><oxy:PlotView x:Name="ComparisonDvhPlot" Model="{Binding Comparison.DvhPlotModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/></Border>
+   <TextBlock Text="Constraints im Vergleich" FontSize="17" FontWeight="SemiBold" Margin="0,24,0,10"/>
+   <DataGrid ItemsSource="{Binding Comparison.Constraints}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="90" MaxHeight="350"><DataGrid.Columns>
+    <DataGridTextColumn Header="Struktur" Binding="{Binding Structure}" Width="1.2*"/><DataGridTextColumn Header="Kriterium" Binding="{Binding Objective}" Width="0.8*"/>
+    <DataGridTextColumn Header="Referenz" Binding="{Binding ReferenceValue}" Width="85"/><DataGridTextColumn Header="Aktuell" Binding="{Binding CurrentValue}" Width="85"/><DataGridTextColumn Header="Δ" Binding="{Binding Difference}" Width="80"/>
+    <DataGridTextColumn Header="Einheit" Binding="{Binding Unit}" Width="60"/><DataGridTextColumn Header="Ziel Ref." Binding="{Binding ReferenceGoal}" Width="90"/><DataGridTextColumn Header="Ziel aktuell" Binding="{Binding CurrentGoal}" Width="90"/>
+    <DataGridTextColumn Header="Einordnung" Binding="{Binding Note}" Width="2*"/>
+   </DataGrid.Columns></DataGrid>
+   <TextBlock Text="Planparameter im Vergleich" FontSize="17" FontWeight="SemiBold" Margin="0,24,0,10"/>
+   <DataGrid ItemsSource="{Binding Comparison.Parameters}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="90"><DataGrid.Columns>
+    <DataGridTextColumn Header="Metrik" Binding="{Binding Label}" Width="1.5*"/><DataGridTextColumn Header="Referenz" Binding="{Binding Reference}" Width="*"/><DataGridTextColumn Header="Aktuell" Binding="{Binding Current}" Width="*"/>
+    <DataGridTextColumn Header="Δ" Binding="{Binding Difference}" Width="*"/><DataGridTextColumn Header="Einheit" Binding="{Binding Unit}" Width="0.7*"/><DataGridTextColumn Header="Einordnung" Binding="{Binding Note}" Width="2*"/>
+   </DataGrid.Columns></DataGrid>
+  </StackPanel>
+ </ScrollViewer>
+</UserControl>

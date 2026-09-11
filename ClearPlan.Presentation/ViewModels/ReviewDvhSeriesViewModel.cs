@@ -31,8 +31,9 @@ namespace ClearPlan.Presentation.ViewModels
                 : "Volumen n/a";
             Points = new List<ReviewDvhPoint>(
                 series.Points ?? new List<ReviewDvhPoint>());
-            isSelected = series.Selected;
-            IsInitiallySelected = series.Selected;
+            RequiredForTargetReview = series.RequiredForTargetReview;
+            isSelected = series.Selected || RequiredForTargetReview;
+            IsInitiallySelected = isSelected;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -57,11 +58,15 @@ namespace ClearPlan.Presentation.ViewModels
 
         public bool IsInitiallySelected { get; private set; }
 
+        public bool RequiredForTargetReview { get; private set; }
+
         public bool IsSelected
         {
             get { return isSelected; }
             set
             {
+                // Targets remain in the captured data and default selection, but an
+                // explicit display choice may hide them without altering evaluation.
                 if (isSelected == value)
                 {
                     return;

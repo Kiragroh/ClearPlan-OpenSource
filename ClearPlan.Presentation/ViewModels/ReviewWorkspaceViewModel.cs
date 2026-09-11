@@ -7,6 +7,8 @@ using System.Linq;
 using System.Windows.Input;
 using System.Windows.Data;
 using ClearPlan.Core.Review;
+using ClearPlan.Core.PlanAnalysis;
+using ClearPlan.Core.Simulation;
 using ClearPlan.Presentation.Plot;
 using OxyPlot;
 
@@ -16,6 +18,12 @@ namespace ClearPlan.Presentation.ViewModels
     {
         private string dvhFilterText;
         private bool showSelectedDvhOnly;
+        private bool updatingDvhSelections;
+        private bool hideUnmatched = true;
+        private bool includeBeamEyeViews = true;
+        private bool ariaEnabled, ariaBusy;
+        private string ariaStatus = "ARIA-Upload ist nicht eingerichtet. Pfad unter Einstellungen hinterlegen.";
+        private readonly Dictionary<string, bool> structureVisibility = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
         public ReviewWorkspaceViewModel(ReviewSnapshot snapshot)
         {
@@ -42,6 +50,16 @@ namespace ClearPlan.Presentation.ViewModels
             PlanDisplayLabel = ReviewDisplayText.ValueOrDash(
                 snapshot.PlanDisplayLabel);
             ActivePlanKey = snapshot.ActivePlanKey;
+            // Scenario identity selects the mathematical phantom, never machine-name inference.
+            Func<ReviewBeamAnalysis, ReviewControlPointSample, BeamEyeViewImage> syntheticDrrProvider = null;
+            if (snapshot.Synthetic && SyntheticPublicationScenarioFactory.ScenarioIds.Contains(snapshot.ScenarioId, StringComparer.Ordinal))
+                syntheticDrrProvider = SyntheticPublicationScenarioFactory.CreateDrr;
+            Analysis = new PlanAnalysisViewModel(snapshot.PlanAnalysis, snapshot.Synthetic, syntheticDrrProvider);
+            PlanImages = new PlanImagesViewModel(snapshot.Synthetic && (snapshot.PlanImages == null || snapshot.PlanImages.Count == 0)
+                ? ClearPlan.Core.Simulation.SyntheticPlanImageFactory.Create(snapshot.ActivePlanKey) : snapshot.PlanImages, snapshot.ActivePlanKey);
+            PlanImages.ReloadRequested += (sender, args) => Raise(PlanImagesRequested, "plan-images", null);
+            PlanImages.StructureVisibilityChanged += (sender, args) => SetStructureVisibility(args.StructureId, args.IsVisible);
+            Comparison = new PlanComparisonViewModel(snapshot);
 
             Sources = new ObservableCollection<ReviewSourceStatusViewModel>(
                 (snapshot.Sources ?? new List<ReviewSourceStatus>())
@@ -52,6 +70,8 @@ namespace ClearPlan.Presentation.ViewModels
             PqmRows = new ObservableCollection<ReviewPqmRowViewModel>(
                 (snapshot.PqmRows ?? new List<ReviewPqmRow>())
                     .Select(row => new ReviewPqmRowViewModel(row)));
+            VisiblePqmRows = CollectionViewSource.GetDefaultView(PqmRows);
+            VisiblePqmRows.Filter = row => !HideUnmatched || !string.IsNullOrWhiteSpace(((ReviewPqmRowViewModel)row).ResolvedStructureId);
             PlanCheckRows =
                 new ObservableCollection<ReviewCheckRowViewModel>(
                     (snapshot.PlanCheckRows ?? new List<ReviewCheckRow>())
@@ -59,6 +79,12 @@ namespace ClearPlan.Presentation.ViewModels
             FieldRows = new ObservableCollection<ReviewFieldRowViewModel>(
                 (snapshot.FieldRows ?? new List<ReviewFieldRow>())
                     .Select(row => new ReviewFieldRowViewModel(row)));
+            WarningRows = new ObservableCollection<ReviewCheckRowViewModel>((snapshot.PlanCheckRows ?? new List<ReviewCheckRow>())
+                .Where(row => row.Category == "Eclipse warnings").Select(row => new ReviewCheckRowViewModel(row)));
+            var warningSource = snapshot.Sources.FirstOrDefault(row => row.SourceCode == "eclipse-validation-messages");
+            WarningSourceText = warningSource == null
+                ? "Keine native ESAPI-Warnungsquelle geladen. Eine leere Ansicht bedeutet nicht, dass der Plan warnungsfrei ist."
+                : warningSource.Status + " | " + warningSource.Message;
             StructureMappings =
                 new ObservableCollection<ReviewStructureMappingViewModel>(
                     (snapshot.StructureMappings ??
@@ -66,6 +92,8 @@ namespace ClearPlan.Presentation.ViewModels
                         .Select(
                             row =>
                                 new ReviewStructureMappingViewModel(row)));
+            VisibleStructureMappings = new ListCollectionView(StructureMappings);
+            VisibleStructureMappings.Filter = row => !HideUnmatched || !string.IsNullOrWhiteSpace(((ReviewStructureMappingViewModel)row).SelectedStructureId);
             DvhSeries =
                 new ObservableCollection<ReviewDvhSeriesViewModel>(
                     (snapshot.DvhSeries ?? new List<ReviewDvhSeries>())
@@ -79,15 +107,23 @@ namespace ClearPlan.Presentation.ViewModels
             foreach (ReviewDvhSeriesViewModel series in DvhSeries)
             {
                 series.PropertyChanged += OnDvhSeriesPropertyChanged;
+                structureVisibility[series.StructureId] = series.IsSelected;
             }
+            PlanImages.SetStructureVisibilities(structureVisibility);
 
             OverviewPlotModel = ReviewPlotFactory.Create(DvhSeries);
             DetailPlotModel = ReviewPlotFactory.Create(DvhSeries);
+            // Native checkbox legends remain visible and keyboard-operable even when a curve is hidden.
+            OverviewPlotModel.IsLegendVisible = false;
+            DetailPlotModel.IsLegendVisible = false;
+            OverviewPlotController = ReviewPlotFactory.CreateHoverController();
+            DetailPlotController = ReviewPlotFactory.CreateHoverController();
 
             SourceStatusSummary = BuildSourceStatusSummary(Sources);
             PqmSummary = BuildStatusSummary(PqmRows.Select(row => row.StatusCode));
             PlanCheckSummary = BuildStatusSummary(
                 PlanCheckRows.Select(row => row.StatusCode));
+            if (snapshot.DisabledCheckCount > 0) PlanCheckSummary += " · " + snapshot.DisabledCheckCount + " Befunde gemäß Einstellungen nicht einbezogen";
             FieldSummary = string.Format(
                 CultureInfo.InvariantCulture,
                 "{0}/{1} IDs korrekt · {2}/{3} Namen korrekt",
@@ -102,11 +138,18 @@ namespace ClearPlan.Presentation.ViewModels
                     ReportRequested,
                     ReviewWorkspaceActionCodes.Report,
                     parameter));
+            HtmlReportCommand = new RelayCommand(
+                parameter => Raise(HtmlReportRequested, ReviewWorkspaceActionCodes.HtmlReport, parameter));
+            AriaUploadCommand = new RelayCommand(parameter => {
+                if(CanUploadToAria) Raise(AriaUploadRequested,ReviewWorkspaceActionCodes.AriaUpload,parameter);
+            }, parameter => CanUploadToAria);
             OpenPlanCommand = new RelayCommand(
                 parameter => Raise(
                     OpenPlanRequested,
                     ReviewWorkspaceActionCodes.OpenPlan,
                     parameter));
+            SelectComparisonPlanCommand = new RelayCommand(parameter => Raise(ComparisonPlanRequested, "select-comparison-plan", parameter),
+                parameter => parameter is ReviewPlanRowViewModel && !Comparison.IsLoading);
             ResetDvhCommand = new RelayCommand(
                 parameter => Raise(
                     DvhResetRequested,
@@ -146,10 +189,22 @@ namespace ClearPlan.Presentation.ViewModels
                     ScenarioSelectionRequested,
                     ReviewWorkspaceActionCodes.SelectScenario,
                     parameter));
+            Analysis.ImportPlanDataCommand = new RelayCommand(
+                parameter => Raise(ImportPlanDataRequested, "import-plan-data", parameter),
+                parameter => !IsSynthetic);
+            Analysis.CalculateTargetCommand = new RelayCommand(
+                parameter => Raise(CalculateTargetRequested, "calculate-target", Analysis.SelectedTargetStructureId),
+                parameter => !IsSynthetic && !string.IsNullOrWhiteSpace(Analysis.SelectedTargetStructureId));
+            if (!IsSynthetic)
+                Analysis.GenerateDrrCommand = new RelayCommand(
+                    parameter => Raise(GenerateDrrRequested, "generate-drr", parameter),
+                    parameter => Analysis.SelectedControlPoint != null);
         }
 
         public event EventHandler<ReviewWorkspaceActionEventArgs>
             ReportRequested;
+        public event EventHandler<ReviewWorkspaceActionEventArgs> HtmlReportRequested;
+        public event EventHandler<ReviewWorkspaceActionEventArgs> AriaUploadRequested;
 
         public event EventHandler<ReviewWorkspaceActionEventArgs>
             OpenPlanRequested;
@@ -177,6 +232,14 @@ namespace ClearPlan.Presentation.ViewModels
 
         public event PropertyChangedEventHandler PropertyChanged;
 
+        public event EventHandler<ReviewWorkspaceActionEventArgs> ImportPlanDataRequested;
+        public event EventHandler<ReviewWorkspaceActionEventArgs> CalculateTargetRequested;
+        public event EventHandler<ReviewWorkspaceActionEventArgs> GenerateDrrRequested;
+        public event EventHandler<ReviewWorkspaceActionEventArgs> PlanImagesRequested;
+        public event EventHandler<ReviewWorkspaceActionEventArgs> ComparisonPlanRequested;
+
+        public ObservableCollection<ReviewCheckRowViewModel> WarningRows { get; private set; }
+        public string WarningSourceText { get; private set; }
         public bool IsSynthetic { get; private set; }
 
         public string ModeBadgeText { get; private set; }
@@ -194,6 +257,11 @@ namespace ClearPlan.Presentation.ViewModels
         public string PlanDisplayLabel { get; private set; }
 
         public string ActivePlanKey { get; private set; }
+
+        public PlanAnalysisViewModel Analysis { get; private set; }
+        public PlanImagesViewModel PlanImages { get; private set; }
+
+        public PlanComparisonViewModel Comparison { get; private set; }
 
         public string SourceStatusSummary { get; private set; }
 
@@ -288,9 +356,62 @@ namespace ClearPlan.Presentation.ViewModels
 
         public PlotModel DetailPlotModel { get; private set; }
 
+        public PlotController OverviewPlotController { get; private set; }
+
+        public PlotController DetailPlotController { get; private set; }
+
         public ICommand ReportCommand { get; private set; }
+        public ICommand HtmlReportCommand { get; private set; }
+        public ICommand AriaUploadCommand { get; private set; }
+        public bool CanUploadToAria { get { return ariaEnabled && !ariaBusy && !IsSynthetic; } }
+        public string AriaUploadText { get { return ariaBusy ? "ARIA · läuft …" : "An ARIA senden"; } }
+        public string AriaUploadStatus { get { return IsSynthetic ? "Synthetische Daten werden nicht in klinische Patientenakten hochgeladen." : ariaStatus; } }
+        public void SetAriaUploadAvailability(bool enabled,bool busy,string message)
+        {
+            ariaEnabled=enabled; ariaBusy=busy; ariaStatus=message ?? string.Empty;
+            OnPropertyChanged("CanUploadToAria"); OnPropertyChanged("AriaUploadText"); OnPropertyChanged("AriaUploadStatus");
+            CommandManager.InvalidateRequerySuggested();
+        }
 
         public ICommand OpenPlanCommand { get; private set; }
+        public ICommand SelectComparisonPlanCommand { get; private set; }
+        public ICollectionView VisiblePqmRows { get; private set; }
+        public ICollectionView VisibleStructureMappings { get; private set; }
+        public bool HideUnmatched
+        {
+            get { return hideUnmatched; }
+            set { if (hideUnmatched == value) return; hideUnmatched = value;
+                VisiblePqmRows.Refresh(); VisibleStructureMappings.Refresh();
+                OnPropertyChanged("HideUnmatched"); OnPropertyChanged("PqmVisibilityText"); }
+        }
+        public bool IncludeBeamEyeViews
+        {
+            get { return includeBeamEyeViews; }
+            set { includeBeamEyeViews = value; OnPropertyChanged("IncludeBeamEyeViews"); }
+        }
+        public string PqmVisibilityText { get { return HideUnmatched ?
+            PqmRows.Count(row => string.IsNullOrWhiteSpace(row.ResolvedStructureId)) + " nicht zugeordnete Kriterien ausgeblendet · Zuordnung bleibt unter PQM möglich" : "Alle Kriterien sichtbar"; } }
+        public IEnumerable<string> HiddenStructureIds { get { return structureVisibility.Where(pair => !pair.Value).Select(pair => pair.Key).ToArray(); } }
+
+        public void SetStructureVisibility(string structureId, bool visible)
+        {
+            if (string.IsNullOrWhiteSpace(structureId)) return;
+            structureVisibility[structureId] = visible;
+            foreach (var row in DvhSeries.Where(item => string.Equals(item.StructureId, structureId, StringComparison.OrdinalIgnoreCase)))
+                row.IsSelected = visible;
+            PlanImages.SetStructureVisibility(structureId, visible);
+        }
+
+        public void RestorePresentationState(ReviewWorkspaceViewModel previous)
+        {
+            if (previous == null || previous.IsSynthetic != IsSynthetic || previous.ActivePlanKey != ActivePlanKey) return;
+            HideUnmatched = previous.HideUnmatched;
+            IncludeBeamEyeViews = previous.IncludeBeamEyeViews;
+            foreach (var pair in previous.structureVisibility) SetStructureVisibility(pair.Key, pair.Value);
+            PlanImages.ShowStructures = previous.PlanImages.ShowStructures;
+            PlanImages.ShowDose = previous.PlanImages.ShowDose;
+            PlanImages.FocusIsocenter = previous.PlanImages.FocusIsocenter;
+        }
 
         public ICommand ResetDvhCommand { get; private set; }
 
@@ -312,14 +433,7 @@ namespace ClearPlan.Presentation.ViewModels
 
         public void ResetDvhSelections()
         {
-            foreach (ReviewDvhSeriesViewModel series in DvhSeries)
-            {
-                series.IsSelected = series.IsInitiallySelected;
-            }
-
-            FilteredDvhSeries.Refresh();
-            OverviewPlotModel.InvalidatePlot(true);
-            DetailPlotModel.InvalidatePlot(true);
+            SetDvhSelections(series => series.IsInitiallySelected, true);
         }
 
         public void MarkStructureMappingApplied(
@@ -386,7 +500,7 @@ namespace ClearPlan.Presentation.ViewModels
             object sender,
             PropertyChangedEventArgs eventArgs)
         {
-            if (eventArgs.PropertyName != "IsSelected")
+            if (eventArgs.PropertyName != "IsSelected" || updatingDvhSelections)
             {
                 return;
             }
@@ -397,6 +511,9 @@ namespace ClearPlan.Presentation.ViewModels
             {
                 return;
             }
+
+            structureVisibility[series.StructureId] = series.IsSelected;
+            PlanImages.SetStructureVisibility(series.StructureId, series.IsSelected);
 
             ReviewPlotFactory.SetSeriesVisibility(
                 OverviewPlotModel,
@@ -445,11 +562,27 @@ namespace ClearPlan.Presentation.ViewModels
 
         private void SetAllDvhSelections(bool isSelected)
         {
-            foreach (ReviewDvhSeriesViewModel series in DvhSeries)
-            {
-                series.IsSelected = isSelected;
-            }
+            SetDvhSelections(series => isSelected || series.RequiredForTargetReview, false);
+        }
 
+        private void SetDvhSelections(
+            Func<ReviewDvhSeriesViewModel, bool> select,
+            bool resetAxes)
+        {
+            updatingDvhSelections = true;
+            try
+            {
+                foreach (ReviewDvhSeriesViewModel series in DvhSeries)
+                    series.IsSelected = select(series);
+            }
+            finally
+            {
+                updatingDvhSelections = false;
+            }
+            ReviewPlotFactory.SetSeriesVisibilities(OverviewPlotModel, DvhSeries, resetAxes);
+            ReviewPlotFactory.SetSeriesVisibilities(DetailPlotModel, DvhSeries, resetAxes);
+            foreach (var series in DvhSeries) structureVisibility[series.StructureId] = series.IsSelected;
+            PlanImages.SetStructureVisibilities(structureVisibility);
             FilteredDvhSeries.Refresh();
         }
 
@@ -483,6 +616,8 @@ namespace ClearPlan.Presentation.ViewModels
     public static class ReviewWorkspaceActionCodes
     {
         public const string Report = "report";
+        public const string HtmlReport = "html-report";
+        public const string AriaUpload = "aria-upload";
         public const string OpenPlan = "open-plan";
         public const string ResetDvh = "reset-dvh";
         public const string ExportDvh = "export-dvh";
@@ -631,6 +766,7 @@ namespace ClearPlan.Presentation.ViewModels
         public string SeverityText { get; private set; }
 
         public string Message { get; private set; }
+        public string DetailsText { get { return "Code " + CheckCode + " · " + Category + "\nBeobachtet: " + ObservedValue + "\nErwartet: " + ExpectedValue; } }
     }
 
     public sealed class ReviewFieldRowViewModel
@@ -691,7 +827,7 @@ namespace ClearPlan.Presentation.ViewModels
             AvailableStructureIds = new List<string>(
                 row.AvailableStructureIds ?? new List<string>());
             StatusCode = row.Status;
-            StatusText = ReviewDisplayText.Status(row.Status);
+            StatusText = MappingStatusText(row.Status);
             Message = ReviewDisplayText.ValueOrDash(row.Message);
         }
 
@@ -737,12 +873,19 @@ namespace ClearPlan.Presentation.ViewModels
         {
             SelectedStructureId = selectedStructureIdValue;
             StatusCode = ReviewStatusCodes.Pass;
-            StatusText = ReviewDisplayText.Status(
+            StatusText = MappingStatusText(
                 ReviewStatusCodes.Pass);
             Message = ReviewDisplayText.ValueOrDash(messageValue);
             OnPropertyChanged("StatusCode");
             OnPropertyChanged("StatusText");
             OnPropertyChanged("Message");
+        }
+
+        private static string MappingStatusText(string status)
+        {
+            if (status == ReviewStatusCodes.Pass) return "Zugeordnet";
+            if (status == ReviewStatusCodes.Variation) return "Mehrdeutig";
+            return "Nicht zugeordnet";
         }
 
         private void OnPropertyChanged(string propertyName)

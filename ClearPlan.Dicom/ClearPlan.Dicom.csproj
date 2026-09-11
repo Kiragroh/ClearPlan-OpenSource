@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <ProjectGuid>{D5E89003-5EB1-4A52-9954-C62949EAC902}</ProjectGuid>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>x64;AnyCPU</Platforms>
+    <OutputPath>..\artifacts\dicom\$(Configuration)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <RestoreSources>https://api.nuget.org/v3/index.json</RestoreSources>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>3.2.0.0</FileVersion>
+    <Version>3.2.0</Version>
+    <Deterministic>true</Deterministic>
+    <LangVersion>7.3</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="fo-dicom" Version="[5.2.6]" />
+    <Reference Include="Newtonsoft.Json"><HintPath>..\ClearPlan-DLLs\Newtonsoft.Json.dll</HintPath><Private>true</Private></Reference>
+    <ProjectReference Include="..\ClearPlan.Core\ClearPlan.Core.csproj" />
+  </ItemGroup>
+</Project>

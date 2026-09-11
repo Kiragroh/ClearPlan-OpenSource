@@ -1,0 +1,31 @@
+{
+  "SchemaVersion": 1,
+  "Profiles": [
+    {
+      "Id": "TrueBeam-HD120-PlanCheck-estimate",
+      "MachineModelNames": ["TDS"],
+      "MlcModels": ["Varian High Definition 120"],
+      "MaxGantrySpeedDegreesPerSecond": 6.0,
+      "Assumption": "TrueBeam reference profile selected from the exact ESAPI TDS + Varian High Definition 120 metadata combination. TDS is a technical model label, not a separate device family; HD120 alone does not uniquely identify a treatment unit. Speed remains the PlanCheck reference assumption of 6 deg/s, not measured or locally commissioned timing. Verify the installed system. Acceleration, MLC/jaw motion, ramping and holds are omitted."
+    },
+    {
+      "Id": "Halcyon-SX2-RapidArc-estimate",
+      "MachineModelNames": ["RDS"],
+      "MlcModels": ["SX2"],
+      "MaxGantrySpeedDegreesPerSecond": 12.0,
+      "Assumption": "Halcyon reference profile selected from the exact ESAPI RDS + SX2 dual-layer MLC metadata combination. RDS is retained as the technical model label, not presented as a separate device family. Illustrative RapidArc assumption: 2 rpm = 12 deg/s, not the 4 rpm mechanical maximum. Vendor describes RapidArc typically at 2 rpm: https://cancercare.siemens-healthineers.com/products/radiotherapy/treatment-delivery/halcyon . Verify installed machine/software locally. Both MLC layers, acceleration, ramping and holds are omitted."
+    },
+    {
+      "Id": "TrueBeam-PlanCheck-estimate",
+      "MachineModelNames": ["TrueBeam"],
+      "MaxGantrySpeedDegreesPerSecond": 6.0,
+      "Assumption": "PlanCheck reference assumption: 6 deg/s. Exact model match, not an inferred machine limit. Site verification required. Ignores acceleration, MLC/jaw motion, dose ramping and beam holds."
+    },
+    {
+      "Id": "Halcyon-RapidArc-estimate",
+      "MachineModelNames": ["Halcyon"],
+      "MaxGantrySpeedDegreesPerSecond": 12.0,
+      "Assumption": "Illustrative RapidArc assumption: 2 rpm = 12 deg/s, not the 4 rpm mechanical maximum. Vendor describes RapidArc delivery typically at 2 rpm: https://cancercare.siemens-healthineers.com/products/radiotherapy/treatment-delivery/halcyon . Verify installed machine/software locally; explicit MachineIds profiles can override. Ignores acceleration, both MLC layers, dose ramping and beam holds."
+    }
+  ]
+}

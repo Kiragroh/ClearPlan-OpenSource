@@ -11,6 +11,33 @@ namespace ClearPlan.Core.Constraints
             ConstraintSourceOptions options,
             string baseDirectory)
         {
+            ConstraintCatalogLoadResult result = LoadSource(options, baseDirectory);
+            ApplyAliases(result, options == null ? null : options.StructureAliasesJsonPath, baseDirectory);
+            return result;
+        }
+
+        public static void ApplyAliases(ConstraintCatalogLoadResult result, string configuredPath, string baseDirectory)
+        {
+            if (result == null || !result.IsUsable || string.IsNullOrWhiteSpace(configuredPath)) return;
+            try
+            {
+                string path = SettingsPathResolver.Resolve(baseDirectory, configuredPath);
+                // A runtime override must be an explicit alias document, never another constraint catalog.
+                IList<StructureDefinition> aliases = StructureAliasConfiguration.Deserialize(
+                    System.IO.File.ReadAllText(path, System.Text.Encoding.UTF8));
+                result.Catalog.Structures = StructureAliasConfiguration.Merge(result.Catalog.Structures, aliases);
+                result.Warnings.Add("Externe Struktur-Aliase aktiv: " + path);
+            }
+            catch (Exception exception)
+            {
+                result.Errors.Add("Struktur-Aliase nicht angewendet: " + exception.Message);
+            }
+        }
+
+        private static ConstraintCatalogLoadResult LoadSource(
+            ConstraintSourceOptions options,
+            string baseDirectory)
+        {
             var result = new ConstraintCatalogLoadResult();
             if (options == null)
             {

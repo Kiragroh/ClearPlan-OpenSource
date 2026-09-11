@@ -159,6 +159,9 @@ namespace ClearPlan.Core.Tests
 
         public static void DvhExportWritesALocalPng()
         {
+            // Match the simulator's headless WPF capture environment; otherwise
+            // RenderTargetBitmap can return an all-transparent PNG on CI sessions.
+            AppContext.SetSwitch("Switch.System.Windows.Media.ShouldRenderEvenWhenNoDisplayDevicesAreAvailable", true);
             ReviewSnapshot snapshot =
                 SyntheticScenarioFactory.Create("baseline-pass");
             var viewModel = new ReviewWorkspaceViewModel(snapshot);
@@ -172,8 +175,36 @@ namespace ClearPlan.Core.Tests
 
             try
             {
+                var model = viewModel.DetailPlotModel;
+                var lines = model.Series.OfType<LineSeries>().ToArray();
+                // Exercise the real GUI state: its native checkbox legend disables
+                // OxyPlot's internal legend, and an unselected curve stays unselected.
+                TestAssert.False(model.IsLegendVisible);
+                lines.Last().IsVisible = false;
+                var pointsBefore = lines.Select(line => line.Points.ToArray()).ToArray();
+                var visibleBefore = lines.Select(line => line.IsVisible).ToArray();
+                var legendBefore = lines.Select(line => line.RenderInLegend).ToArray();
+                string titleBefore = model.Title;
+                double legendFontBefore = model.LegendFontSize;
+                double titleFontBefore = model.TitleFontSize;
+                double legendWidthBefore = model.LegendMaxWidth;
+                var placementBefore = model.LegendPlacement;
+                var positionBefore = model.LegendPosition;
+                Directory.CreateDirectory(directory);
+                using (var lockedOutput = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    TestAssert.Throws<IOException>(() => new SyntheticDvhPngService().Export(model, outputPath));
+                    TestAssert.False(model.IsLegendVisible, "A failed export must restore GUI legend visibility.");
+                    TestAssert.Equal(titleBefore, model.Title, "A failed export must restore the GUI title.");
+                    TestAssert.Equal(legendFontBefore, model.LegendFontSize);
+                    TestAssert.Equal(titleFontBefore, model.TitleFontSize);
+                    TestAssert.Equal(legendWidthBefore, model.LegendMaxWidth);
+                    TestAssert.Equal(placementBefore, model.LegendPlacement);
+                    TestAssert.Equal(positionBefore, model.LegendPosition);
+                    TestAssert.True(legendBefore.SequenceEqual(lines.Select(line => line.RenderInLegend)));
+                }
                 string actual = new SyntheticDvhPngService().Export(
-                    viewModel.DetailPlotModel,
+                    model,
                     outputPath);
 
                 TestAssert.Equal(
@@ -185,6 +216,53 @@ namespace ClearPlan.Core.Tests
                 TestAssert.Equal(
                     "89504E470D0A1A0A",
                     BitConverter.ToString(header).Replace("-", ""));
+                using (var bitmap = new System.Drawing.Bitmap(actual))
+                {
+                    TestAssert.Equal(1400, bitmap.Width);
+                    TestAssert.Equal(800, bitmap.Height);
+                    var legendArea = model.LegendArea;
+                    TestAssert.True(legendArea.Width > 0 && legendArea.Height > 0 && legendArea.Left >= model.PlotArea.Right,
+                        "The exported legend must have its own right-side area outside the DVH axes.");
+                    TestAssert.True(model.PlotArea.Left >= 40 && model.PlotArea.Bottom <= bitmap.Height - 35,
+                        "Complete axis labels must fit inside the exported bitmap.");
+                    foreach (var line in lines)
+                    {
+                        int coloredLegendPixels = 0;
+                        for (int y = (int)Math.Ceiling(legendArea.Top); y < Math.Min(bitmap.Height, legendArea.Bottom); y++)
+                        for (int x = (int)Math.Ceiling(legendArea.Left); x < Math.Min(bitmap.Width, legendArea.Right); x++)
+                        {
+                            var pixel = bitmap.GetPixel(x, y);
+                            if (pixel.R == line.Color.R && pixel.G == line.Color.G && pixel.B == line.Color.B)
+                                coloredLegendPixels++;
+                        }
+                        if (line.IsVisible)
+                            TestAssert.True(coloredLegendPixels >= 8, "Exported DVH must identify every selected curve in its right-side legend: " + line.Title +
+                                "; key pixels=" + coloredLegendPixels + "; canvas=" + bitmap.GetPixel(0, 0) + "; legend=" + legendArea);
+                        else
+                            TestAssert.Equal(0, coloredLegendPixels, "Unselected curves must not appear in the export legend.");
+                    }
+                    int titlePixels = 0;
+                    for (int y = 10; y < 40; y++)
+                    for (int x = 230; x < 1100; x++)
+                    {
+                        var pixel = bitmap.GetPixel(x, y);
+                        if (pixel.R < 120 && pixel.G < 120 && pixel.B < 120) titlePixels++;
+                    }
+                    TestAssert.True(titlePixels > 200, "The exported bitmap needs its own visible synthetic-use notice, independent of GUI chrome.");
+                }
+                TestAssert.False(model.IsLegendVisible, "Export must restore the native GUI legend state.");
+                TestAssert.Equal(titleBefore, model.Title);
+                TestAssert.Equal(legendFontBefore, model.LegendFontSize);
+                TestAssert.Equal(titleFontBefore, model.TitleFontSize);
+                TestAssert.Equal(legendWidthBefore, model.LegendMaxWidth);
+                TestAssert.Equal(placementBefore, model.LegendPlacement);
+                TestAssert.Equal(positionBefore, model.LegendPosition);
+                for (int index = 0; index < lines.Length; index++)
+                {
+                    TestAssert.True(pointsBefore[index].SequenceEqual(lines[index].Points), "Export must not recalculate detached DVH samples.");
+                    TestAssert.Equal(visibleBefore[index], lines[index].IsVisible);
+                    TestAssert.Equal(legendBefore[index], lines[index].RenderInLegend);
+                }
             }
             finally
             {

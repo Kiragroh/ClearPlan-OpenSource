@@ -175,43 +175,43 @@ namespace ClearPlan.Core.Constraints
             };
 
             TryAssignInteger(
-                detail.FractionCountMinimum,
+                FirstPopulated(detail.FractionCountMinimum, summary.FractionCountMinimum),
                 value => table.FractionCountMinimum = value,
                 issues,
                 tableId,
                 "fx_min");
             TryAssignInteger(
-                detail.FractionCountMaximum,
+                FirstPopulated(detail.FractionCountMaximum, summary.FractionCountMaximum),
                 value => table.FractionCountMaximum = value,
                 issues,
                 tableId,
                 "fx_max");
             TryAssignDecimal(
-                detail.DosePerFractionMinimum,
+                FirstPopulated(detail.DosePerFractionMinimum, summary.DosePerFractionMinimum),
                 value => table.DosePerFractionMinimumGy = value,
                 issues,
                 tableId,
                 "dpf_min");
             TryAssignDecimal(
-                detail.DosePerFractionMaximum,
+                FirstPopulated(detail.DosePerFractionMaximum, summary.DosePerFractionMaximum),
                 value => table.DosePerFractionMaximumGy = value,
                 issues,
                 tableId,
                 "dpf_max");
             TryAssignDecimal(
-                detail.TotalDoseMinimum,
+                FirstPopulated(detail.TotalDoseMinimum, summary.TotalDoseMinimum),
                 value => table.TotalDoseMinimumGy = value,
                 issues,
                 tableId,
                 "td_min");
             TryAssignDecimal(
-                detail.TotalDoseMaximum,
+                FirstPopulated(detail.TotalDoseMaximum, summary.TotalDoseMaximum),
                 value => table.TotalDoseMaximumGy = value,
                 issues,
                 tableId,
                 "td_max");
 
-            foreach (string prescription in (detail.Prescriptions ?? new List<RefDbPrescriptionDto>())
+            foreach (string prescription in (detail.Prescriptions ?? summary.Prescriptions ?? new List<RefDbPrescriptionDto>())
                 .Where(item => item != null &&
                                (_includeInactivePrescription(item) ||
                                 string.Equals(item.Status, "active", StringComparison.OrdinalIgnoreCase)))
@@ -234,6 +234,14 @@ namespace ClearPlan.Core.Constraints
             }
 
             return table;
+        }
+
+        private static object FirstPopulated(object detail, object summary)
+        {
+            // RefDB exports may keep selection metadata in the summary only.
+            // Nonempty detail values remain authoritative, including numeric zero.
+            return detail == null || string.IsNullOrWhiteSpace(Convert.ToString(detail, CultureInfo.InvariantCulture))
+                ? summary : detail;
         }
 
         private static bool _includeInactivePrescription(RefDbPrescriptionDto item)

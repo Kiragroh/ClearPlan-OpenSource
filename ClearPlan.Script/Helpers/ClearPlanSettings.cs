@@ -66,6 +66,7 @@ namespace ClearPlan.Helpers
                 {
                     _constraintCatalogCache =
                         LoadConstraintCatalogWithNetworkBound();
+                    ApplyConfiguredAliases(_constraintCatalogCache);
                 }
 
                 return _constraintCatalogCache;
@@ -142,6 +143,42 @@ namespace ClearPlan.Helpers
             }
 
             return failure;
+        }
+
+        private void ApplyConfiguredAliases(ConstraintCatalogLoadResult result)
+        {
+            string configuredPath = ConstraintSource == null ? null : ConstraintSource.StructureAliasesJsonPath;
+            if (string.IsNullOrWhiteSpace(configuredPath) || !result.IsUsable) return;
+            if (!IsUncPath(ResolvePath(configuredPath)))
+            {
+                ConstraintCatalogService.ApplyAliases(result, configuredPath, BaseDirectory);
+                return;
+            }
+            // Work on a detached copy: a timed-out network read must never mutate the live catalog later.
+            string detachedJson = JsonConvert.SerializeObject(result);
+            var task = Task.Factory.StartNew(() =>
+            {
+                var copy = JsonConvert.DeserializeObject<ConstraintCatalogLoadResult>(detachedJson);
+                ConstraintCatalogService.ApplyAliases(copy, configuredPath, BaseDirectory);
+                return copy;
+            }, CancellationToken.None, TaskCreationOptions.DenyChildAttach, TaskScheduler.Default);
+            try
+            {
+                if (task.Wait(NetworkSourceTimeout))
+                {
+                    result.Catalog = task.Result.Catalog;
+                    result.Warnings = task.Result.Warnings;
+                    result.Errors = task.Result.Errors;
+                    return;
+                }
+            }
+            catch (AggregateException exception)
+            {
+                result.Errors.Add("Struktur-Aliase nicht angewendet: " + exception.GetBaseException().Message);
+                return;
+            }
+            result.Errors.Add("Struktur-Aliase nicht angewendet: Netzwerkdatei nicht rechtzeitig erreichbar.");
+            task.ContinueWith(completed => { var ignored = completed.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         private ConstraintCatalogLoadResult LoadConfiguredSource(
@@ -400,18 +437,28 @@ namespace ClearPlan.Helpers
 
             ConstraintSource.ExcelWorkbookPath = DefaultIfBlank(
                 ConstraintSource.ExcelWorkbookPath,
-                Path.Combine("ConstraintTemplates", "ClearPlan_DefaultConstraints.xlsx"));
+                Path.Combine("ConstraintTemplates", "ClearPlan_StockConstraints2024.xlsx"));
             ConstraintSource.RefDbJsonPath = ConstraintSource.RefDbJsonPath ?? string.Empty;
+            ConstraintSource.StructureAliasesJsonPath = ConstraintSource.StructureAliasesJsonPath ?? string.Empty;
+            Paths.MlcGeometryProfilesJsonPath = DefaultIfBlank(Paths.MlcGeometryProfilesJsonPath,
+                Path.Combine("MachineGeometry", "MlcGeometryProfiles.example.json"));
+            // An explicitly blank path disables dose-rate estimation; older settings receive the example.
+            Paths.DoseRateProfilesJsonPath = Paths.DoseRateProfilesJsonPath ??
+                Path.Combine("MachineGeometry", "DoseRateProfiles.example.json");
+            Paths.AriaUploadConfigJsonPath = Paths.AriaUploadConfigJsonPath ?? string.Empty;
+            // Null means an older configuration. An explicitly blank path disables Default rules.
+            Paths.DefaultReviewRulesJsonPath = Paths.DefaultReviewRulesJsonPath ?? "DefaultReviewRules.json";
+            Paths.FieldNamingRulesJsonPath = Paths.FieldNamingRulesJsonPath ?? "FieldNamingRules.json";
 
             Paths.ConstraintTemplatesDirectory = DefaultIfBlank(
                 Paths.ConstraintTemplatesDirectory,
                 "ConstraintTemplates");
             Paths.DefaultConventionalTemplate = DefaultIfBlank(
                 Paths.DefaultConventionalTemplate,
-                "ClearPlan_DefaultConstraints.xlsx");
+                "ClearPlan_StockConstraints2024.xlsx");
             Paths.DefaultHypofractionatedTemplate = DefaultIfBlank(
                 Paths.DefaultHypofractionatedTemplate,
-                "ClearPlan_DefaultConstraints.xlsx");
+                "ClearPlan_StockConstraints2024.xlsx");
             Paths.DefaultPlanSumTemplate = DefaultIfBlank(
                 Paths.DefaultPlanSumTemplate,
                 "ClearPlan_DefaultConstraints.xlsx");
@@ -419,6 +466,7 @@ namespace ClearPlan.Helpers
             Paths.ReportsDirectory = DefaultIfBlank(Paths.ReportsDirectory, "Reports");
             Paths.CsvExportDirectory = DefaultIfBlank(Paths.CsvExportDirectory, "Exports");
             Paths.StateDirectory = DefaultIfBlank(Paths.StateDirectory, "State");
+            Paths.ConfigurationDirectory = DefaultIfBlank(Paths.ConfigurationDirectory, "Configuration");
             Paths.UsageLogFile = DefaultIfBlank(
                 Paths.UsageLogFile,
                 Path.Combine("Logs", "ClearPlan_UserLog.csv"));

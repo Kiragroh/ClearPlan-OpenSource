@@ -1,8 +1,11 @@
 [CmdletBinding()]
 param(
     [string]$Root = "",
-    [string]$Version = "3.1.0",
-    [string]$OutputDirectory
+    [string]$Version = "3.2.0",
+    [string]$OutputDirectory,
+    [switch]$Preview,
+    [string]$PythonExecutable = "python",
+    [string]$ExecutionEvidencePath = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,7 +22,9 @@ New-Item -ItemType Directory -Path $resolvedOutput -Force | Out-Null
 & (Join-Path $PSScriptRoot "validate-release-version.ps1") `
     -Root $resolvedRoot `
     -ExpectedVersion $Version `
-    -PublicBinariesOnly
+    -PublicBinariesOnly `
+    -ExecutionEvidencePath $ExecutionEvidencePath `
+    -DevelopmentPreview:$Preview
 
 & (Join-Path $PSScriptRoot "validate-vendor-free-assemblies.ps1") `
     -Root $resolvedRoot
@@ -32,6 +37,7 @@ $simulatorDirectory = Join-Path `
 $requiredRuntimeFiles = @(
     "ClearPlan.Simulator.exe",
     "ClearPlan.Core.dll",
+    "ClearPlan.Rendering.dll",
     "ClearPlan.Presentation.dll",
     "ClearPlan.Reporting.dll",
     "ClearPlan.Reporting.MigraDoc.dll",
@@ -80,6 +86,7 @@ if (-not $stageRoot.StartsWith(
 }
 
 $archiveName = "ClearPlan-Simulator-v$Version-win-x64.zip"
+if ($Preview) { $archiveName = "ClearPlan-Simulator-v$Version-development-preview-win-x64.zip" }
 $archivePath = Join-Path $resolvedOutput $archiveName
 $hashPath = $archivePath + ".sha256"
 
@@ -117,7 +124,12 @@ try {
             -Destination (Join-Path $stageRoot $relativePath)
     }
 
-    & python `
+    if ($Preview) {
+        Copy-Item -LiteralPath (Join-Path $resolvedRoot "docs\releases\v$Version.md") `
+            -Destination (Join-Path $stageRoot 'START-HERE.md')
+    }
+
+    & $PythonExecutable `
         (Join-Path $PSScriptRoot "create-deterministic-zip.py") `
         --source $stageRoot `
         --output $archivePath

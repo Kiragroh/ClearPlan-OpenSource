@@ -236,10 +236,23 @@
     <Compile Include="ViewModels\FieldNamePreviewViewModel.cs" />
     <Compile Include="ViewModels\ConstraintSourceStatusViewModel.cs" />
     <Compile Include="ViewModels\SettingsViewModel.cs" />
+    <Compile Include="ViewModels\ConfigurationWorkspaceViewModel.cs" />
+    <Compile Include="ViewModels\ConfigurationContentValidator.cs" />
+    <Compile Include="Views\ConfigurationWorkspaceView.xaml.cs"><DependentUpon>ConfigurationWorkspaceView.xaml</DependentUpon></Compile>
     <Compile Include="ViewModels\OverviewViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Review\ClinicalReviewWorkspaceHost.cs" />
     <Compile Include="Review\EsapiReviewSnapshotBuilder.cs" />
+    <Compile Include="Review\EsapiPlanAnalysisBuilder.cs" />
+    <Compile Include="Review\EsapiTargetQualityBuilder.cs" />
+    <Compile Include="Review\EsapiBevBuilder.cs" />
+    <Compile Include="Review\EsapiNativeGeometryFingerprint.cs" />
+    <Compile Include="Review\EsapiNativeMlcAdapter.cs" />
+    <Compile Include="Review\EsapiPlanImageBuilder.cs" />
+    <Compile Include="Review\EsapiClinicalGoalBuilder.cs" />
+    <Compile Include="Review\EsapiTargetReviewBuilder.cs" />
+    <Compile Include="Review\TargetContourContainment.cs" />
+    <Compile Include="Review\EsapiWarningsBuilder.cs" />
     <Compile Include="MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
     </Compile>
@@ -255,6 +268,7 @@
     <Compile Include="PlanSelectView.xaml.cs">
       <DependentUpon>PlanSelectView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="MainView.AriaUpload.cs" />
     <Compile Include="Views\SettingsView.xaml.cs">
       <DependentUpon>SettingsView.xaml</DependentUpon>
     </Compile>
@@ -276,6 +290,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\ConfigurationWorkspaceView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
     <Page Include="Styles\ClinicalBlueprint.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -294,6 +309,11 @@
       <TargetPath>settings.ini</TargetPath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Distribution\MachineGeometry\MlcGeometryProfiles.example.json"><TargetPath>MachineGeometry\MlcGeometryProfiles.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Distribution\MachineGeometry\DoseRateProfiles.example.json"><TargetPath>MachineGeometry\DoseRateProfiles.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Distribution\DefaultReviewRules.json"><TargetPath>DefaultReviewRules.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Distribution\AriaUpload.example.json"><TargetPath>AriaUpload.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Distribution\FieldNamingRules.json"><TargetPath>FieldNamingRules.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\CHANGELOG.md">
       <TargetPath>CHANGELOG.md</TargetPath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -306,8 +326,20 @@
       <TargetPath>ConstraintTemplates\ClearPlan_DefaultConstraints.xlsx</TargetPath>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Distribution\ConstraintTemplates\ClearPlan_StockConstraints2024.xlsx">
+      <TargetPath>ConstraintTemplates\ClearPlan_StockConstraints2024.xlsx</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Distribution\ConstraintTemplates\TG263_StructureAliases.example.json">
+      <TargetPath>ConstraintTemplates\TG263_StructureAliases.example.json</TargetPath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ClearPlan.Dicom\ClearPlan.Dicom.csproj">
+      <Project>{D5E89003-5EB1-4A52-9954-C62949EAC902}</Project>
+      <Name>ClearPlan.Dicom</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ClearPlan.Core\ClearPlan.Core.csproj">
       <Project>{3715B5CB-1DD0-4129-8CFD-662EF928043D}</Project>
       <Name>ClearPlan.Core</Name>
@@ -354,4 +386,5 @@
     <Resource Include="Resources\bolus.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\tools\CopyDicomRuntime.targets" />
 </Project>

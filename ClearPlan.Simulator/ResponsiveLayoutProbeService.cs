@@ -6,6 +6,8 @@ using System.Web.Script.Serialization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using ClearPlan.Presentation.Views;
 
 namespace ClearPlan.Simulator
@@ -65,9 +67,15 @@ namespace ClearPlan.Simulator
                 FindRequiredTemplateElement<FrameworkElement>(
                     navigation,
                     "NavigationSourceStatusText");
-            var dvhScroller = FindRequiredElement<ScrollViewer>(
+            var dvhContent = FindRequiredElement<Grid>(
                 workspace,
-                "DvhOverflowScrollViewer");
+                "DvhContentGrid");
+            var dvhStructurePanel = FindRequiredElement<FrameworkElement>(
+                workspace,
+                "DvhStructurePanel");
+            var dvhPlot = FindRequiredElement<FrameworkElement>(
+                workspace,
+                "DvhDetailPlot");
 
             Rect workspaceBounds = GetBounds(
                 workspace,
@@ -111,11 +119,37 @@ namespace ClearPlan.Simulator
                     workspaceBounds,
                     footerBounds,
                     sourceStatusBounds,
-                    dvhScroller,
+                    dvhContent,
+                    dvhStructurePanel,
+                    dvhPlot,
                     workspaceFitsViewport,
                     footerFullyVisible,
                     sourceStatusFullyVisible),
                 new UTF8Encoding(false));
+
+            // Capture the new scrolling review surfaces at the real requested
+            // workstation size, not the fixed publication capture canvas.
+            foreach (string tab in new[] { "parameters", "comparison", "bev" })
+            {
+                VisualCaptureService.SelectTab(workspace, tab);
+                var model = workspace.DataContext as ClearPlan.Presentation.ViewModels.ReviewWorkspaceViewModel;
+                if (tab == "bev" && model != null) await model.Analysis.ActivateBevAsync();
+                if (tab == "comparison" && model != null && model.IsSynthetic && !model.Comparison.HasReference)
+                    model.Comparison.LoadExampleCommand.Execute(null);
+                captureRoot.UpdateLayout();
+                await WaitForDispatcherAsync(window.Dispatcher, DispatcherPriority.ApplicationIdle);
+                captureRoot.UpdateLayout();
+                var bitmap = new RenderTargetBitmap(
+                    (int)Math.Ceiling(captureRoot.ActualWidth), (int)Math.Ceiling(captureRoot.ActualHeight),
+                    96.0, 96.0, PixelFormats.Pbgra32);
+                bitmap.Render(captureRoot);
+                CapturePixelValidator.AssertNonBlank(bitmap);
+                var encoder = new PngBitmapEncoder();
+                encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                using (var stream = File.Create(Path.Combine(directory,
+                    Path.GetFileNameWithoutExtension(fullPath) + "-" + tab + ".png")))
+                    encoder.Save(stream);
+            }
         }
 
         private static T FindRequiredElement<T>(
@@ -197,7 +231,9 @@ namespace ClearPlan.Simulator
             Rect workspaceBounds,
             Rect footerBounds,
             Rect sourceStatusBounds,
-            ScrollViewer dvhScroller,
+            FrameworkElement dvhContent,
+            FrameworkElement dvhStructurePanel,
+            FrameworkElement dvhPlot,
             bool workspaceFitsViewport,
             bool footerFullyVisible,
             bool sourceStatusFullyVisible)
@@ -221,16 +257,13 @@ namespace ClearPlan.Simulator
                 sourceStatusHeight = sourceStatusBounds.Height,
                 sourceStatusBottom = sourceStatusBounds.Bottom,
                 sourceStatusFullyVisible,
-                dvhViewportWidth = dvhScroller.ViewportWidth,
-                dvhViewportHeight = dvhScroller.ViewportHeight,
-                dvhExtentWidth = dvhScroller.ExtentWidth,
-                dvhExtentHeight = dvhScroller.ExtentHeight,
-                dvhScrollableWidth = dvhScroller.ScrollableWidth,
-                dvhScrollableHeight = dvhScroller.ScrollableHeight,
-                dvhHorizontalOverflowAvailable =
-                    dvhScroller.ScrollableWidth > VisibilityTolerance,
-                dvhVerticalOverflowAvailable =
-                    dvhScroller.ScrollableHeight > VisibilityTolerance
+                dvhContentWidth = dvhContent.ActualWidth,
+                dvhContentHeight = dvhContent.ActualHeight,
+                dvhStructurePanelWidth = dvhStructurePanel.ActualWidth,
+                dvhPlotWidth = dvhPlot.ActualWidth,
+                dvhPlotHeight = dvhPlot.ActualHeight,
+                dvhHorizontalOverflowAvailable = false,
+                dvhVerticalOverflowAvailable = false
             };
             return new JavaScriptSerializer().Serialize(result);
         }

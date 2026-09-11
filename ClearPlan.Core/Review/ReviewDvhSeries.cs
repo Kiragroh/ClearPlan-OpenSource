@@ -39,6 +39,29 @@ namespace ClearPlan.Core.Review
         [JsonProperty("points", Order = 8)]
         public List<ReviewDvhPoint> Points { get; set; }
 
+        // Native TPS statistics, captured in Gy independently of the plotted bins.
+        // Older/curve-only snapshots leave these null; zero is a valid dose value.
+        [JsonProperty("minimumDoseGy", Order = 9)]
+        public double? MinimumDoseGy { get; set; }
+
+        [JsonProperty("meanDoseGy", Order = 10)]
+        public double? MeanDoseGy { get; set; }
+
+        [JsonProperty("maximumDoseGy", Order = 11)]
+        public double? MaximumDoseGy { get; set; }
+
+        [JsonProperty("targetKind", Order = 12, DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string TargetKind { get; set; }
+
+        [JsonProperty("requiredForTargetReview", Order = 13, DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool RequiredForTargetReview { get; set; }
+
+        [JsonProperty("targetSelectionReason", Order = 14, DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public string TargetSelectionReason { get; set; }
+
+        [JsonProperty("d98DoseGy", Order = 15, DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public double? D98DoseGy { get; set; }
+
         [OnDeserialized]
         internal void RestoreOptionalCollections(StreamingContext context)
         {

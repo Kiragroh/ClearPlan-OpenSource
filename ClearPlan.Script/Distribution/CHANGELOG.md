@@ -1,5 +1,14 @@
 # Changelog
 
+## [3.2.0.0] Integrated plan analysis and publication fixtures (unreleased candidate)
+- Expanded the read-only review with target-specific PAM, physical single-/jawless dual-layer MLC geometry, Paddick CI and reciprocal, GI/HI, total MU and distinctly labeled estimated dose-rate trajectories. Automatic PAM compares eligible PTVs without changing TPS assignments.
+- Added three-plane CT dose/structure overlays, optional field-start BEV/DRR report panels, compact single-plan PDF and offline HTML quicklook, separate comparison-plan selection and shared structure visibility.
+- Improved focused DVH sizing, outside legends, hover contrast and reset behavior; unmatched rows are hidden by default but remain editable in structure mapping.
+- Added versioned settings/configuration history for aliases, default constraints, field nomenclature, target rules and enabled checks, with safe restore-as-new-revision and explicit missing/ambiguous states.
+- Added two patient-free publication fixtures using coherent analytic phantom definitions, while retaining the original seven scenarios and ESAPI manuscript sandbox. Phantom dose is not calculated from apertures and does not establish physical or clinical validation.
+- Added optional, disabled-by-default ARIA report-document upload with patient/provider binding, durable audit receipts and verification; treatment-plan inspection remains read-only.
+- Expanded portable regression coverage and release evidence collection to record actual executions, tested-input hashes and explicit stock-source skips. Final release, manuscript and clinical-commissioning gates remain pending; no test-count claim is inferred from registrations.
+
 ## [3.1.0.0] Simulator-backed technical-note release (GitHub v3.1.0)
 - Added the standalone, vendor-free ClearPlan Simulator with seven deterministic synthetic scenarios, watermarked PDF reports, DVH export, reproducible captures, and no clinical source data.
 - Added the versioned neutral `ReviewSnapshot` contract shared by the simulator and the read-only Eclipse/ESAPI host.

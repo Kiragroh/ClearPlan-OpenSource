@@ -1,7 +1,8 @@
 [CmdletBinding()]
 param(
     [string]$Root = "",
-    [string]$TestExecutable
+    [string]$TestExecutable,
+    [string]$PythonExecutable = "python"
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,7 +23,7 @@ $outputDirectory = Join-Path $resolvedRoot "artifacts\raystation-contract"
 $outputPath = Join-Path $outputDirectory "fake-context-review.json"
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 
-& python `
+& $PythonExecutable `
     (Join-Path `
         $resolvedRoot `
         "examples\raystation\tests\export_contract_fixture.py") `

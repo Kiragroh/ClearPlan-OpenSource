@@ -83,6 +83,7 @@ namespace ClearPlan.Core.Simulation
                 UsesFieldAndMappingFindings(scenarioId));
             snapshot.StructureMappings = CreateMappings(
                 UsesFieldAndMappingFindings(scenarioId));
+            AddPlanAnalysis(snapshot);
 
             if (UsesOptionalFallback(scenarioId))
             {
@@ -101,6 +102,41 @@ namespace ClearPlan.Core.Simulation
             }
 
             return snapshot;
+        }
+
+        public static void AddPlanAnalysis(ReviewSnapshot snapshot)
+        {
+            if (snapshot == null || !snapshot.Synthetic)
+                throw new ArgumentException("Only explicitly synthetic snapshots can receive illustrative plan geometry.");
+            snapshot.PlanAnalysis = PlanAnalysis.SyntheticPlanAnalysisFactory.Create(
+                snapshot.ScenarioId == "mixed-review", snapshot.ScenarioId != "baseline-pass");
+            snapshot.PlanAnalysis.TargetStructureId = "PTV_60";
+            var target = snapshot.DvhSeries.FirstOrDefault(s => s.StructureId == "PTV_60");
+            var body = snapshot.DvhSeries.FirstOrDefault(s => s.Role == ReviewDvhRoleCodes.External);
+            if (target != null)
+            {
+                var stats = ReviewDvhStatisticsCalculator.Calculate(target.Points);
+                var quality = PlanAnalysis.TargetQualityCalculator.Calculate(target.StructureId, 60, target.VolumeCc,
+                    SyntheticVolumeAtDose(target, 60), SyntheticVolumeAtDose(body, 60), SyntheticVolumeAtDose(body, 30), stats.D2Gy, stats.D98Gy);
+                quality.BodyStructureId = body == null ? null : body.StructureId;
+                snapshot.PlanAnalysis.TargetQuality.Add(quality);
+            }
+            snapshot.PlanAnalysis.TargetQualityNote = PlanAnalysis.TargetQualityCalculator.Definition +
+                " Synthetic: calculated from the displayed analytical target and External curves, not a physical dose calculation.";
+            snapshot.PlanAnalysis.GeometryProvenance += " The projected target is an illustrative ellipse; the analytical DVH is not a dose calculation from this aperture geometry.";
+        }
+
+        private static double? SyntheticVolumeAtDose(ReviewDvhSeries series, double doseGy)
+        {
+            if (series == null || !series.VolumeCc.HasValue) return null;
+            for (int i = 1; i < series.Points.Count; i++)
+            {
+                var a = series.Points[i - 1]; var b = series.Points[i];
+                if (doseGy >= a.DoseGy && doseGy <= b.DoseGy && b.DoseGy > a.DoseGy)
+                    return series.VolumeCc * (a.VolumePercent + (b.VolumePercent - a.VolumePercent) *
+                        (doseGy - a.DoseGy) / (b.DoseGy - a.DoseGy)) / 100;
+            }
+            return null;
         }
 
         private static ReviewSnapshot CreateBaseSnapshot(

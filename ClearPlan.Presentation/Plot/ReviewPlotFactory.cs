@@ -10,6 +10,13 @@ namespace ClearPlan.Presentation.Plot
 {
     public static class ReviewPlotFactory
     {
+        public static PlotController CreateHoverController()
+        {
+            var controller = new PlotController();
+            controller.BindMouseEnter(PlotCommands.HoverSnapTrack);
+            return controller;
+        }
+
         public static PlotModel Create(
             IEnumerable<ReviewDvhSeriesViewModel> source)
         {
@@ -29,9 +36,10 @@ namespace ClearPlan.Presentation.Plot
                 PlotAreaBorderColor = OxyColor.Parse("#CBD5E1"),
                 PlotAreaBorderThickness = new OxyThickness(1),
                 IsLegendVisible = true,
-                LegendPlacement = LegendPlacement.Inside,
+                LegendPlacement = LegendPlacement.Outside,
                 LegendPosition = LegendPosition.RightTop,
                 LegendOrientation = LegendOrientation.Vertical,
+                LegendMaxWidth = 220,
                 LegendBackground = OxyColor.FromAColor(
                     224,
                     OxyColors.White),
@@ -113,6 +121,25 @@ namespace ClearPlan.Presentation.Plot
                 series.IsVisible = isVisible;
                 model.InvalidatePlot(false);
             }
+        }
+
+        public static void SetSeriesVisibilities(
+            PlotModel model,
+            IEnumerable<ReviewDvhSeriesViewModel> source,
+            bool resetAxes)
+        {
+            var selected = source.ToDictionary(row => row.StableId, row => row.IsSelected,
+                StringComparer.Ordinal);
+            foreach (Series series in model.Series)
+            {
+                bool isVisible;
+                if (selected.TryGetValue(Convert.ToString(series.Tag), out isVisible))
+                    series.IsVisible = isVisible;
+            }
+            if (resetAxes)
+                model.ResetAllAxes();
+            // Only visibility/viewport changed; the detached DVH points stay intact.
+            model.InvalidatePlot(false);
         }
 
         private static OxyColor ParseColor(string colorHex)

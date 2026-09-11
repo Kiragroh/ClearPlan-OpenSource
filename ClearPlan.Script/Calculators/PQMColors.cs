@@ -1,4 +1,5 @@
 using System;
+using ClearPlan.Core.Constraints;
 using System.Text.RegularExpressions;
 using System.Windows.Media;
 using VMS.TPS.Common.Model.API;
@@ -9,42 +10,33 @@ namespace ClearPlan.Calculators
     {
         public static Tuple<SolidColorBrush, double> GetAchievedColor(Structure structure, string goal, string DVHObjective, string Achieved)
         {
-            var achievedColor = new SolidColorBrush();
+            var achievedColor = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FFFFFF"));
             double achievedDouble;
             double achievedRatio = 0;
-            try
-            {
-                achievedColor = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FFA7F3A4")); //green
-                achievedDouble = Convert.ToDouble(Regex.Match(Achieved.ToString(), @"\d+").Value);
-            }
-            catch (FormatException)
-            {
-                achievedColor = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FFFFFF")); //white
-                achievedDouble = 0;
-            }
-            if (structure == null)
+            double goalDouble;
+            string comparator;
+            if (structure == null || !PqmNumericEvaluator.TryParseAchieved(Achieved, out achievedDouble) ||
+                !PqmNumericEvaluator.TryParseGoal(goal, out comparator, out goalDouble) ||
+                !PqmNumericEvaluator.TryGetGoalRatio(Achieved, goal, out achievedRatio))
             {
                 achievedColor = (SolidColorBrush)(new BrushConverter().ConvertFrom("#FFFFFF")); //white
                 achievedDouble = 0;
                 return Tuple.Create(achievedColor, achievedRatio);
             }          
-            achievedRatio = 0;
-            double goalDouble = Convert.ToDouble(Regex.Match(goal.ToString(), @"(\d+(\.\d+)?)|(\.\d+)").Value);
             if (goal.Contains("<"))  //D at V, V at D, serial tissue
             {
-                achievedRatio = Convert.ToInt64(achievedDouble / goalDouble * 100);
                 achievedColor = GetNormalTissueSolidColorBrush(achievedRatio);
             }
-            if (goal.Contains(">") && DVHObjective.ToString().Contains("CV"))  //CV parallel tissue
+            if (goal.Contains(">") && (DVHObjective ?? string.Empty).Contains("CV"))  //CV parallel tissue
             {
-                var structVol = structure.Volume;
-                achievedRatio = Convert.ToInt32((structVol - achievedDouble) / (structVol - goalDouble));
+                var outputUnit = Regex.Match(DVHObjective, @"\[(?<unit>%|cc)\]$").Groups["unit"].Value;
+                if (!PqmNumericEvaluator.TryGetComplementGoalRatio(Achieved, goal, structure.Volume, outputUnit, out achievedRatio))
+                    return Tuple.Create(achievedColor, 0.0);
                 achievedColor = GetNormalTissueSolidColorBrush(achievedRatio);
             }
 
             else if (goal.ToString().Contains(">")) //Target
             {
-                achievedRatio = Convert.ToDouble(achievedDouble / goalDouble * 100);
                 achievedColor = GetTargetSolidColorBrush(achievedRatio);
             }
             return Tuple.Create(achievedColor, achievedRatio);

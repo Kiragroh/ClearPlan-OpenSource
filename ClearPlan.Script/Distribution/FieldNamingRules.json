@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "enabled": true,
+  "arcOrder": ["angles", "table", "direction"],
+  "staticOrder": ["angles", "table"],
+  "partSeparator": " ",
+  "angleSeparator": "-",
+  "tablePrefix": "T",
+  "clockwiseToken": "UZ",
+  "counterClockwiseToken": "GUZ",
+  "staticDuplicateToken": "UZ"
+}

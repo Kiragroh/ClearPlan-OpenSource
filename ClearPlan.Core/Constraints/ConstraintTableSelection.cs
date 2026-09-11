@@ -11,6 +11,8 @@ namespace ClearPlan.Core.Constraints
 
         public ConstraintTableDefinition Table { get; set; }
         public int Score { get; set; }
+        public bool HasMatchingFractionScope { get; set; }
+        public int StructureHits { get; set; }
         public IList<string> Reasons { get; set; }
     }
 

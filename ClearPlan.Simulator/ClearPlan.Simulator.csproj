@@ -90,6 +90,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="CapturePixelValidator.cs" />
     <Compile Include="ResponsiveLayoutProbeService.cs" />
     <Compile Include="SimulatorArguments.cs" />
     <Compile Include="SimulatorOutputPaths.cs" />

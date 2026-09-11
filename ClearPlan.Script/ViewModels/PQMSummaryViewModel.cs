@@ -58,8 +58,11 @@ namespace ClearPlan
         public string Variation { get; set; }
         public string Priority { get; set; }
         public string Source { get; set; }
+        public string MappingDescription { get; set; }
         public string Comment { get; set; }
         public bool isCalculated { get; set; }
+        // Measurement remains available when the table/total-course scope needs review.
+        public bool EvaluationRequiresConfirmation { get; set; }
         public double AchievedPercentageOfGoal { get; set; }
         public string StructureName { get; set; }
         public string StructureNameWithCode { get; set; }
@@ -102,9 +105,16 @@ namespace ClearPlan
         {
             var evaluation = new PqmStructureEvaluation
             {
-                Structure = structure
+                Structure = structure,
+                StructureName = structure == null ? string.Empty : structure.StructureName,
+                StructureNameWithCode = structure == null ? string.Empty : structure.StructureNameWithCode,
+                StructVolume = structure == null ? string.Empty : structure.VolumeValue,
+                StructType = structure == null || structure.Structure == null ? string.Empty : structure.Structure.DicomType,
+                Achieved = string.Empty,
+                Met = string.Empty,
+                AchievedColor = new SolidColorBrush(Colors.Transparent)
             };
-            if (structure == null || Goal == null)
+            if (structure == null || Goal == null || ActivePlanningItem == null)
             {
                 return evaluation;
             }
@@ -116,11 +126,14 @@ namespace ClearPlan
                 ActivePlanningItem,
                 DVHObjective,
                 Variation);
-            string met = calculator.EvaluateMetric(
+            string met = Core.Constraints.PqmNumericEvaluator.EvaluateForConfirmedScope(
                 achieved,
                 Goal,
-                Variation);
-            var color = Calculators.PQMColors.GetAchievedColor(
+                Variation,
+                !EvaluationRequiresConfirmation);
+            var color = EvaluationRequiresConfirmation
+                ? Tuple.Create(new SolidColorBrush(Colors.Transparent), 0.0)
+                : Calculators.PQMColors.GetAchievedColor(
                 structure.Structure,
                 Goal,
                 DVHObjective,
@@ -147,23 +160,20 @@ namespace ClearPlan
             }
 
             _Structure = evaluation.Structure;
-            NotifyPropertyChanged("Structure");
-            NotifyPropertyChanged("MappedStructureDisplay");
-            if (!evaluation.HasCalculatedMetrics)
-            {
-                return;
-            }
-
+            isCalculated = evaluation.HasCalculatedMetrics;
             StructVolume = evaluation.StructVolume;
+            StructType = evaluation.StructType;
             Achieved = evaluation.Achieved;
             Met = evaluation.Met;
             StructureName = evaluation.StructureName;
             StructureNameWithCode =
                 evaluation.StructureNameWithCode;
             AchievedColor = evaluation.AchievedColor;
-            AchievedPercentageOfGoal =
-                evaluation.AchievedPercentageOfGoal;
+            AchievedPercentageOfGoal = evaluation.AchievedPercentageOfGoal;
+            NotifyPropertyChanged("Structure");
+            NotifyPropertyChanged("isCalculated");
             NotifyPropertyChanged("StructVolume");
+            NotifyPropertyChanged("StructType");
             NotifyPropertyChanged("Achieved");
             NotifyPropertyChanged("Met");
             NotifyPropertyChanged("StructureName");
@@ -178,8 +188,9 @@ namespace ClearPlan
             return new PqmStructureEvaluation
             {
                 Structure = _Structure,
-                HasCalculatedMetrics = true,
+                HasCalculatedMetrics = isCalculated,
                 StructVolume = StructVolume,
+                StructType = StructType,
                 Achieved = Achieved,
                 Met = Met,
                 StructureName = StructureName,
@@ -196,6 +207,7 @@ namespace ClearPlan
         public StructureViewModel Structure { get; set; }
         public bool HasCalculatedMetrics { get; set; }
         public string StructVolume { get; set; }
+        public string StructType { get; set; }
         public string Achieved { get; set; }
         public string Met { get; set; }
         public string StructureName { get; set; }

@@ -33,6 +33,7 @@ namespace ClearPlan.Core.Tests
                 "field-and-mapping",
                 arguments.ScenarioId);
             TestAssert.Equal("fields", arguments.TabId);
+            TestAssert.Equal("warnings", SimulatorArguments.Parse(new[] { "--tab", "warnings" }).TabId);
         }
 
         public static void ParsesSingleCapture()

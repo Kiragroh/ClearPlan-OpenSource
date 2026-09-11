@@ -1,0 +1,122 @@
+<UserControl x:Class="ClearPlan.Presentation.Views.PlanParametersView"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:oxy="http://oxyplot.org/wpf" FontFamily="Segoe UI" FontWeight="Normal" Foreground="{DynamicResource ClinicalBlueprintText}">
+ <!-- THESIS: Inspect delivery complexity alongside its evidence, not a pass/fail score.
+ OWN-WORLD: Existing slate navigation, paper-white plotting surfaces, teal traces, quiet hairlines.
+ STORY: Read plan totals, select a beam, inspect the control-point trace and metric definitions.
+ FIRST VIEWPORT: Plan summary strip; wide paired traces; field selector above and full-width beam table below.
+ FORM: Scoped extension of the established native WPF workspace; no concept seed required.
+ FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
+ <UserControl.Resources>
+  <ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../Styles/ClinicalBlueprint.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary>
+ </UserControl.Resources>
+ <ScrollViewer x:Name="ParameterScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+  <StackPanel Margin="24,22">
+   <DockPanel>
+    <Button Content="ESAPI-Geometrie aktualisieren" Command="{Binding ImportPlanDataCommand}" DockPanel.Dock="Right" Style="{StaticResource ClinicalBlueprintSecondaryButton}" ToolTip="Native ESAPI-Kontrollpunkte lesen und mit dem Maschinenprofil aus settings.ini zuordnen. Kein DICOM-Export; keine TPS-Änderungen." ToolTipService.ShowOnDisabled="True"/>
+    <Button x:Name="ShowParameterPlotsButton" Content="Dosisrate &amp; Apertur" Click="ShowParameterPlots" DockPanel.Dock="Right" Margin="0,0,10,0" Style="{StaticResource ClinicalBlueprintSecondaryButton}" ToolTip="Zum Kontrollpunktverlauf des ausgewählten Feldes springen."/>
+    <TextBlock Text="Planparameter" Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
+   </DockPanel>
+   <TextBlock Text="Modulation verstehen · Abgabeparameter prüfen · Werte nachvollziehen" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,5,0,20"/>
+   <TextBlock Text="PTV-Qualität · Konformität, Gradient &amp; Homogenität" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+   <TextBlock Text="Bezug: Planverschreibung, nicht automatisch die PTV-spezifische Dosis. GI umfasst das gesamte EXTERNAL."
+              TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,0,0,10"/>
+   <DataGrid x:Name="TargetQualityTable" ItemsSource="{Binding TargetQuality}" AutoGenerateColumns="False" IsReadOnly="True"
+             CanUserAddRows="False" MinHeight="72" MaxHeight="210" AutomationProperties.Name="PTV-Qualitätsmetriken, nur lesend">
+    <DataGrid.Columns>
+     <DataGridTextColumn Header="PTV" Binding="{Binding StructureId}" Width="*" MinWidth="130"/>
+     <DataGridTextColumn Header="Plan-Rx [Gy]" Binding="{Binding ReferenceDoseGy, StringFormat={}{0:0.##}, TargetNullValue=—}" Width="100"/>
+     <DataGridTextColumn Header="Paddick CI" Binding="{Binding PaddickCi, StringFormat={}{0:0.000}, TargetNullValue=—}" Width="95"/>
+     <DataGridTextColumn Header="1 / Paddick CI" Binding="{Binding PlanCheckCi, StringFormat={}{0:0.000}, TargetNullValue=—}" Width="115"/>
+     <DataGridTextColumn Header="GI · V50/V100" Binding="{Binding GradientIndex, StringFormat={}{0:0.000}, TargetNullValue=—}" Width="105"/>
+     <DataGridTextColumn Header="HI · (D2−D98)/Rx" Binding="{Binding HomogeneityIndex, StringFormat={}{0:0.000}, TargetNullValue=—}" Width="125"/>
+     <DataGridTextColumn Header="Verfügbarkeit" Binding="{Binding AvailabilityScope}" Width="*" MinWidth="110"/>
+    </DataGrid.Columns>
+   </DataGrid>
+   <Expander Header="Definitionen und Bezugsvolumen" Margin="0,8,0,20">
+    <TextBlock Text="{Binding TargetQualityNote}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,8,0,0"/>
+   </Expander>
+   <Border Background="White" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="0,1" Padding="18,14" Margin="0,0,0,20">
+    <UniformGrid Columns="4">
+     <StackPanel><TextBlock Text="Gesamt-MU" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{Binding TotalMuText}" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="Pro Fraktionsdosis" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{Binding MuPerGyText}" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="PAM · dimensionslos" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{Binding PamText}" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="Mittlere Apertur" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{Binding AreaText}" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+    </UniformGrid>
+   </Border>
+   <DockPanel x:Name="ParameterPlotsHeading" Margin="0,0,0,12">
+    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+     <TextBlock Text="Feld" VerticalAlignment="Center" Margin="0,0,10,0"/>
+     <ComboBox ItemsSource="{Binding Beams}" SelectedItem="{Binding SelectedBeam}" DisplayMemberPath="BeamId" MinWidth="140" Padding="8,5" AutomationProperties.Name="Feld für Kontrollpunktverlauf"/>
+    </StackPanel>
+    <StackPanel><TextBlock Text="Verlauf über die Kontrollpunkte" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="{Binding BeamText}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,4,14,0" TextWrapping="Wrap"/></StackPanel>
+   </DockPanel>
+   <Grid x:Name="ParameterPlots" Height="330">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+    <Border Background="White" Padding="10">
+      <StackPanel>
+       <TextBlock x:Name="NominalDoseRateValue" Text="{Binding NominalDoseRateText}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+       <TextBlock Text="{Binding DoseRateSummary}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" TextWrapping="Wrap" Margin="0,4,0,0" ToolTip="{Binding DoseRateText}"/>
+      </StackPanel>
+    </Border>
+    <Border Grid.Column="2" Background="White" Padding="10">
+     <StackPanel>
+      <TextBlock Text="Aperturfläche" FontWeight="SemiBold"/>
+      <TextBlock Text="Geometrie der gespeicherten Kontrollpunkte" Foreground="{StaticResource ClinicalBlueprintTextMuted}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+     </StackPanel>
+    </Border>
+    <Grid Grid.Row="1" Background="White" Margin="0,0,0,10">
+     <oxy:PlotView x:Name="DoseRatePlot" Model="{Binding DoseRatePlotModel}" Margin="10,0,10,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+      <oxy:PlotView.Style><Style TargetType="oxy:PlotView"><Style.Triggers>
+       <DataTrigger Binding="{Binding HasDoseRateTrace}" Value="False"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+      </Style.Triggers></Style></oxy:PlotView.Style>
+     </oxy:PlotView>
+     <Border x:Name="DoseRateUnavailable" Padding="24" VerticalAlignment="Stretch" ToolTip="{Binding DoseRateText}">
+      <Border.Style><Style TargetType="Border"><Style.Triggers>
+       <DataTrigger Binding="{Binding HasDoseRateTrace}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger>
+      </Style.Triggers></Style></Border.Style>
+      <StackPanel VerticalAlignment="Center">
+       <TextBlock Text="Dosisratenverlauf nicht verfügbar" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap"/>
+       <TextBlock Text="Kein gültiges Schätzprofil oder keine vollständigen Eingangsdaten. Der Feld-Sollwert ist kein Verlauf." Foreground="{StaticResource ClinicalBlueprintTextMuted}" TextWrapping="Wrap" Margin="0,10,0,0"/>
+      </StackPanel>
+     </Border>
+    </Grid>
+    <Border Grid.Row="1" Grid.Column="2" Background="White" Padding="10,0,10,10"><oxy:PlotView x:Name="AperturePlot" Model="{Binding AperturePlotModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/></Border>
+   </Grid>
+   <TextBlock Text="{Binding DoseRateProfileText}" ToolTip="{Binding DoseRateText}" Focusable="True" Foreground="{StaticResource ClinicalBlueprintTextMuted}" TextWrapping="Wrap" Margin="0,8,0,22"/>
+   <TextBlock Text="Behandlungsfelder" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+   <DataGrid ItemsSource="{Binding Beams}" SelectedItem="{Binding SelectedBeam}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="85" MaxHeight="240">
+    <DataGrid.Columns>
+     <DataGridTextColumn Header="Feld" Binding="{Binding BeamId}" Width="*"/>
+     <DataGridTextColumn Header="Gerät" Binding="{Binding MachineId}" Width="*"/>
+     <DataGridTextColumn Header="MLC" Binding="{Binding MlcModel}" Width="1.2*"/>
+     <DataGridTextColumn Header="Lagen" Binding="{Binding MlcLayerCount}" Width="65"/>
+     <DataGridTextColumn Header="MU" Binding="{Binding MetersetMu, StringFormat={}{0:0.0}, TargetNullValue=—}" Width="80"/>
+     <DataGridTextColumn Header="Nominal [MU/min]" Binding="{Binding NominalDoseRateMuPerMin, TargetNullValue=—}" Width="125"/>
+     <DataGridTextColumn Header="BAM" Binding="{Binding Pam, StringFormat={}{0:0.000}, TargetNullValue=—}" Width="70"/>
+     <DataGridTextColumn Header="Fläche [cm²]" Binding="{Binding MeanApertureAreaCm2, StringFormat={}{0:0.00}, TargetNullValue=—}" Width="100"/>
+     <DataGridTextColumn Header="Geometrie" Binding="{Binding GeometryReason}" Width="2*"/>
+    </DataGrid.Columns>
+   </DataGrid>
+   <Grid Margin="0,24,0,0">
+    <Grid.ColumnDefinitions><ColumnDefinition Width="1.5*"/><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+    <StackPanel>
+     <TextBlock Text="Metriken &amp; Definitionen" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+     <DataGrid ItemsSource="{Binding Metrics}" IsReadOnly="True" AutoGenerateColumns="False"><DataGrid.Columns>
+      <DataGridTextColumn Header="Metrik" Binding="{Binding Name}" Width="1.5*"/><DataGridTextColumn Header="Wert" Binding="{Binding ValueText}" Width="80"/><DataGridTextColumn Header="Einheit" Binding="{Binding Unit}" Width="65"/>
+      <DataGridTextColumn Header="Definition" Binding="{Binding Note}" Width="2*"/>
+     </DataGrid.Columns></DataGrid>
+    </StackPanel>
+    <StackPanel Grid.Column="2">
+     <TextBlock Text="PAM-Zielstruktur" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+     <DockPanel Margin="0,0,0,10"><Button Content="Berechnen" DockPanel.Dock="Right" Command="{Binding CalculateTargetCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="8,0,0,0"/><ComboBox ItemsSource="{Binding AvailableTargets}" SelectedItem="{Binding SelectedTargetStructureId}" Padding="7,4" AutomationProperties.Name="Zielstruktur für PAM"/></DockPanel>
+     <TextBlock Text="{Binding TargetText}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+     <TextBlock Text="{Binding MethodText}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+     <TextBlock Text="{Binding WarningText}" TextWrapping="Wrap" Foreground="#835509" Margin="0,12,0,0"/>
+    </StackPanel>
+   </Grid>
+  </StackPanel>
+ </ScrollViewer>
+</UserControl>

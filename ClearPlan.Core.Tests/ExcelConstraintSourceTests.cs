@@ -7,6 +7,34 @@ namespace ClearPlan.Core.Tests
 {
     internal static class ExcelConstraintSourceTests
     {
+        public static void StockCatalogLoadsAsConfirmableFallback()
+        {
+            string root = Directory.GetCurrentDirectory();
+            string relative = Path.Combine("ClearPlan.Script", "Distribution", "ConstraintTemplates", "ClearPlan_StockConstraints2024.xlsx");
+            var options = new ClearPlan.Core.Settings.ConstraintSourceOptions {
+                Mode = ConstraintSourceMode.Automatic,
+                ExcelWorkbookPath = relative
+            };
+            var loaded = new ConstraintCatalogService().Load(options, root);
+            TestAssert.True(loaded.IsUsable, string.Join("; ", loaded.Errors));
+            var catalog = loaded.Catalog;
+            TestAssert.Equal("Excel", catalog.SourceKind);
+            TestAssert.Equal(8, catalog.Tables.Count);
+            TestAssert.Equal(495, catalog.Tables.Sum(table => table.Constraints.Count));
+            TestAssert.True(catalog.Tables.All(table => table.RequiresConfirmation));
+            TestAssert.False(catalog.Issues.Any(issue => issue.IsFatal));
+            foreach (int fractions in new[] { 1, 3, 5, 8, 10, 15, 20 })
+            {
+                var selection = ConstraintTableSelector.Select(catalog.Tables, new PlanConstraintContext { FractionCount = fractions });
+                TestAssert.True(selection.RequiresConfirmation && selection.SelectedTable == null);
+            }
+            var cord = catalog.Structures.Single(row => row.CanonicalName == "SpinalCord");
+            TestAssert.False(cord.Aliases.Contains("Spinalkanal"));
+            TestAssert.False(catalog.Structures.Single(row => row.CanonicalName == "Lungs").Aliases.Contains("Lungs-PTV"));
+            options.RefDbJsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Fixtures", "refdb-minimal.json");
+            TestAssert.Equal("RefDB", new ConstraintCatalogService().Load(options, root).Catalog.SourceKind);
+        }
+
         public static void LoadsSharedStringsAndUnicode()
         {
             ConstraintCatalog catalog = new ExcelConstraintSource().Load(

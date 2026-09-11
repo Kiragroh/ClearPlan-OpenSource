@@ -9,7 +9,6 @@ namespace ClearPlan.Simulator
     {
         protected override void OnStartup(StartupEventArgs eventArgs)
         {
-            base.OnStartup(eventArgs);
             bool automatedModeRequested = (eventArgs.Args ?? new string[0]).Any(
                 value =>
                     value.Equals(
@@ -21,6 +20,16 @@ namespace ClearPlan.Simulator
                     value.Equals(
                         "--layout-probe",
                         StringComparison.OrdinalIgnoreCase));
+
+            // WPF otherwise silently returns transparent RenderTargetBitmaps when
+            // this short-lived capture process has no attached display device.
+            // This switch is process-local and capture-only: no registry, global
+            // rendering policy or interactive/clinical application is changed.
+            if (automatedModeRequested)
+                AppContext.SetSwitch(
+                    "Switch.System.Windows.Media.ShouldRenderEvenWhenNoDisplayDevicesAreAvailable",
+                    true);
+            base.OnStartup(eventArgs);
 
             try
             {

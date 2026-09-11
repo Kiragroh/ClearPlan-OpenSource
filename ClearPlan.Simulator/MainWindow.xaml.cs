@@ -19,7 +19,12 @@ namespace ClearPlan.Simulator
             "pqm",
             "plancheck",
             "fields",
-            "dvh"
+            "dvh",
+            "images",
+            "parameters",
+            "comparison",
+            "bev",
+            "warnings"
         };
 
         private readonly SimulatorScenarioRepository repository;
@@ -132,7 +137,10 @@ namespace ClearPlan.Simulator
         {
             ReviewSnapshot nextSnapshot = repository.Load(scenarioId);
             var nextViewModel = new ReviewWorkspaceViewModel(nextSnapshot);
+            if (workspaceViewModel != null)
+                nextViewModel.Comparison.SetReference(workspaceViewModel.Comparison.ReferenceSnapshot);
             nextViewModel.ReportRequested += OnReportRequested;
+            nextViewModel.HtmlReportRequested += OnHtmlReportRequested;
             nextViewModel.OpenPlanRequested += OnOpenPlanRequested;
             nextViewModel.DvhResetRequested += OnDvhResetRequested;
             nextViewModel.DvhExportRequested += OnDvhExportRequested;
@@ -142,6 +150,7 @@ namespace ClearPlan.Simulator
             if (workspaceViewModel != null)
             {
                 workspaceViewModel.ReportRequested -= OnReportRequested;
+                workspaceViewModel.HtmlReportRequested -= OnHtmlReportRequested;
                 workspaceViewModel.OpenPlanRequested -=
                     OnOpenPlanRequested;
                 workspaceViewModel.DvhResetRequested -=
@@ -198,7 +207,7 @@ namespace ClearPlan.Simulator
                 {
                     string report = reportService.Export(
                         snapshot,
-                        arguments.ReportPath);
+                        arguments.ReportPath, ApplyReportOptions);
                     SimulatorStatusText.Text =
                         "Report erstellt · " + Path.GetFileName(report);
                 }
@@ -225,7 +234,7 @@ namespace ClearPlan.Simulator
                     SynchronizeSnapshotDvhSelections();
                     reportService.Export(
                         snapshot,
-                        arguments.ReportPath);
+                        arguments.ReportPath, ApplyReportOptions);
                 }
                 return;
             }
@@ -257,7 +266,7 @@ namespace ClearPlan.Simulator
                         "clearplan-synthetic-report.pdf")
                     : arguments.ReportPath;
             SynchronizeSnapshotDvhSelections();
-            reportService.Export(snapshot, reportPath);
+            reportService.Export(snapshot, reportPath, ApplyReportOptions);
         }
 
         private void OnScenarioSelectionChanged(
@@ -296,6 +305,27 @@ namespace ClearPlan.Simulator
             }
         }
 
+        private void OnHtmlReportRequested(object sender, ReviewWorkspaceActionEventArgs eventArgs)
+        {
+            if (!ReferenceEquals(sender, workspaceViewModel) || snapshot == null || !snapshot.Synthetic) return;
+            try
+            {
+                var document = new ClearPlan.Reporting.ReviewSnapshotReportMapper().Map(snapshot);
+                ApplyReportOptions(document);
+                foreach (var series in document.DvhSeries)
+                {
+                    var selection = workspaceViewModel.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
+                    if (selection != null) series.Selected = selection.IsSelected;
+                }
+                string html = new ClearPlan.Reporting.MigraDoc.HtmlReviewReportRenderer().Render(document);
+                new ClearPlan.Presentation.Views.HtmlReportPreviewWindow(html, defaultReportDirectory) { Owner = this }.Show();
+            }
+            catch (Exception)
+            {
+                SimulatorStatusText.Text = "HTML-Quicklook konnte nicht erstellt werden. Die Szenarioansicht bleibt unverändert.";
+            }
+        }
+
         private void OnReportRequested(
             object sender,
             ReviewWorkspaceActionEventArgs eventArgs)
@@ -321,9 +351,9 @@ namespace ClearPlan.Simulator
                 SynchronizeSnapshotDvhSelections();
                 string path = reportService.Export(
                     snapshot,
-                    dialog.FileName);
+                    dialog.FileName, ApplyReportOptions);
                 SimulatorStatusText.Text =
-                    "Report erstellt · " + Path.GetFileName(path);
+                    "PDF und HTML-Report erstellt · " + Path.GetFileName(path);
             }
             catch (Exception exception)
             {
@@ -333,6 +363,13 @@ namespace ClearPlan.Simulator
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
             }
+        }
+
+        private void ApplyReportOptions(ClearPlan.Reporting.ReviewReportDocument document)
+        {
+            document.IncludeBeamEyeViews = workspaceViewModel.IncludeBeamEyeViews;
+            document.HideUnmatched = workspaceViewModel.HideUnmatched;
+            document.HiddenStructureIds = workspaceViewModel.HiddenStructureIds.ToList();
         }
 
         private void OnOpenPlanRequested(
@@ -553,6 +590,7 @@ namespace ClearPlan.Simulator
             }
 
             workspaceViewModel.ReportRequested -= OnReportRequested;
+            workspaceViewModel.HtmlReportRequested -= OnHtmlReportRequested;
             workspaceViewModel.OpenPlanRequested -= OnOpenPlanRequested;
             workspaceViewModel.DvhResetRequested -= OnDvhResetRequested;
             workspaceViewModel.DvhExportRequested -= OnDvhExportRequested;

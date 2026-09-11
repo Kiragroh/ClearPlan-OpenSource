@@ -8,7 +8,7 @@ namespace ClearPlan.Simulator
 {
     public sealed class SyntheticReportService
     {
-        public string Export(ReviewSnapshot snapshot, string outputPath)
+        public string Export(ReviewSnapshot snapshot, string outputPath, Action<ReviewReportDocument> configure = null)
         {
             if (snapshot == null)
             {
@@ -35,11 +35,15 @@ namespace ClearPlan.Simulator
             }
 
             Directory.CreateDirectory(parent);
+            if (snapshot.PlanImages == null || snapshot.PlanImages.Count == 0)
+                snapshot.PlanImages = Core.Simulation.SyntheticPlanImageFactory.Create(snapshot.ActivePlanKey);
             ReviewReportDocument document =
                 new ReviewSnapshotReportMapper().Map(snapshot);
             document.ModeLabel = SimulatorArguments.SafetyBanner;
             document.Watermark = SimulatorArguments.SafetyBanner;
+            if (configure != null) configure(document);
             new ReportPdf().Export(fullPath, document);
+            new HtmlReviewReportRenderer().ExportCompanion(fullPath, document);
             return fullPath;
         }
     }

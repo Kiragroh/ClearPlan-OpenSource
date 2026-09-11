@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace ClearPlan.Core.Review
 {
@@ -65,6 +66,7 @@ namespace ClearPlan.Core.Review
     public static class ReviewSnapshotValidator
     {
         private const double DvhTolerance = 1e-9;
+        private static readonly DefaultContractResolver PublicContractResolver = new DefaultContractResolver();
 
         private static readonly HashSet<string> AllowedStatuses =
             new HashSet<string>(
@@ -256,6 +258,7 @@ namespace ClearPlan.Core.Review
             ValidateDvhSeries(issues, dvhSeries);
             ValidateStructureReferences(issues, mappings, dvhSeries);
             ValidatePublishSafeText(issues, snapshot);
+            ValidateExtendedReview(issues, snapshot);
 
             return new ReviewSnapshotValidationResult(issues);
         }
@@ -538,6 +541,7 @@ namespace ClearPlan.Core.Review
             {
                 return;
             }
+            if (value is byte[]) return;
 
             string text = value as string;
             if (text != null)
@@ -563,41 +567,54 @@ namespace ClearPlan.Core.Review
             }
 
             Type valueType = value.GetType();
-            if (!string.Equals(
-                    valueType.Namespace,
-                    typeof(ReviewSnapshot).Namespace,
-                    StringComparison.Ordinal))
+            if (valueType.Namespace != typeof(ReviewSnapshot).Namespace &&
+                valueType.Namespace != typeof(PlanAnalysis.ReviewPlanAnalysis).Namespace)
             {
                 return;
             }
 
-            var serializedProperties = valueType
-                .GetProperties(BindingFlags.Instance | BindingFlags.Public)
-                .Select(property => new
-                {
-                    Property = property,
-                    Attribute = (JsonPropertyAttribute)Attribute.GetCustomAttribute(
-                        property,
-                        typeof(JsonPropertyAttribute))
-                })
-                .Where(item =>
-                    item.Property.CanRead &&
-                    item.Attribute != null)
-                .OrderBy(item => item.Attribute.Order)
-                .ThenBy(
-                    item => item.Attribute.PropertyName ?? item.Property.Name,
-                    StringComparer.Ordinal);
+            // Follow the actual JSON contract, including default opt-out DTOs,
+            // but never inspect deliberately ignored patient geometry/identifiers.
+            var contract = PublicContractResolver.ResolveContract(valueType) as JsonObjectContract;
+            if (contract == null) return;
+            var serializedProperties = contract.Properties.Where(item => item.Readable && !item.Ignored);
 
             foreach (var item in serializedProperties)
             {
-                string propertyName =
-                    string.IsNullOrWhiteSpace(item.Attribute.PropertyName)
-                        ? item.Property.Name
-                        : item.Attribute.PropertyName;
                 ValidatePublishSafeTextValue(
                     issues,
-                    item.Property.GetValue(value, null),
-                    path + "." + propertyName);
+                    item.ValueProvider.GetValue(value),
+                    path + "." + item.PropertyName);
+            }
+        }
+
+        private static void ValidateExtendedReview(IList<ReviewSnapshotValidationIssue> issues, ReviewSnapshot snapshot)
+        {
+            var analysis = snapshot.PlanAnalysis;
+            if (analysis != null)
+            {
+                foreach (double? value in new[] { analysis.TotalMetersetMu, analysis.MuPerGy, analysis.Pam,
+                    analysis.MeanApertureAreaCm2, analysis.SmallApertureFraction, analysis.PlanNormalizationPercent })
+                    if (value.HasValue && (!ReviewComparison.Finite(value) || value < 0))
+                        Add(issues, "analysis.numeric.invalid", "$.planAnalysis", "Plan metrics must be nonnegative finite numbers or unavailable.");
+                if (analysis.Pam > 1 || analysis.SmallApertureFraction > 1)
+                    Add(issues, "analysis.fraction.invalid", "$.planAnalysis", "Dimensionless modulation fractions must be in [0,1].");
+                foreach (var beam in analysis.Beams ?? new List<PlanAnalysis.ReviewBeamAnalysis>())
+                foreach (var cp in beam.ControlPoints ?? new List<PlanAnalysis.ReviewControlPointSample>())
+                    if (cp.BevImage != null && cp.BevImage.Synthetic != snapshot.Synthetic)
+                        Add(issues, "bev.mode.mismatch", "$.planAnalysis", "Clinical and synthetic BEV pixels must remain separate.");
+            }
+            foreach (var image in snapshot.PlanImages ?? new List<ReviewPlanImage>())
+            {
+                if (image == null) continue;
+                if (snapshot.Synthetic && !image.Synthetic)
+                    Add(issues, "image.synthetic.required", "$.planImages", "A synthetic snapshot cannot contain a clinical image.");
+                if (image.GrayscalePixels == null) continue;
+                if (image.WidthPixels <= 0 || image.HeightPixels <= 0 ||
+                    (long)image.WidthPixels * image.HeightPixels != image.GrayscalePixels.Length || image.GrayscalePixels.Length > 4194304 ||
+                    !ReviewComparison.Finite(image.PixelSpacingXMillimeters) || image.PixelSpacingXMillimeters <= 0 ||
+                    !ReviewComparison.Finite(image.PixelSpacingYMillimeters) || image.PixelSpacingYMillimeters <= 0)
+                    Add(issues, "image.geometry.invalid", "$.planImages", "Overview pixels require a bounded complete grid and positive physical spacing.");
             }
         }
 

@@ -4,9 +4,21 @@ ClearPlan is an open-source .NET Framework 4.8/ESAPI framework for read-only rad
 
 The public package is an institution-neutral baseline. Clinical constraint sets, paths, identifiers, and acceptance criteria remain local and require independent commissioning.
 
-> **Independent project:** ClearPlan is maintained independently and is not an official publication of any employer, healthcare provider, university, or software vendor. It is supplied without warranty and is not a certified medical device. See [DISCLAIMER.md](DISCLAIMER.md).
-
 ## What is included
+
+This tree targets **v3.2.0, currently an unpublished release candidate**. It adds
+target-specific PAM with physical single-/dual-layer MLC geometry, Paddick CI and
+its reciprocal, GI/HI, total MU, explicitly estimated dose-rate trajectories,
+plan comparison, shared structure visibility and a TG-263-oriented alias editor.
+The active-plan PDF and HTML quicklook include compact findings, three CT planes
+with dose/structure overlays and optional field-start BEV/DRR panels.
+See the [analysis method](docs/plan-analysis-method.md),
+[dose-rate limitations](docs/DOSE_RATE_ESTIMATE.md),
+[review controls](docs/review-controls/README.md) and
+[alias configuration](docs/STRUCTURE_ALIASES.md).
+These changes require final public-release evidence and local clinical
+commissioning; neither a version label nor a passing software test constitutes
+treatment approval. The technical-note manuscript remains in preparation.
 
 - `ClearPlan.Core`: ESAPI-independent constraint, settings, alias, table-selection, and field-naming logic
 - `ClearPlan.Presentation`: vendor-neutral shared WPF review workspace and DVH presentation
@@ -16,12 +28,13 @@ The public package is an institution-neutral baseline. Clinical constraint sets,
 - plan-context table selection with explicit confirmation for ambiguous results
 - a read-only, plan-aware field preview with separate ID/name status and explicit angle-table-UZ/GUZ ordering
 - a Clinical Blueprint interface with one integrated plan/PQM/PlanCheck/field/DVH review surface, a direct PDF report action, and complete detail/settings pages
-- a standalone vendor-free simulator with seven checked-in deterministic synthetic scenarios, wide DVH review, watermarked reports, and reproducible captures
+- a standalone vendor-free simulator with seven checked-in deterministic scenarios plus two generated publication phantoms, wide interactive DVHs, watermarked reports and reproducible captures
 - a versioned neutral review-snapshot contract shared by the simulator and the read-only Eclipse host
 - an illustrative, unvalidated RayStation snapshot adapter that withholds clinical pass/fail classifications unless semantic equivalence has been commissioned
-- an editable settings page for source and operational paths
-- a public workbook containing three example tables, 19 constraints, and seven structures
-- 125 C# executable tests, 20 RayStation example tests, simulator smoke tests, and release validation tools
+- editable settings for paths, aliases, constraints, field-name defaults, target rules and enabled checks, with author/time/hash history and restore-as-new-revision
+- an editable Stock 2024 workbook with eight fractionation tables, 495 OAR rules, 70 canonical structures, a review-only audit queue and traceable sources; the small original example workbook is retained
+- executable C# core/contract tests, separate synthetic DICOM and illustrative RayStation tests, stock parser/transcription checks, simulator smoke tests and release validators; executed counts and skips are recorded from each actual run
+- optional, explicitly configured ARIA report-document upload with patient/provider binding and audit receipts; disabled by default and separate from read-only treatment-plan inspection
 
 The open-source starter PlanCheck contains general examples. A clinical deployment can preserve its own complete `ErrorCalculator.cs`; the supplied deployment tooling explicitly excludes that file from replacement.
 
@@ -31,20 +44,30 @@ The simulator does not require Eclipse, ESAPI, a patient, or proprietary TPS
 assemblies. Build and start the integrated publication scenario:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-and-test.ps1 `
-  -Configuration Release -Platform x64
-artifacts\simulator\Release\ClearPlan.Simulator.exe --scenario mixed-review
+$msbuild = & .\tools\resolve-msbuild.ps1
+& $msbuild .\ClearPlan.sln /t:ClearPlan_Simulator /p:Configuration=Release /p:Platform=x64
+.\artifacts\simulator\Release\ClearPlan.Simulator.exe --scenario publication-single-layer
 ```
 
-The other scenario IDs are `baseline-pass`, `target-underdose`,
+Use `publication-dual-layer` for the jawless dual-layer example. Both publication
+fixtures use the same mathematical phantom definitions for CT overlays, DVHs,
+goals and target-quality metrics. Their dose is analytic, **not calculated from
+the MLC apertures**; this is not physical dosimetric validation.
+
+The original scenario IDs are `mixed-review`, `baseline-pass`, `target-underdose`,
 `oar-overdose`, `metadata-plancheck`, `field-and-mapping`, and
 `optional-path-fallback`. Every simulator window, capture, and report is marked
 `SYNTHETIC DEMONSTRATION — NOT FOR CLINICAL USE`.
 
+The public build requires Windows, .NET Framework 4.8 developer tools and MSBuild.
+The release checks additionally use Python with `openpyxl`; the separate optional
+DICOM project uses an SDK-style locked NuGet restore. No proprietary TPS assembly
+is required for the simulator or these synthetic tests.
+
 Run the complete deterministic UI/report smoke test with:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\test-simulator.ps1
+powershell -NoProfile -File tools\test-simulator.ps1
 ```
 
 ## Quick start: Eclipse/ESAPI mode
@@ -57,8 +80,8 @@ licensed Varian assemblies or a preconfigured clinical ruleset.
 2. Build the Eclipse workstation output:
 
    ```powershell
-   powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-and-test.ps1 `
-     -Configuration Debug -Platform x64
+   powershell -NoProfile -File tools\build-and-test.ps1 `
+     -Configuration Debug -Platform x64 -SkipPaperArtifacts
    ```
 
 3. Open `built\settings.ini` or use the `Einstellungen` page to edit paths.
@@ -67,6 +90,12 @@ licensed Varian assemblies or a preconfigured clinical ruleset.
 5. Save only after the catalog has validated successfully.
 6. Start `built\ClearPlan.Runner.exe` or load the built plugin in an
    ESAPI-capable environment.
+
+For patient-free screenshots inside the Eclipse/ESAPI window, select the
+session-only `Demodaten` switch in the ClearPlan header. The shared workspace
+then hides the clinical plan and constraint context and displays the
+watermarked deterministic `mixed-review` snapshot. Switching it off rebuilds
+the current read-only clinical snapshot; the setting is never persisted.
 
 Every file-system path is stored in `settings.ini`. Relative paths are resolved from the directory containing the active settings files, normally `built`. Absolute local or UNC paths are supported for clinical use. If an optional log, report, export, or state path is temporarily unavailable, ClearPlan uses a local directory under `built` instead of terminating the clinical UI.
 
@@ -93,7 +122,7 @@ The `[Paths]` section in `settings.ini` contains RefDB, Excel, templates, logs, 
 
 ## Public Excel schema
 
-The workbook `ClearPlan.Script\Distribution\ConstraintTemplates\ClearPlan_DefaultConstraints.xlsx` has three sheets:
+The default fallback is `ClearPlan.Script\Distribution\ConstraintTemplates\ClearPlan_StockConstraints2024.xlsx`. It contains eight current 2024 compilation tables (1/3/5/8/10/15/20 fractions and conventional), and safe TG-263-oriented glossary aliases. The three machine-readable sheets are:
 
 - `Structures`: canonical structure identity, code, DICOM type, laterality, aliases, and active status
 - `Tables`: table identity, display name, plan/PlanSum compatibility, fraction and dose ranges, site/regime hints, and active status
@@ -101,7 +130,9 @@ The workbook `ClearPlan.Script\Distribution\ConstraintTemplates\ClearPlan_Defaul
 
 Keep identifiers unique and relationships explicit. The validator rejects missing headers, duplicate identifiers, broken table/structure references, and invalid objective values. Do not merge cells or add presentation-only rows inside the data ranges.
 
-Validate the public workbook with:
+Stock tables have `requires_confirmation=true`: compatibility is a suggestion, not automatic clinical approval. The 318 non-executable source rules and 42 excluded alias cases stay visible in `ReviewRows`; `Sources` preserves reference codes and provenance. No institution-specific prescription links, target placeholders, cropped-organ equivalences or new acceptance thresholds are invented. Configure a local copy or use RefDB. See [stock maintenance and verification](tools/stock-catalog/README.md).
+
+The smaller original `ClearPlan_DefaultConstraints.xlsx` remains an example fixture; its existing validator is:
 
 ```powershell
 python tools\validate-constraint-workbook.py
@@ -150,7 +181,7 @@ The adapter contains no plan-modification, beam-renaming, setup-field, apply, or
 
 ## Integrated review surface
 
-`Gesamtansicht` shows the available plans, the complete PQM result list with the resolved structure visible in every row, PlanCheck findings, separate field-ID/name conformance, and the DVH in one vertically scrollable review. The focused pages remain available for PQM reassignment, reporting options, reference-point details, the full field comparison, DVH controls, and settings. DVH selections are shared through view-model state; overall and detail plots use separate synchronized OxyPlot models.
+`Gesamtansicht` shows the available plans, the complete PQM result list with the resolved structure visible in every row, PlanCheck findings, separate field-ID/name conformance, and the DVH in one vertically scrollable review. The focused pages remain available for PQM reassignment, reporting options, reference-point details, the full field comparison, DVH controls, and settings. DVH selections are shared through view-model state; overall and detail plots use separate synchronized OxyPlot models. The focused DVH page uses a bounded, resizable structure selector and gives the remaining finite width and height directly to the plot.
 
 ## Essentials runner presentation
 
@@ -163,7 +194,7 @@ scripting-capable TPS can populate the neutral snapshot boundary without
 writing to a treatment plan. It is intentionally conservative: unsupported
 semantics remain `not-evaluated`, output must be an explicit local path, and
 the example is not runtime-validated or clinically commissioned in RayStation.
-See `examples\raystation\README.md` and run its 20 tests with:
+See `examples\raystation\README.md` and run its tests with:
 
 ```powershell
 python -m unittest discover -s examples\raystation\tests -v
@@ -178,9 +209,11 @@ The public settings avoid direct patient and user identifiers in automatic logs 
 - `ClearPlan.Core`: source-independent logic
 - `ClearPlan.Core.Tests`: executable tests
 - `ClearPlan.Presentation`: shared snapshot-backed WPF presentation
+- `ClearPlan.Rendering`: shared CT/BEV image rendering
+- `ClearPlan.Dicom` and `ClearPlan.Dicom.Tests`: optional read-only RTPLAN enrichment and synthetic-file tests; not required by the simulator
 - `ClearPlan.Script`: ESAPI plugin, Clinical Blueprint UI, PlanCheck, and adapters
 - `ClearPlan.Reporting`: report data structures
-- `ClearPlan.Reporting.MigraDoc`: PDF rendering
+- `ClearPlan.Reporting.MigraDoc`: PDF and offline HTML quicklook rendering
 - `ClearPlan.Runner`: desktop launcher
 - `paper`: technical note and reproducible public-safe figures
 - `tools`: build, migration, release, PlanCheck guard, and deployment utilities
@@ -189,14 +222,14 @@ Distribution files are maintained in `ClearPlan.Script\Distribution` and copied 
 
 ## Validation
 
-Run the full local pipeline:
+For a locally configured, licensed ESAPI development environment:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-and-test.ps1
+powershell -NoProfile -File tools\build-and-test.ps1 -SkipPaperArtifacts
 ```
 
-It builds the requested `Debug|Release` x64 configuration, runs 125 C# tests
-and the 20 Python adapter tests, checks a Python-produced snapshot against the
+It builds the requested `Debug|Release` x64 configuration, runs the C# suite
+and Python adapter tests, checks a Python-produced snapshot against the
 C# contract validator, validates the workbook, scans the source and Office XML
 for private tokens, checks the shared workspace and network fallback
 contracts, and verifies the read-only field and adapter boundaries.
@@ -205,30 +238,55 @@ For a clean vendor-free checkout, build and package only the public simulator
 and its tests:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-public-release.ps1
+powershell -NoProfile -File tools\build-public-release.ps1
+# If Python is not on PATH, add: -PythonExecutable 'C:\path\python.exe'
 ```
 
-This public workflow also creates the ZIP twice and requires byte-identical
-SHA-256 hashes. See `docs\reproducibility.md`.
+The public workflow builds Core/Simulator and the separate locked DICOM project,
+then executes the C#, DICOM, RayStation and stock suites. Its current run receipt
+is `artifacts/public-release-test-evidence.json`, with actual passed counts,
+skipped tests/groups, timestamps and tested-input hashes. A clean public checkout
+does not contain the private stock-transcription intermediate: that test group
+is explicitly skipped, while parser tests and the distributed workbook's C#
+loader regression still execute. A skipped group is not counted as passed.
+
+The workflow also creates the ZIP twice and requires byte-identical SHA-256
+hashes. This proves deterministic packaging of one build, not reproducibility
+of independent clean builds. Final manuscript/figure review and remote release
+verification are separate gates. `-DevelopmentPreview` leaves manuscript gates
+pending; `-SkipSimulatorSmoke` explicitly skips UI/report verification. Neither
+option completes release verification. See `docs\reproducibility.md`.
+
+To refresh software evidence without changing the manuscript, after building:
+
+```powershell
+python tools\collect-paper-evidence.py --configuration Release --include-dicom `
+  --release-version 3.2.0 --output artifacts\technical-note-evidence.json
+```
+
+This collector executes the current suites. Test registrations are never used
+as a substitute for execution, and collected evidence does not claim that a tag,
+published asset or manuscript has been verified.
 
 Individual guards:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\validate-public-release.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\validate-ui-distinctiveness.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\validate-readonly-field-preview.ps1
+powershell -NoProfile -File tools\validate-public-release.ps1
+powershell -NoProfile -File tools\validate-ui-distinctiveness.ps1
+powershell -NoProfile -File tools\validate-readonly-field-preview.ps1
 ```
 
-These checks are implementation safeguards, not a substitute for clinical commissioning.
+Use a trusted checkout under your institution's execution/signature policy; do not disable that policy to run these commands. These checks are implementation safeguards, not a substitute for clinical commissioning.
 
 ## Community and publication
 
 - Use GitHub Issues for anonymized bugs, onboarding problems, and feature requests.
 - See `CONTRIBUTING.md` before changing sources, aliases, PlanCheck, or ESAPI adapters.
-- The reproducible technical note is in `paper\ClearPlan_ZMP_short_communication.md`.
+- The technical-note manuscript in preparation is in `paper\ClearPlan_ZMP_short_communication.md`.
 - A proposed, nonuniversal local transfer checklist is in
   `docs\local-commissioning-scaffold.md`.
-- Versioned software and simulator assets are published at
-  `https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.1.0`.
+- The intended release location is [v3.2.0](https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.2.0).
+  It is prospective until the release and its assets have been published and
+  independently verified; this README does not assert that those assets exist.
 
 ClearPlan is a framework; each institution remains responsible for its clinical rules, validation, deployment, and governance.

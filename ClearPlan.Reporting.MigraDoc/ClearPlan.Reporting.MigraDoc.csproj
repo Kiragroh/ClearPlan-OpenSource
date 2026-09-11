@@ -89,6 +89,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Internal\DVHstatsContent.cs" />
+    <Compile Include="Internal\ReviewImageRenderer.cs" />
     <Compile Include="Internal\HeaderAndFooter.cs" />
     <Compile Include="Internal\PatientInfo.cs" />
     <Compile Include="Internal\RefsContent.cs" />
@@ -97,6 +98,7 @@
     <Compile Include="Internal\SexSymbol.cs" />
     <Compile Include="Internal\Size.cs" />
     <Compile Include="ReportPdf.cs" />
+    <Compile Include="HtmlReviewReportRenderer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Internal\CustomStyles.cs" />
     <Compile Include="Internal\PQMsContent.cs" />
@@ -106,6 +108,11 @@
       <Project>{9bb0ce8d-91c4-4e54-9afa-eb8d9797e8ea}</Project>
       <Name>ClearPlan.Reporting</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Core\ClearPlan.Core.csproj">
+      <Project>{3715B5CB-1DD0-4129-8CFD-662EF928043D}</Project>
+      <Name>ClearPlan.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Rendering\ClearPlan.Rendering.csproj"><Project>{A8367D71-6B67-4A95-98F4-00C6E8D6BD09}</Project><Name>ClearPlan.Rendering</Name></ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\female-symbol.png" />

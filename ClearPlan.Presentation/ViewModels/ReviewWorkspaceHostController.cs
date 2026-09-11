@@ -13,10 +13,12 @@ namespace ClearPlan.Presentation.ViewModels
         private readonly Func<ReviewSnapshot> snapshotFactory;
         private readonly ReviewWorkspaceActionBindings bindings;
         private bool disposed;
+        private ReviewSnapshot comparisonReference;
 
         public ReviewWorkspaceHostController(
             Func<ReviewSnapshot> snapshotFactoryValue,
-            ReviewWorkspaceActionBindings bindingsValue)
+            ReviewWorkspaceActionBindings bindingsValue,
+            ReviewSnapshot comparisonReferenceValue = null)
         {
             if (snapshotFactoryValue == null)
             {
@@ -25,9 +27,13 @@ namespace ClearPlan.Presentation.ViewModels
 
             snapshotFactory = snapshotFactoryValue;
             bindings = bindingsValue ?? new ReviewWorkspaceActionBindings();
+            comparisonReference = comparisonReferenceValue == null ? null :
+                ReviewSnapshotJson.Deserialize(ReviewSnapshotJson.Serialize(comparisonReferenceValue));
         }
 
         public ReviewWorkspaceViewModel CurrentViewModel { get; private set; }
+
+        public ReviewSnapshot CurrentSnapshot { get; private set; }
 
         public bool TryRefresh(out Exception failure)
         {
@@ -35,7 +41,41 @@ namespace ClearPlan.Presentation.ViewModels
             failure = null;
             try
             {
-                ReviewSnapshot snapshot = snapshotFactory();
+                return TryActivateSnapshot(
+                    snapshotFactory(),
+                    out failure);
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+                return false;
+            }
+        }
+
+        public bool TryShowSnapshot(
+            ReviewSnapshot snapshot,
+            out Exception failure)
+        {
+            ThrowIfDisposed();
+            failure = null;
+            try
+            {
+                return TryActivateSnapshot(snapshot, out failure);
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+                return false;
+            }
+        }
+
+        private bool TryActivateSnapshot(
+            ReviewSnapshot snapshot,
+            out Exception failure)
+        {
+            failure = null;
+            try
+            {
                 ReviewSnapshotValidationResult validation =
                     ReviewSnapshotValidator.Validate(snapshot);
                 if (!validation.IsValid)
@@ -51,10 +91,15 @@ namespace ClearPlan.Presentation.ViewModels
                 }
 
                 var next = new ReviewWorkspaceViewModel(snapshot);
+                next.RestorePresentationState(CurrentViewModel);
+                if (comparisonReference != null && comparisonReference.Synthetic != snapshot.Synthetic)
+                    comparisonReference = null;
+                next.Comparison.SetReference(comparisonReference);
                 Subscribe(next);
 
                 ReviewWorkspaceViewModel previous = CurrentViewModel;
                 CurrentViewModel = next;
+                CurrentSnapshot = snapshot;
                 if (previous != null)
                 {
                     Unsubscribe(previous);
@@ -85,7 +130,15 @@ namespace ClearPlan.Presentation.ViewModels
 
         private void Subscribe(ReviewWorkspaceViewModel viewModel)
         {
+            viewModel.Comparison.ReferenceChanged += OnComparisonReferenceChanged;
+            viewModel.ImportPlanDataRequested += bindings.ImportPlanData;
+            viewModel.CalculateTargetRequested += bindings.CalculateTarget;
+            viewModel.GenerateDrrRequested += bindings.GenerateDrr;
+            viewModel.PlanImagesRequested += bindings.PlanImages;
+            viewModel.ComparisonPlanRequested += bindings.SelectComparisonPlan;
             viewModel.ReportRequested += bindings.Report;
+            viewModel.HtmlReportRequested += bindings.HtmlReport;
+            viewModel.AriaUploadRequested += bindings.AriaUpload;
             viewModel.OpenPlanRequested += bindings.OpenPlan;
             viewModel.DvhResetRequested += bindings.ResetDvh;
             viewModel.DvhExportRequested += bindings.ExportDvh;
@@ -101,7 +154,15 @@ namespace ClearPlan.Presentation.ViewModels
 
         private void Unsubscribe(ReviewWorkspaceViewModel viewModel)
         {
+            viewModel.Comparison.ReferenceChanged -= OnComparisonReferenceChanged;
+            viewModel.ImportPlanDataRequested -= bindings.ImportPlanData;
+            viewModel.CalculateTargetRequested -= bindings.CalculateTarget;
+            viewModel.GenerateDrrRequested -= bindings.GenerateDrr;
+            viewModel.PlanImagesRequested -= bindings.PlanImages;
+            viewModel.ComparisonPlanRequested -= bindings.SelectComparisonPlan;
             viewModel.ReportRequested -= bindings.Report;
+            viewModel.HtmlReportRequested -= bindings.HtmlReport;
+            viewModel.AriaUploadRequested -= bindings.AriaUpload;
             viewModel.OpenPlanRequested -= bindings.OpenPlan;
             viewModel.DvhResetRequested -= bindings.ResetDvh;
             viewModel.DvhExportRequested -= bindings.ExportDvh;
@@ -123,6 +184,11 @@ namespace ClearPlan.Presentation.ViewModels
                     typeof(ReviewWorkspaceHostController).FullName);
             }
         }
+
+        private void OnComparisonReferenceChanged(object sender, EventArgs eventArgs)
+        {
+            comparisonReference = ((PlanComparisonViewModel)sender).ReferenceSnapshot;
+        }
     }
 
     public sealed class ReviewWorkspaceActionBindings
@@ -130,6 +196,8 @@ namespace ClearPlan.Presentation.ViewModels
         public ReviewWorkspaceActionBindings()
         {
             Report = Ignore;
+            HtmlReport = Ignore;
+            AriaUpload = Ignore;
             OpenPlan = Ignore;
             ResetDvh = Ignore;
             ExportDvh = Ignore;
@@ -138,9 +206,21 @@ namespace ClearPlan.Presentation.ViewModels
             SelectConstraintTable = Ignore;
             OpenSettings = Ignore;
             SelectScenario = Ignore;
+            ImportPlanData = Ignore;
+            CalculateTarget = Ignore;
+            GenerateDrr = Ignore;
+            PlanImages = Ignore;
+            SelectComparisonPlan = Ignore;
         }
 
         public EventHandler<ReviewWorkspaceActionEventArgs> Report { get; set; }
+        public EventHandler<ReviewWorkspaceActionEventArgs> HtmlReport { get; set; }
+        public EventHandler<ReviewWorkspaceActionEventArgs> AriaUpload { get; set; }
+        public EventHandler<ReviewWorkspaceActionEventArgs> ImportPlanData { get; set; }
+        public EventHandler<ReviewWorkspaceActionEventArgs> CalculateTarget { get; set; }
+        public EventHandler<ReviewWorkspaceActionEventArgs> GenerateDrr { get; set; }
+        public EventHandler<ReviewWorkspaceActionEventArgs> PlanImages { get; set; }
+        public EventHandler<ReviewWorkspaceActionEventArgs> SelectComparisonPlan { get; set; }
 
         public EventHandler<ReviewWorkspaceActionEventArgs> OpenPlan { get; set; }
 

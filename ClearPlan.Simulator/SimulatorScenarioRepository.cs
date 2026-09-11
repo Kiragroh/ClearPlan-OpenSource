@@ -30,12 +30,15 @@ namespace ClearPlan.Simulator
             get
             {
                 return new List<string>(
-                    SyntheticScenarioFactory.ScenarioIds);
+                    SyntheticScenarioFactory.ScenarioIds.Concat(SyntheticPublicationScenarioFactory.ScenarioIds));
             }
         }
 
         public ReviewSnapshot Load(string scenarioId)
         {
+            // Publication geometry is generated in memory; JSON intentionally omits MLC/DRR pixels.
+            if (SyntheticPublicationScenarioFactory.ScenarioIds.Contains(scenarioId, StringComparer.Ordinal))
+                return SyntheticPublicationScenarioFactory.Create(scenarioId);
             if (!SyntheticScenarioFactory.ScenarioIds.Contains(
                 scenarioId,
                 StringComparer.Ordinal))
@@ -80,6 +83,8 @@ namespace ClearPlan.Simulator
                     "Scenario filename and scenarioId do not match.");
             }
 
+            // Rehydrate deterministic in-memory MLC geometry, intentionally omitted from portable JSON.
+            SyntheticScenarioFactory.AddPlanAnalysis(snapshot);
             return snapshot;
         }
     }

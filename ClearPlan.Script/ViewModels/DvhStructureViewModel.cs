@@ -16,11 +16,14 @@ namespace ClearPlan
 
         public string Id { get; private set; }
 
+        public bool RequiredForTargetReview { get; set; }
+
         public bool IsSelected
         {
             get { return _isSelected; }
             set
             {
+                value = value || RequiredForTargetReview;
                 if (_isSelected == value)
                 {
                     return;

@@ -12,7 +12,8 @@ namespace ClearPlan.Calculators
     public static class FieldNamingPreviewCalculator
     {
         public static ObservableCollection<FieldNamePreviewViewModel> Calculate(
-            PlanningItemViewModel planningItem)
+            PlanningItemViewModel planningItem,
+            FieldNamingRuleConfiguration configuration)
         {
             var result = new ObservableCollection<FieldNamePreviewViewModel>();
             PlanSetup plan = planningItem == null
@@ -49,7 +50,7 @@ namespace ClearPlan.Calculators
             }
 
             foreach (FieldNameSuggestion suggestion in
-                FieldNameSuggester.Suggest(plan.Id, inputs))
+                FieldNameSuggester.Suggest(plan.Id, inputs, configuration == null ? null : configuration.Rules))
             {
                 result.Add(new FieldNamePreviewViewModel
                 {
@@ -61,7 +62,10 @@ namespace ClearPlan.Calculators
                     SuggestedName = suggestion.SuggestedName,
                     IdWouldChange = suggestion.IdWouldChange,
                     NameWouldChange = suggestion.NameWouldChange,
-                    WouldChange = suggestion.WouldChange
+                    WouldChange = suggestion.WouldChange,
+                    IsEvaluated = suggestion.IsEvaluated,
+                    EvaluationMessage = suggestion.IsEvaluated ? configuration.Message :
+                        configuration == null ? suggestion.EvaluationMessage : configuration.Message
                 });
             }
 

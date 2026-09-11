@@ -9,6 +9,7 @@ namespace ClearPlan
         static public ObservableCollection<StructureViewModel> GetStructureList(StructureSet structureSet)
         {
             var StructureList = new ObservableCollection<StructureViewModel>();
+            if (structureSet == null) return StructureList;
             foreach (Structure structure in structureSet.Structures)
             {
                 if (!structure.IsEmpty && structure.DicomType != "SUPPORT")

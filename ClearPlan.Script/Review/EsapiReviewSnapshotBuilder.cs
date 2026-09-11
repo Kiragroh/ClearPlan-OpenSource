@@ -73,17 +73,56 @@ namespace ClearPlan.Review
             };
 
             snapshot.Sources = BuildSources(source, settings);
+            var targetBuilder = new EsapiTargetReviewBuilder();
+            TargetReviewCapture targetReview = targetBuilder.BuildSelection(source.ActivePlanningItem.PlanningItemObject);
 
             var usedCheckIds = new HashSet<string>(StringComparer.Ordinal);
             snapshot.PqmRows = BuildPqmRows(source);
+            ReviewSourceStatus nativeGoalSource;
+            snapshot.PqmRows.AddRange(new EsapiClinicalGoalBuilder().Build(source.ActivePlanningItem.PlanningItemObject, out nativeGoalSource));
+            snapshot.Sources.Add(nativeGoalSource);
+            ReviewSourceStatus userTargetSource;
+            List<ReviewPqmRow> userTargetRows = targetBuilder.BuildGoals(
+                source.ActivePlanningItem.PlanningItemObject, targetReview,
+                DefaultReviewRuleConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.DefaultReviewRulesJsonPath)
+                    ? null : settings.ResolvePath(settings.Paths.DefaultReviewRulesJsonPath)), out userTargetSource);
+            snapshot.PqmRows.AddRange(userTargetRows);
+            snapshot.Sources.Add(userTargetSource);
+            snapshot.Report.Notes.Add(userTargetSource.Message);
             snapshot.PlanCheckRows = BuildPlanCheckRows(
                 source,
                 usedCheckIds);
+            var checkSelection = PlanCheckSelectionConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.PlanCheckSelectionJsonPath)
+                ? null : settings.ResolvePath(settings.Paths.PlanCheckSelectionJsonPath));
+            int disabledChecks;
+            snapshot.PlanCheckRows = checkSelection.Filter(snapshot.PlanCheckRows, out disabledChecks);
+            snapshot.DisabledCheckCount = disabledChecks;
+            snapshot.Sources.Add(new ReviewSourceStatus { StableId = "source-plancheck-selection", SourceCode = "plancheck-selection",
+                SourceType = "review-inclusion-policy", Status = checkSelection.Status, Optional = true, UsedFallback = false,
+                PathDisplayLabel = "PlanCheck inclusion", Message = checkSelection.Message });
+            snapshot.Report.Notes.Add(checkSelection.Message);
+            if (disabledChecks > 0)
+                snapshot.Report.Notes.Add(disabledChecks + " legacy PlanCheck findings excluded by configured check family; they were calculated but are not included in this review/report. This is not a complete all-checks pass.");
+            if (checkSelection.Status == ReviewStatusCodes.Unavailable)
+                snapshot.PlanCheckRows.Add(new ReviewCheckRow { CheckCode = "plancheck-selection-config", Category = "Configuration",
+                    Status = ReviewStatusCodes.NotEvaluated, Severity = ReviewSeverityCodes.Warning, Unit = ReviewUnitCodes.Text,
+                    Message = checkSelection.Message, ObservedValue = "unavailable", ExpectedValue = "Valid inclusion configuration" });
             snapshot.FieldRows = BuildFieldRows(source);
+            ReviewSourceStatus nativeWarningSource;
+            snapshot.PlanCheckRows.AddRange(EsapiWarningsBuilder.Build(source.ActivePlanningItem.PlanningItemObject, out nativeWarningSource));
+            snapshot.Sources.Add(nativeWarningSource);
+            string nativeDvhSelectionNote;
+            var nativeDvhSelections = ReadNativeDvhSelection(source.ActivePlanningItem.PlanningItemObject, out nativeDvhSelectionNote);
+            snapshot.Report.Notes.Add("DVH selection includes resolved constraint structures, native Eclipse DVH selections, ClearPlan selections, and required targets. " +
+                "The ESAPI DVH-selection list is not a general StructureSet visibility flag.");
+            if (!string.IsNullOrWhiteSpace(nativeDvhSelectionNote)) snapshot.Report.Notes.Add(nativeDvhSelectionNote);
             snapshot.DvhSeries = BuildDvhSeries(
                 source,
                 snapshot.PlanCheckRows,
-                usedCheckIds);
+                usedCheckIds,
+                targetReview,
+                snapshot.PqmRows,
+                nativeDvhSelections);
             snapshot.StructureMappings = BuildStructureMappings(
                 snapshot.PqmRows,
                 snapshot.DvhSeries);
@@ -92,6 +131,19 @@ namespace ClearPlan.Review
                 GetAggregateStatus(snapshot),
                 out string activePlanKey);
             snapshot.ActivePlanKey = activePlanKey;
+            var parameterPlan = source.ActivePlanningItem.PlanningItemObject as PlanSetup;
+            try
+            {
+                snapshot.PlanAnalysis = parameterPlan == null
+                    ? new ClearPlan.Core.PlanAnalysis.ReviewPlanAnalysis { PamReason = "Plan parameters require a single treatment plan, not a plan sum." }
+                    : new EsapiPlanAnalysisBuilder().Build(parameterPlan);
+            }
+            catch (Exception)
+            {
+                // Optional extended analysis must not break the established PQM/PlanCheck workspace.
+                snapshot.PlanAnalysis = new ClearPlan.Core.PlanAnalysis.ReviewPlanAnalysis
+                { PamReason = "Extended plan parameters could not be read; existing plan checks remain available." };
+            }
 
             ReviewSnapshotValidationResult validation =
                 ReviewSnapshotValidator.Validate(snapshot);
@@ -188,11 +240,20 @@ namespace ClearPlan.Review
                 PathDisplayLabel = sourceLabel + " constraints",
                 Message = string.Format(
                     CultureInfo.InvariantCulture,
-                    "Constraint catalog status: {0} warning(s), {1} error(s).",
+                    "Constraint catalog status: {0} warning(s), {1} error(s). Table: {2}. Selection: {3}",
                     warnings,
-                    errors)
+                    errors,
+                    source.ActiveConstraintPath == null ? "none" : source.ActiveConstraintPath.ConstraintName,
+                    source.ActiveConstraintPath == null ? "unavailable" : source.ActiveConstraintPath.SelectionReason)
             });
 
+            sources.Add(new ReviewSourceStatus
+            {
+                StableId = "source-default-field-naming", SourceCode = "field-naming", SourceType = "editable-default-rules",
+                Status = source.FieldNamingConfiguration == null ? ReviewStatusCodes.NotEvaluated : source.FieldNamingConfiguration.Status,
+                Optional = false, UsedFallback = false, PathDisplayLabel = "Default: field naming",
+                Message = source.FieldNamingConfiguration == null ? "Field-naming configuration unavailable; no conformance inferred." : source.FieldNamingConfiguration.Message
+            });
             return sources;
         }
 
@@ -277,7 +338,9 @@ namespace ClearPlan.Review
                     Unit = unit,
                     Status = mapped.Status,
                     Severity = mapped.Severity,
-                    Explanation = BuildPqmExplanation(item)
+                    Explanation = BuildPqmExplanation(item),
+                    SourceLabel = ClinicalReviewValueMapper.SanitizeClinicalLabel(item.Source, "Configured constraint source"),
+                    MappingDescription = item.MappingDescription
                 });
             }
 
@@ -308,7 +371,7 @@ namespace ClearPlan.Review
                             item.Severity,
                             "plan-check-" + index,
                             usedIds),
-                    Category = "PlanCheck",
+                Category = "Default",
                     Status = mapped.Status,
                     Severity = mapped.Severity,
                     ObservedValue = string.Empty,
@@ -385,7 +448,7 @@ namespace ClearPlan.Review
                     ClinicalReviewValueMapper.SanitizeClinicalLabel(
                         item.CurrentId,
                         "Field " + index);
-                string expectedId =
+                string expectedId = !item.IsEvaluated ? string.Empty :
                     ClinicalReviewValueMapper.SanitizeClinicalLabel(
                         item.ExpectedId,
                         currentId);
@@ -393,7 +456,7 @@ namespace ClearPlan.Review
                     ClinicalReviewValueMapper.SanitizeClinicalLabel(
                         item.CurrentName,
                         "Field name " + index);
-                string suggestedName =
+                string suggestedName = !item.IsEvaluated ? string.Empty :
                     ClinicalReviewValueMapper.SanitizeClinicalLabel(
                         item.SuggestedName,
                         currentName);
@@ -411,11 +474,11 @@ namespace ClearPlan.Review
                     ExpectedId = expectedId,
                     CurrentName = currentName,
                     SuggestedName = suggestedName,
-                    IdStatus =
+                    IdStatus = !item.IsEvaluated ? ReviewStatusCodes.NotEvaluated :
                         ClinicalReviewValueMapper.MapFieldStatus(
                             currentId,
                             expectedId),
-                    NameStatus =
+                    NameStatus = !item.IsEvaluated ? ReviewStatusCodes.NotEvaluated :
                         ClinicalReviewValueMapper.MapFieldStatus(
                             currentName,
                             suggestedName)
@@ -425,13 +488,37 @@ namespace ClearPlan.Review
             return rows;
         }
 
+        public static List<string> ReadNativeDvhSelection(PlanningItem planningItem, out string note)
+        {
+            note = null;
+            try
+            {
+                var selected = planningItem == null ? null : planningItem.StructuresSelectedForDvh;
+                if (selected != null)
+                    return selected.Where(item => item != null && !string.IsNullOrWhiteSpace(item.Id))
+                        .Select(item => item.Id).Distinct(StringComparer.Ordinal).ToList();
+            }
+            catch (Exception)
+            {
+                // Missing UI-derived selection must not suppress independent constraints or manual selections.
+            }
+            note = "Native Eclipse DVH selection could not be read; constraint structures, ClearPlan selections, and required targets remain selected.";
+            return new List<string>();
+        }
+
         private static List<ReviewDvhSeries> BuildDvhSeries(
             MainViewModel source,
             IList<ReviewCheckRow> findings,
-            ISet<string> usedCheckIds)
+            ISet<string> usedCheckIds,
+            TargetReviewCapture targetReview,
+            IEnumerable<ReviewPqmRow> pqmRows,
+            IEnumerable<string> nativeDvhSelections)
         {
             var series = new List<ReviewDvhSeries>();
             var usedSeriesIds = new HashSet<string>(StringComparer.Ordinal);
+            var requestedStructureIds = (pqmRows ?? Enumerable.Empty<ReviewPqmRow>())
+                .Where(row => row != null).Select(row => row.ResolvedStructureId)
+                .Concat(nativeDvhSelections ?? Enumerable.Empty<string>()).ToList();
             int index = 0;
 
             foreach (DvhStructureViewModel item in source.DvhStructures ??
@@ -448,6 +535,12 @@ namespace ClearPlan.Review
                     ClinicalReviewValueMapper.SanitizeClinicalLabel(
                         item.Id,
                         "Structure " + index);
+                TargetReviewStructure target = targetReview.Structures.FirstOrDefault(entry => entry.StructureId == item.Id);
+                bool required = targetReview.RequiredStructureIds.Contains(item.Id, StringComparer.Ordinal);
+                bool selected = required || item.IsSelected || DvhSelectionPolicy.ShouldSelect(item.Id, requestedStructureIds);
+                string targetKind = DvhSelectionPolicy.ClassifyTarget(item.Id, item.Structure.DicomType);
+                double? nativeD98 = EsapiTargetReviewBuilder.ReadDoseAtVolume(
+                    source.ActivePlanningItem.PlanningItemObject, item.Structure, 98.0);
                 try
                 {
                     DVHData data =
@@ -477,13 +570,36 @@ namespace ClearPlan.Review
                         Role = GetDvhRole(item.Structure, structureId),
                         ColorHex = GetColorHex(item.Structure, index),
                         LineStyle = ReviewLineStyleCodes.Solid,
-                        Selected = item.IsSelected,
+                        Selected = selected,
+                        TargetKind = targetKind,
+                        RequiredForTargetReview = required,
+                        TargetSelectionReason = target == null ? null : target.ContainmentReason,
+                        D98DoseGy = nativeD98,
                         VolumeCc = GetFiniteVolume(item.Structure),
+                        MinimumDoseGy = GetDvhDoseOrNull(() => data.MinDose),
+                        MeanDoseGy = GetDvhDoseOrNull(() => data.MeanDose),
+                        MaximumDoseGy = GetDvhDoseOrNull(() => data.MaxDose),
                         Points = BuildDvhPoints(data)
                     });
                 }
                 catch (Exception)
                 {
+                    if (selected)
+                    {
+                        // Requested structures stay in the table/legend even without a DVH.
+                        // No zero-valued curve or successful coverage result is fabricated.
+                        series.Add(new ReviewDvhSeries
+                        {
+                            StableId = ClinicalReviewValueMapper.CreateUniqueStableId("dvh-" + structureId, "dvh-" + index, usedSeriesIds),
+                            StructureId = structureId, DisplayName = structureId,
+                            Role = GetDvhRole(item.Structure, structureId), TargetKind = targetKind,
+                            ColorHex = GetColorHex(item.Structure, index), LineStyle = ReviewLineStyleCodes.Solid,
+                            Selected = true, RequiredForTargetReview = required,
+                            TargetSelectionReason = target == null ? null : "Native DVH unavailable. " + target.ContainmentReason,
+                            VolumeCc = GetFiniteVolume(item.Structure),
+                            D98DoseGy = nativeD98
+                        });
+                    }
                     findings.Add(new ReviewCheckRow
                     {
                         CheckCode =
@@ -503,6 +619,22 @@ namespace ClearPlan.Review
             }
 
             return series;
+        }
+
+        private static double? GetDvhDoseOrNull(Func<DoseValue> readDose)
+        {
+            try
+            {
+                double doseGy = ConvertDoseToGray(readDose());
+                return double.IsNaN(doseGy) || double.IsInfinity(doseGy) || doseGy < 0.0
+                    ? (double?)null : doseGy;
+            }
+            catch (Exception)
+            {
+                // A missing native statistic must not erase an otherwise valid
+                // curve, nor be replaced by a misleading zero or a sampled extreme.
+                return null;
+            }
         }
 
         private static List<ReviewDvhPoint> BuildDvhPoints(DVHData data)
@@ -801,7 +933,7 @@ namespace ClearPlan.Review
             }
 
             if (statuses.Contains(ReviewStatusCodes.Variation) ||
-                statuses.Contains(ReviewStatusCodes.NotEvaluated))
+                statuses.Contains(ReviewStatusCodes.NotEvaluated) || snapshot.DisabledCheckCount > 0)
             {
                 return ReviewStatusCodes.Variation;
             }
@@ -851,10 +983,11 @@ namespace ClearPlan.Review
         {
             string raw = string.Format(
                 CultureInfo.InvariantCulture,
-                "Goal: {0}; variation: {1}; achieved: {2}.",
+                "Source: {3}. {4} Goal: {0}; variation: {1}; achieved: {2}.",
                 item.Goal ?? "not specified",
                 item.Variation ?? "not specified",
-                item.Achieved ?? "not evaluated");
+                item.Achieved ?? "not evaluated",
+                item.Source ?? "Not specified", item.Comment ?? string.Empty);
             return ClinicalReviewValueMapper.SanitizeClinicalLabel(
                 raw,
                 "PQM values contain no publishable text.");
@@ -895,10 +1028,7 @@ namespace ClearPlan.Review
             string structureId)
         {
             string normalized = (structureId ?? string.Empty).ToUpperInvariant();
-            if (normalized.Contains("PTV") ||
-                normalized.Contains("CTV") ||
-                normalized.Contains("GTV") ||
-                normalized.Contains("ITV"))
+            if (DvhSelectionPolicy.ClassifyTarget(structureId, structure.DicomType).Length > 0)
             {
                 return ReviewDvhRoleCodes.Target;
             }

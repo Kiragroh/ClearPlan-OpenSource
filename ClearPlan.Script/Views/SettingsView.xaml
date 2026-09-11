@@ -1,7 +1,8 @@
 <UserControl x:Class="ClearPlan.Views.SettingsView"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        MinWidth="640">
+        xmlns:views="clr-namespace:ClearPlan.Views"
+        MinWidth="640" Background="#F1F5F9">
     <UserControl.Resources>
         <Style x:Key="SettingsLabel" TargetType="TextBlock">
             <Setter Property="Foreground" Value="#334155"/>
@@ -23,7 +24,23 @@
             <Setter Property="Padding" Value="16"/>
             <Setter Property="Margin" Value="0,0,0,12"/>
         </Style>
+        <Style x:Key="AliasCellText" TargetType="TextBlock">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="4,5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style x:Key="AliasCellEditor" TargetType="TextBox">
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Padding" Value="4,5"/>
+        </Style>
     </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <TabControl x:Name="SettingsTabs" Margin="12,12,12,0" SelectionChanged="SettingsTabChanged">
+            <TabItem Header="Konfigurationen &amp; Versionen">
+                <views:ConfigurationWorkspaceView DataContext="{Binding Configuration}"/>
+            </TabItem>
+            <TabItem Header="Pfade &amp; Quellen">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="24">
             <TextBlock Text="Einstellungen" FontSize="24" FontWeight="SemiBold"
@@ -31,6 +48,22 @@
             <TextBlock Margin="0,4,0,18"
                        Text="Alle Pfade werden in settings.ini gespeichert und können hier bearbeitet werden. Relative Pfade beziehen sich auf den ClearPlan-Build-Ordner."
                        Foreground="#64748B" TextWrapping="Wrap"/>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                    <TextBlock Text="Versionsablage und Feldnamen" FontSize="17" FontWeight="SemiBold" Foreground="#16324A" Margin="0,0,0,10"/>
+                    <TextBlock Text="Versionsablage · gemeinsam nutzbarer Ordner" Style="{StaticResource SettingsLabel}" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding ConfigurationDirectory, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource SettingsPathBox}" AutomationProperties.Name="Pfad der Versionsablage"/>
+                    <TextBlock Text="Standard: Configuration relativ zum Build-Ordner. Ein Pfadwechsel verschiebt keine vorhandenen Versionen; nach dem Speichern wird die gewählte Ablage geöffnet."
+                               TextWrapping="Wrap" Foreground="#64748B" Margin="0,5,0,12"/>
+                    <TextBlock Text="Feldnamen-Nomenklatur · JSON" Style="{StaticResource SettingsLabel}" Margin="0,0,0,5"/>
+                    <TextBox Text="{Binding FieldNamingRulesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource SettingsPathBox}" AutomationProperties.Name="Pfad der Feldnamen-Nomenklatur"/>
+                    <TextBlock Text="Die Nomenklatur steuert ausschließlich die Vorschläge für Feldnamen. Bearbeiten, Importieren und Wiederherstellen unter Konfigurationen &amp; Versionen."
+                               TextWrapping="Wrap" Foreground="#64748B" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Border>
 
             <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
@@ -121,6 +154,86 @@
                                        TextWrapping="Wrap" Foreground="#92400E"/>
                         </StackPanel>
                     </Border>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                    <TextBlock Text="MLC-Maschinengeometrie" FontSize="17" FontWeight="SemiBold" Foreground="#115E59" Margin="0,0,0,8"/>
+                    <TextBox Text="{Binding MlcGeometryProfilesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der MLC-Geometrieprofile"/>
+                    <TextBlock Text="Dosisraten-Schätzmodell · JSON (leer = deaktiviert)" Style="{StaticResource SettingsLabel}"/>
+                    <TextBox Text="{Binding DoseRateProfilesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der Dosisraten-Schätzprofile"/>
+                    <TextBlock Text="Exakte ESAPI-Modellnamen, Blattgrenzen und bestätigte Lagenzuordnung. Unbekannte Modelle bleiben ausdrücklich unverfügbar; es werden keine Halcyon-Lagen geraten." TextWrapping="Wrap" Foreground="#475569" Margin="0,0,0,16"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                    <TextBlock Text="ARIA · Berichtversand" FontSize="17" FontWeight="SemiBold" Foreground="#115E59" Margin="0,0,0,8"/>
+                    <TextBlock Text="Verbindungskonfiguration · JSON (leer = deaktiviert)" Style="{StaticResource SettingsLabel}"/>
+                    <TextBox Text="{Binding AriaUploadConfigJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" AutomationProperties.Name="Pfad der ARIA-Verbindungskonfiguration"/>
+                    <TextBlock Text="Endpunkte, Dokumenttyp und Credential-Dateiverweis können im Konfigurationsreiter versioniert bearbeitet werden. Zugangsdaten bleiben in einer externen Datei oder Umgebungsvariable. Vor jedem Senden werden Patient und Plan bestätigt. Sandbox- und Privacy-Berichte werden nicht gesendet." TextWrapping="Wrap" Foreground="#475569" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                    <TextBlock Text="Default – editierbare Zielvolumenregeln" FontSize="17" FontWeight="SemiBold" Foreground="#115E59" Margin="0,0,0,8"/>
+                    <TextBox Text="{Binding DefaultReviewRulesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der editierbaren Default-Regeln"/>
+                    <WrapPanel Margin="0,0,0,8">
+                        <Button Content="Datei wählen …" Click="BrowseDefaultRulesClicked" Padding="10,6" Margin="0,0,6,0"/>
+                        <Button Content="JSON bearbeiten" Click="EditDefaultRulesClicked" Padding="10,6"/>
+                    </WrapPanel>
+                    <TextBlock Text="Default-Regeln können in der JSON-Datei geändert, mit enabled: false deaktiviert oder aus rules gelöscht werden. Zieltypen, Dv%-Metrik, Vergleich und Verordnungsanteil sind editierbar. Leerer Pfad, gelöschte Datei oder rules: [] führen keine Default-Zielregeln aus; die Datei wird beim Review nicht neu angelegt. Nach Änderungen die Planansicht neu laden. Die bestehenden klinischen Prüfungen und RefDB bleiben getrennt."
+                               TextWrapping="Wrap" Foreground="#475569"/>
+                    <TextBlock x:Name="DefaultRulesStatusText" TextWrapping="Wrap" Foreground="#92400E" Margin="0,6,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource SettingsCard}">
+                <StackPanel>
+                    <TextBlock Text="Strukturnamen und Aliase" FontSize="17" FontWeight="SemiBold" Foreground="#115E59" Margin="0,0,0,8"/>
+                    <TextBlock Text="Kanonische Namen nach AAPM TG-263 verwenden. Aliase sind explizite alternative Namen, keine Suchmuster. Links, rechts und kombinierte Organe getrennt halten. Eine Änderung benennt keine Struktur im Planungssystem um."
+                               Foreground="#475569" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                    <Grid Margin="0,0,0,10">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="145"/><ColumnDefinition Width="*"/><ColumnDefinition Width="76"/></Grid.ColumnDefinitions>
+                        <TextBlock Style="{StaticResource SettingsLabel}" Text="Alias-JSON (optional)"/>
+                        <TextBox Grid.Column="1" Style="{StaticResource SettingsPathBox}"
+                                 Text="{Binding StructureAliasesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                        <Button Grid.Column="2" Content="Öffnen …" Margin="8,0,0,0" Click="BrowseAliasesClicked"/>
+                    </Grid>
+                    <TextBlock Text="Leer: Zuordnungen der gewählten Constraint-Quelle bleiben aktiv. Eine Aliasdatei ersetzt nur die aufgeführten Strukturzuordnungen; klinische Grenzwerte und Verordnungstabellen bleiben unverändert."
+                               Foreground="#64748B" TextWrapping="Wrap" Margin="145,0,0,12"/>
+                    <WrapPanel Margin="0,0,0,10">
+                        <Button Content="Quelle übernehmen" Click="LoadSourceAliasesClicked" Padding="10,6" Margin="0,0,6,4"/>
+                        <Button Content="Import JSON / Excel …" Click="ImportAliasesClicked" Padding="10,6" Margin="0,0,6,4"/>
+                        <Button Content="Zeile hinzufügen" Click="AddAliasClicked" Padding="10,6" Margin="0,0,6,4"/>
+                        <Button Content="Auswahl entfernen" Click="RemoveAliasClicked" Padding="10,6" Margin="0,0,6,4"/>
+                    </WrapPanel>
+                    <DataGrid x:Name="AliasesGrid" ItemsSource="{Binding StructureAliases}" AutoGenerateColumns="False"
+                              Height="290" MinHeight="180" CanUserAddRows="False" CanUserDeleteRows="False"
+                              HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeaderWidth="0"
+                              Background="White" Foreground="#1E293B" BorderBrush="#CBD5E1" MinRowHeight="34"
+                              AlternatingRowBackground="#F8FAFC" HorizontalGridLinesBrush="#E2E8F0"
+                              RowEditEnding="AliasRowEditEnding" SelectionMode="Extended" FontSize="13">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Kanonischer Name" Binding="{Binding CanonicalName, UpdateSourceTrigger=PropertyChanged}" Width="155"/>
+                            <DataGridTextColumn Header="Aliase (mit | trennen)" Binding="{Binding Aliases, UpdateSourceTrigger=PropertyChanged}" Width="240"
+                                                ElementStyle="{StaticResource AliasCellText}" EditingElementStyle="{StaticResource AliasCellEditor}"/>
+                            <DataGridTextColumn Header="Seite¹" Binding="{Binding Laterality, UpdateSourceTrigger=PropertyChanged}" Width="60"/>
+                            <DataGridTextColumn Header="Aliase links" Binding="{Binding SideAliasesLeft, UpdateSourceTrigger=PropertyChanged}" Width="170"
+                                                ElementStyle="{StaticResource AliasCellText}" EditingElementStyle="{StaticResource AliasCellEditor}"/>
+                            <DataGridTextColumn Header="Aliase rechts" Binding="{Binding SideAliasesRight, UpdateSourceTrigger=PropertyChanged}" Width="170"
+                                                ElementStyle="{StaticResource AliasCellText}" EditingElementStyle="{StaticResource AliasCellEditor}"/>
+                            <DataGridTextColumn Header="Quell-ID" Binding="{Binding StructureId}" IsReadOnly="True" Width="90"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Text="¹ Leer, L, R, L/R (paarweise) oder R+L (kombiniert). Groß-/Kleinschreibung, Leerzeichen und Unterstriche werden normalisiert; TG-263-Zeichen wie ~ und - bleiben erhalten."
+                               Foreground="#64748B" TextWrapping="Wrap" FontSize="12" Margin="0,7,0,10"/>
+                    <WrapPanel>
+                        <Button Content="Aliase prüfen" Click="ValidateAliasesClicked" Padding="10,6" Margin="0,0,6,4"/>
+                        <Button Content="JSON exportieren …" Click="ExportAliasesClicked" Padding="10,6" Margin="0,0,6,4"/>
+                        <Button Content="Als versionierten Entwurf übernehmen" Click="SaveAliasesClicked" Padding="12,6" Margin="0,0,6,4"
+                                Background="#115E59" Foreground="White" FontWeight="SemiBold"/>
+                    </WrapPanel>
+                    <TextBlock x:Name="AliasStatusText" Foreground="#92400E" TextWrapping="Wrap" Margin="0,6,0,0"/>
                 </StackPanel>
             </Border>
 
@@ -217,19 +330,56 @@
                 </StackPanel>
             </Border>
 
-            <DockPanel Margin="0,4,0,24">
-                <TextBlock x:Name="ActionStatusText" VerticalAlignment="Center"
-                           TextWrapping="Wrap" Foreground="#475569"/>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+        </StackPanel>
+    </ScrollViewer>
+            </TabItem>
+            <TabItem Header="PlanCheck-Auswahl">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="24">
+                        <TextBlock Text="PlanCheck im Review und Bericht" FontSize="21" FontWeight="SemiBold" Foreground="#16324A" Margin="0,0,0,10"/>
+                        <TextBlock Text="Die Auswahl steuert, welche bereits berechneten PlanCheck-Befunde einbezogen werden. Sie schaltet die externe Berechnung nicht ab. Native Eclipse-Warnungen und Referenzpunkt-Zusammenfassungen bleiben unverändert. Ausgeschlossene Befunde werden als Anzahl ausgewiesen; das Ergebnis ist kein vollständiger All-Checks-Pass."
+                                   TextWrapping="Wrap" Foreground="#334155" Margin="0,0,0,16"/>
+                        <TextBlock Text="Auswahlkonfiguration · JSON" Style="{StaticResource SettingsLabel}" Margin="0,0,0,5"/>
+                        <TextBox Text="{Binding PlanCheckSelectionJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" AutomationProperties.Name="Pfad der PlanCheck-Auswahl"/>
+                        <TextBlock Text="Leer oder fehlend: alle Befunde einbeziehen. Ungültige Konfiguration: keine Befunde ausblenden und Konfigurationshinweis anzeigen. Die Übersicht enthält Check-Familien aus dem aktuellen Review und der Konfiguration, keinen vollständigen Algorithmuskatalog der externen Engine. Wiederholungen wie 74-2 gehören zu Code 74."
+                                   TextWrapping="Wrap" Foreground="#475569" Margin="0,8,0,16"/>
+                        <DataGrid x:Name="CheckSelectionGrid" ItemsSource="{Binding PlanCheckSelectionRows}" AutoGenerateColumns="False"
+                                  Height="320" MinHeight="180" CanUserAddRows="False" CanUserDeleteRows="False"
+                                  HeadersVisibility="Column" GridLinesVisibility="Horizontal" RowHeaderWidth="0"
+                                  Background="White" Foreground="#1E293B" BorderBrush="#CBD5E1" MinRowHeight="34"
+                                  AlternatingRowBackground="#F8FAFC" HorizontalGridLinesBrush="#E2E8F0" FontSize="13"
+                                  AutomationProperties.Name="PlanCheck-Familien für Review und Bericht">
+                            <DataGrid.Columns>
+                                <DataGridCheckBoxColumn Header="Einbeziehen" Binding="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="100"/>
+                                <DataGridTextColumn Header="Code" Binding="{Binding Code}" IsReadOnly="True" Width="75"/>
+                                <DataGridTextColumn Header="Befunde" Binding="{Binding FindingCount}" IsReadOnly="True" Width="75"/>
+                                <DataGridTextColumn Header="Aktueller Kontext · nicht gespeichert" Binding="{Binding Description}" IsReadOnly="True" Width="*" ElementStyle="{StaticResource AliasCellText}"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Text="{Binding PlanCheckSelectionStatus}" TextWrapping="Wrap" Foreground="#475569" Margin="0,10,0,12"/>
+                        <WrapPanel>
+                            <Button Content="Auswahl neu laden" Click="LoadCheckSelectionClicked" Padding="12,7" Margin="0,0,8,6"/>
+                            <Button Content="Als versionierten Entwurf übernehmen" Click="StageCheckSelectionClicked" Padding="12,7" Margin="0,0,0,6" Background="#0F766E" Foreground="White" FontWeight="SemiBold"/>
+                        </WrapPanel>
+                        <TextBlock Text="Gespeichert werden ausschließlich Check-Codes und Ein/Aus-Status. Nach der Übernahme unter Konfigurationen &amp; Versionen einen Änderungsgrund angeben, die Version speichern und danach Einstellungen speichern. Die neue Auswahl gilt beim nächsten Review-Aufbau."
+                                   TextWrapping="Wrap" Foreground="#475569" Margin="0,6,0,0"/>
+                        <TextBlock x:Name="CheckSelectionStatusText" TextWrapping="Wrap" Foreground="#92400E" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+            <DockPanel Grid.Row="1" Margin="24,12,24,16" LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Content="Neu laden" Padding="14,7" Margin="6,0"
                             Click="ReloadClicked"/>
                     <Button Content="Quelle testen" Padding="14,7" Margin="6,0"
                             Click="ValidateClicked"/>
-                    <Button Content="Speichern" Padding="18,7" Margin="6,0"
-                            Background="#1D4ED8" Foreground="White" FontWeight="SemiBold"
+                    <Button Content="Einstellungen speichern" Padding="18,7" Margin="6,0"
+                            Background="#0F766E" Foreground="White" FontWeight="SemiBold"
                             Click="SaveClicked"/>
                 </StackPanel>
+                <TextBlock x:Name="ActionStatusText" VerticalAlignment="Center"
+                           TextWrapping="Wrap" Foreground="#475569"/>
             </DockPanel>
-        </StackPanel>
-    </ScrollViewer>
+    </Grid>
 </UserControl>

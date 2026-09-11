@@ -7,6 +7,8 @@ namespace ClearPlan.Core.Constraints
         public PlanConstraintContext()
         {
             StructureIds = new List<string>();
+            PrescriptionLabels = new List<string>();
+            StructureDefinitions = new List<StructureDefinition>();
         }
 
         public bool IsPlanSum { get; set; }
@@ -16,5 +18,8 @@ namespace ClearPlan.Core.Constraints
         public string SiteHint { get; set; }
         public string RegimeHint { get; set; }
         public IList<string> StructureIds { get; set; }
+        public IList<StructureDefinition> StructureDefinitions { get; set; }
+        public IList<string> PrescriptionLabels { get; set; }
+        public int? PrescriptionFractionCount { get; set; }
     }
 }

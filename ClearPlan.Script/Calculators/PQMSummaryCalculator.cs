@@ -11,6 +11,63 @@ namespace ClearPlan
 {
     public class PQMSummaryCalculator : ViewModelBase
     {
+        public PQMSummaryViewModel[] EvaluateTable(ConstraintViewModel selection, PlanningItemViewModel planningItem, ConstraintCatalog catalog)
+        {
+            var objectives = GetObjectives(selection);
+            var structureSet = planningItem.PlanningItemStructureSet;
+            var structures = structureSet == null ? new List<Structure>() : structureSet.Structures.Where(s => !s.IsEmpty).ToList();
+            var candidates = structures.Select(s => new StructureCandidate
+            {
+                Id = s.Id, DicomType = s.DicomType,
+                Codes = s.StructureCodeInfos == null ? new List<string>() : s.StructureCodeInfos
+                    .Where(code => code != null && !string.IsNullOrWhiteSpace(code.Code)).Select(code => code.Code).ToList()
+            }).ToList();
+            bool hasValidDose = false;
+            try
+            {
+                var plan = planningItem.PlanningItemObject as PlanSetup;
+                var sum = planningItem.PlanningItemObject as PlanSum;
+                hasValidDose = plan != null ? plan.IsDoseValid : sum != null && sum.IsDoseValid();
+            }
+            catch (Exception) { }
+            for (int index = 0; index < objectives.Length; index++)
+            {
+                var objective = objectives[index];
+                var definition = selection.Table.Constraints.Where(c => c != null).ElementAt(index);
+                var match = StructureAliasResolver.Resolve(definition,
+                    catalog == null ? new List<StructureDefinition>() : catalog.Structures, candidates);
+                var structure = !match.IsAmbiguous && match.CandidateId != null
+                    ? structures.SingleOrDefault(s => s.Id == match.CandidateId) : null;
+                objective.Source = selection.SourceKind + ": " + selection.ConstraintName +
+                    (string.IsNullOrWhiteSpace(definition.Source) || string.Equals(definition.Source.Trim(), "nan", StringComparison.OrdinalIgnoreCase)
+                        ? "" : "; " + ClearPlan.Core.Review.ClinicalReviewValueMapper.SanitizeClinicalLabel(definition.Source, "Additional source configured"));
+                objective.Comment = "Match: " + (structure == null ? match.Message : match.Rule + " -> " + structure.Id) +
+                    "; selection: " + selection.SelectionReason + ". " + (definition.Comment ?? "");
+                objective.ActivePlanningItem = planningItem;
+                objective.EvaluationRequiresConfirmation = selection.RequiresConfirmation;
+                if (selection.RequiresConfirmation)
+                    objective.Comment += " Measurement uses the active plan dose without scaling. Goal assessment is pending confirmation of the constraint table and treatment scope.";
+                objective.MappingDescription = structure == null ? "Unresolved or ambiguous" : match.Rule == StructureMatchRule.ExactRequestedName ? "Exact name"
+                    : match.Rule == StructureMatchRule.CanonicalName ? "Canonical name" : match.Rule.ToString();
+                objective.StructureList = StructureSetListViewModel.GetStructureList(structureSet);
+                if (structure != null) { objective.StructureName = structure.Id; objective.StructureNameWithCode = structure.Id; }
+                if (!hasValidDose || structure == null)
+                {
+                    objective.Achieved = !hasValidDose ? "Valid plan dose unavailable." : "Structure match unresolved or ambiguous.";
+                    objective.isCalculated = false;
+                    continue;
+                }
+                try { GetObjectiveProperties(objective, planningItem, structureSet, new StructureViewModel(structure)); }
+                catch (Exception)
+                {
+                    // Keep the failed objective visible; never silently drop a constraint row.
+                    objective.Achieved = "Metric unavailable; check objective expression, units and dose coverage.";
+                    objective.Met = string.Empty; objective.isCalculated = false;
+                }
+            }
+            return objectives;
+        }
+
         public PQMSummaryViewModel[] GetObjectives(ConstraintViewModel constraintVM)
         {
             if (constraintVM == null || constraintVM.Table == null)
@@ -48,26 +105,21 @@ namespace ClearPlan
         public PQMSummaryViewModel GetObjectiveProperties(PQMSummaryViewModel objective, PlanningItemViewModel planningItemVM, StructureSet structureSet, StructureViewModel evalStructure)
         {
             objective.ActivePlanningItem = planningItemVM;
-            PlanningItem planningItem = planningItemVM.PlanningItemObject;
-            if (evalStructure == null)
+            objective.StructureList = StructureSetListViewModel.GetStructureList(structureSet);
+            // WPF SelectedItem must reference an actual item from this list. A separate
+            // wrapper is not equal and can silently clear the selection during binding.
+            var selected = evalStructure == null ? null : objective.StructureList.SingleOrDefault(
+                item => string.Equals(item.StructureName, evalStructure.StructureName, StringComparison.OrdinalIgnoreCase));
+            objective.NotifyPropertyChanged("StructureList");
+            objective.Structure = selected;
+            if (selected == null)
             {
                 objective.Achieved = "Structure not found or empty.";
-                objective.isCalculated = false;
-                objective.StructureList = StructureSetListViewModel.GetStructureList(structureSet);
-                return objective;
+                objective.MappingDescription = "Unresolved or ambiguous";
+                objective.NotifyPropertyChanged("Achieved");
+                objective.NotifyPropertyChanged("MappingDescription");
             }
-            else
-            {
-                objective.isCalculated = true;
-                objective.Structure = evalStructure;
-                objective.StructureName = evalStructure.StructureName;
-                objective.StructureNameWithCode = evalStructure.StructureNameWithCode;
-                objective.StructVolume = evalStructure.VolumeValue;
-                objective.StructType = evalStructure.Structure.DicomType;
-                NotifyPropertyChanged("Structure");
-                objective.StructureList = StructureSetListViewModel.GetStructureList(structureSet);
-                return objective;
-            }
+            return objective;
         }
 
         private static readonly Regex Whitespace = new Regex(@"\s+");
@@ -78,88 +130,29 @@ namespace ClearPlan
 
         public Structure FindStructureFromAlias(StructureSet ss, PlanningItemViewModel planningItem, string ID, string[] aliases, string[] codes, string[] types)
         {
-            // search through the list of alias ids until we find an alias that matches an existing structure.
-            Structure oar = null;
-            string actualStructId = "";
-            oar = (from s in ss.Structures.OrderBy(x=>x.Id)
-                   where s.Id.ToUpper().CompareTo(ID.ToUpper()) == 0 
-                   select s).FirstOrDefault();
-            if (oar == null)
+            if (ss == null) return null;
+            var structures = ss.Structures.Where(structure => structure != null && !structure.IsEmpty).ToList();
+            var definition = new StructureDefinition
             {
-                foreach (string alias in aliases)
+                CanonicalName = ID,
+                Aliases = (aliases ?? new string[0]).ToList(),
+                Codes = (codes ?? new string[0]).ToList(),
+                Active = true
+            };
+            // All entry points share exact names, explicit aliases/codes and ambiguity handling.
+            // The plan target and general DICOM types are not evidence for a requested organ.
+            StructureMatch match = StructureAliasResolver.Resolve(
+                new ConstraintDefinition { StructureName = ID },
+                new[] { definition },
+                structures.Select(structure => new StructureCandidate
                 {
-                    if (alias.Replace(" ", "").Replace("_", "").Length > 1)
-                    {
-                        oar = (from s in ss.Structures.OrderBy(x => x.Id)
-                               where s.Id.ToUpper().Replace(" ", "").Replace("_", "").StartsWith((s.Id.ToUpper().EndsWith("L") || s.Id.ToUpper().EndsWith("R") || s.Id.ToUpper().EndsWith("E") || s.Id.ToUpper().EndsWith("I") || s.Id.ToUpper().EndsWith("B")) ? alias.ToUpper().Replace(" ", "").Replace("_", "") : alias.ToUpper().Replace(" ", "").Replace("_", "").Remove(alias.ToUpper().Replace(" ", "").Replace("_", "").Length - 1))
-                               select s).FirstOrDefault();
-                    }
-                    else
-                    {
-                        oar = (from s in ss.Structures.OrderBy(x => x.Id)
-                               where s.Id.ToUpper().Replace(" ", "").Replace("_", "").StartsWith((s.Id.ToUpper().EndsWith("L") || s.Id.ToUpper().EndsWith("R") || s.Id.ToUpper().EndsWith("E") || s.Id.ToUpper().EndsWith("I") || s.Id.ToUpper().EndsWith("B")) ? alias.ToUpper().Replace(" ", "").Replace("_", "") : alias.ToUpper().Remove(alias.Length - 1))
-                               select s).FirstOrDefault();
-                    }
-                    if (oar != null && oar.IsEmpty != true)
-                    {
-                        actualStructId = oar.Id;
-                        //return oar;
-                        break;
-                    }
-                    else
-                    {
-                        //  || s.Id.ToUpper().Equals(planningItem.PlanningItemTargetId.ToUpper())
-                        foreach (string type in types)  //try to find structure by type
-                        {
-                            if (type == "PTV" && planningItem.PlanningItemTargetId.ToString() != "")
-                            {
-                                oar = (from s in ss.Structures.OrderBy(x => x.Id)
-                                       where s.Id.ToUpper().Equals(planningItem.PlanningItemTargetId.ToUpper())
-                                       select s).FirstOrDefault();
-                                if (oar != null && oar.IsEmpty != true)
-                                {
-                                    actualStructId = oar.Id;
-                                    //return oar;
-                                    break;
-                                }
-                            }
-                            else
-                            {
-                                oar = (from s in ss.Structures.OrderBy(x => x.Id)
-                                       where s.DicomType.ToUpper().CompareTo(type.ToUpper()) == 0
-                                       select s).FirstOrDefault();
-                                if (oar != null && oar.IsEmpty != true)
-                                {
-                                    actualStructId = oar.Id;
-                                    //return oar;
-                                    break;
-                                }
-                                else
-                                {
-                                    foreach (string code in codes)  //try to find structure by code
-                                    {
-                                        oar = (from s in ss.Structures.OrderBy(x => x.Id)
-                                               where s.StructureCodeInfos.FirstOrDefault().Code != null && s.StructureCodeInfos.FirstOrDefault().Code.ToString().CompareTo(code) == 0
-                                               select s).LastOrDefault();
-                                        if (oar != null)
-                                        {
-                                            actualStructId = oar.Id;
-                                            //return oar;
-                                            break;
-                                        }
-
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            if ((oar != null) && (oar.IsEmpty))
-            {
-                oar = null;
-            }
-            return oar;
+                    Id = structure.Id,
+                    Codes = structure.StructureCodeInfos == null ? new List<string>() : structure.StructureCodeInfos
+                        .Where(code => code != null && !string.IsNullOrWhiteSpace(code.Code)).Select(code => code.Code).ToList()
+                }));
+            return !match.IsAmbiguous && !string.IsNullOrWhiteSpace(match.CandidateId)
+                ? structures.SingleOrDefault(structure => string.Equals(structure.Id, match.CandidateId, StringComparison.OrdinalIgnoreCase))
+                : null;
         }
 
         void ConvertUnitToGy(ref string expression)
@@ -303,164 +296,9 @@ namespace ClearPlan
             }
         }
 
-        // further decompose <ateval>
-        //look at the evaluator and compare to goal or variation
         public string EvaluateMetric(string achieved, string goal, string variation)
         {
-            string met = "";
-            string evalpattern = @"^(?<type><|<=|=|>=|>)(?<goal>\d+\p{P}\d+|\d+)$";
-            if (!String.IsNullOrEmpty(goal))
-            {
-                var matches = Regex.Matches(goal, evalpattern);
-                if (matches.Count != 1)
-                {
-                    System.Windows.MessageBox.Show("Eval pattern not recognized");
-                    return string.Format("Evaluator expression \"{0}\" is not a recognized expression type.", goal);                        
-                }
-                Match m = matches[0];
-                Group goalGroup = m.Groups["goal"];
-                Group evaltype = m.Groups["type"];
-
-
-                if (String.IsNullOrEmpty(Regex.Match(achieved, @"\d+\p{P}\d+|\d+").Value))
-                {
-                    met = "Not evaluated";
-                }
-                else
-                {
-                    double evalvalue = Double.Parse(Regex.Match(achieved, @"\d+\p{P}\d+|\d+").Value);
-                    if (evaltype.Value.CompareTo("<") == 0)
-                    {
-                        if ((evalvalue - Double.Parse(goalGroup.ToString())) < 0)
-                        {
-                            met = "Goal";
-                        }
-                        else
-                        {
-                            if (String.IsNullOrEmpty(variation))
-                            {
-                                met = "Not met";
-                            }
-                            else
-                            {
-                                if ((evalvalue - Double.Parse(variation)) < 0)
-                                {
-                                    met = "Variation";
-                                }
-                                else
-                                {
-                                    met = "Not met";
-                                }
-                            }
-                        }
-                    }
-                    else if (evaltype.Value.CompareTo("<=") == 0)
-                    {
-                        //MessageBox.Show("evaluating <= " + evaltype.ToString());
-                        if ((evalvalue - Double.Parse(goalGroup.ToString())) <= 0)
-                        {
-                            met = "Goal";
-                        }
-                        else
-                        {
-                            //MessageBox.Show("Evaluating variation");
-                            if (String.IsNullOrEmpty(variation))
-                            {
-                                //MessageBox.Show(String.Format("Empty variation condition Achieved: {0} Variation: {1}", objective.Achieved.ToString(), objective.Variation.ToString()));
-                                met = "Not met";
-                            }
-                            else
-                            {
-                                //MessageBox.Show(String.Format("Non Empty variation condition Achieved: {0} Variation: {1}", objective.Achieved.ToString(), objective.Variation.ToString()));
-                                if ((evalvalue - Double.Parse(variation)) <= 0)
-                                {
-                                    met = "Variation";
-                                }
-                                else
-                                {
-                                    met = "Not met";
-                                }
-                            }
-                        }
-                    }
-                    else if (evaltype.Value.CompareTo("=") == 0)
-                    {
-                        if ((evalvalue - Double.Parse(goalGroup.ToString())) == 0)
-                        {
-                            met = "Goal";
-                        }
-                        else
-                        {
-                            if (String.IsNullOrEmpty(variation))
-                            {
-                                met = "Not met";
-                            }
-                            else
-                            {
-                                if ((evalvalue - Double.Parse(variation)) == 0)
-                                {
-                                    met = "Variation";
-                                }
-                                else
-                                {
-                                    met = "Not met";
-                                }
-                            }
-                        }
-                    }
-                    else if (evaltype.Value.CompareTo(">=") == 0)
-                    {
-                        if ((evalvalue - Double.Parse(goalGroup.ToString())) >= 0)
-                        {
-                            met = "Goal";
-                        }
-                        else
-                        {
-                            if (String.IsNullOrEmpty(variation))
-                            {
-                                met = "Not met";
-                            }
-                            else
-                            {
-                                if ((evalvalue - Double.Parse(variation)) >= 0)
-                                {
-                                    met = "Variation";
-                                }
-                                else
-                                {
-                                    met = "Not met";
-                                }
-                            }
-                        }
-                    }
-                    else if (evaltype.Value.CompareTo(">") == 0)
-                    {
-                        if ((evalvalue - Double.Parse(goalGroup.ToString())) > 0)
-                        {
-                            met = "Goal";
-                        }
-                        else
-                        {
-                            if (String.IsNullOrEmpty(variation))
-                            {
-                                met = "Not met";
-                            }
-                            else
-                            {
-                                if ((evalvalue - Double.Parse(variation)) > 0)
-                                {
-                                    met = "Variation";
-                                }
-                                else
-                                {
-                                    met = "Not met";
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return met;
+            return PqmNumericEvaluator.Evaluate(achieved, goal, variation);
         }
     }
 }

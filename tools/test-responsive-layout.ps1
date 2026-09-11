@@ -49,8 +49,7 @@ function Assert-Near {
 function Invoke-LayoutProbe {
     param(
         [double]$Width,
-        [double]$Height,
-        [bool]$RequireHorizontalOverflow
+        [double]$Height
     )
 
     $culture = [Globalization.CultureInfo]::InvariantCulture
@@ -80,6 +79,7 @@ function Invoke-LayoutProbe {
     $process = Start-Process `
         -FilePath $simulatorPath `
         -ArgumentList $quotedArguments `
+        -WindowStyle Hidden `
         -PassThru
     if (-not $process.WaitForExit(30000)) {
         Stop-Process -Id $process.Id -Force
@@ -115,14 +115,15 @@ function Invoke-LayoutProbe {
     if ([double]$result.sourceStatusHeight -le 0.0) {
         throw "Navigation source status was not rendered: $sizeText"
     }
-    if (-not [bool]$result.dvhVerticalOverflowAvailable -or
-        [double]$result.dvhScrollableHeight -le 0.0) {
-        throw "DVH vertical overflow is unavailable: $sizeText"
+    if ([double]$result.dvhPlotWidth -lt
+        ([double]$result.dvhContentWidth - 270.0)) {
+        throw "DVH plot does not use the available width: $sizeText"
     }
-    if ($RequireHorizontalOverflow -and
-        (-not [bool]$result.dvhHorizontalOverflowAvailable -or
-         [double]$result.dvhScrollableWidth -le 0.0)) {
-        throw "DVH horizontal overflow is unavailable: $sizeText"
+    if ([double]$result.dvhPlotHeight -lt 360.0) {
+        throw "DVH plot is vertically compressed: $sizeText"
+    }
+    if ([bool]$result.dvhHorizontalOverflowAvailable) {
+        throw "DVH still requires horizontal scrolling: $sizeText"
     }
 
     return $result
@@ -130,26 +131,24 @@ function Invoke-LayoutProbe {
 
 $minimum = Invoke-LayoutProbe `
     -Width 1180.0 `
-    -Height 720.0 `
-    -RequireHorizontalOverflow $true
+    -Height 720.0
 $commonLaptop = Invoke-LayoutProbe `
     -Width 1256.72 `
-    -Height 720.0 `
-    -RequireHorizontalOverflow $false
+    -Height 720.0
 
 Write-Host "PASS responsive WPF layout probe"
 Write-Host "Artifacts: $ArtifactsDirectory"
 Write-Host (
     ("1180x720 workspace={0:0.##} footerBottom={1:0.##} " +
-     "DVH scroll={2:0.##}x{3:0.##}") -f
+     "DVH plot={2:0.##}x{3:0.##}") -f
         [double]$minimum.workspaceViewportHeight,
         [double]$minimum.footerBottom,
-        [double]$minimum.dvhScrollableWidth,
-        [double]$minimum.dvhScrollableHeight)
+        [double]$minimum.dvhPlotWidth,
+        [double]$minimum.dvhPlotHeight)
 Write-Host (
     ("1256.72x720 workspace={0:0.##} footerBottom={1:0.##} " +
-     "DVH scroll={2:0.##}x{3:0.##}") -f
+     "DVH plot={2:0.##}x{3:0.##}") -f
         [double]$commonLaptop.workspaceViewportHeight,
         [double]$commonLaptop.footerBottom,
-        [double]$commonLaptop.dvhScrollableWidth,
-        [double]$commonLaptop.dvhScrollableHeight)
+        [double]$commonLaptop.dvhPlotWidth,
+        [double]$commonLaptop.dvhPlotHeight)

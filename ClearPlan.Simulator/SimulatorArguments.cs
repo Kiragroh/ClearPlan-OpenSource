@@ -25,7 +25,12 @@ namespace ClearPlan.Simulator
             "pqm",
             "plancheck",
             "fields",
-            "dvh"
+            "dvh",
+            "images",
+            "parameters",
+            "comparison",
+            "bev",
+            "warnings"
         };
 
         private SimulatorArguments()
@@ -149,7 +154,7 @@ namespace ClearPlan.Simulator
 
             if (!SyntheticScenarioFactory.ScenarioIds.Contains(
                 parsed.ScenarioId,
-                StringComparer.Ordinal))
+                StringComparer.Ordinal) && !SyntheticPublicationScenarioFactory.ScenarioIds.Contains(parsed.ScenarioId, StringComparer.Ordinal))
             {
                 throw new ArgumentException(
                     "Unknown synthetic scenario: " + parsed.ScenarioId,

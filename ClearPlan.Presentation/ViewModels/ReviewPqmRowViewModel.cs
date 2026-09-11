@@ -31,6 +31,8 @@ namespace ClearPlan.Presentation.ViewModels
             SeverityCode = row.Severity;
             SeverityText = ReviewDisplayText.Severity(row.Severity);
             Explanation = row.Explanation;
+            SourceLabel = row.SourceLabel;
+            MappingDescription = row.MappingDescription;
         }
 
         public string StableId { get; private set; }
@@ -64,6 +66,17 @@ namespace ClearPlan.Presentation.ViewModels
         public string SeverityText { get; private set; }
 
         public string Explanation { get; private set; }
+        public string SourceLabel { get; private set; }
+        public string MappingDescription { get; private set; }
+
+        public string GoalText { get { return (string.IsNullOrWhiteSpace(Comparator) ? string.Empty : Comparator + " ") + WithUnit(Goal); } }
+        public string VariationText { get { return WithUnit(Variation); } }
+        public string AchievedText { get { return WithUnit(AchievedValue); } }
+        public string StructureText { get { return string.IsNullOrWhiteSpace(ResolvedStructureId) ? "Nicht zugeordnet" : ResolvedStructureId; } }
+        public string DetailsText { get { return TemplateCode + " · " + SeverityText + "\n" + MappingDescription + "\n" + SourceLabel + "\n" + Explanation; } }
+
+        private string WithUnit(string value)
+        { return value == "—" || string.IsNullOrWhiteSpace(Unit) ? value : value + " " + Unit; }
 
         private static string FormatValue(double? value)
         {

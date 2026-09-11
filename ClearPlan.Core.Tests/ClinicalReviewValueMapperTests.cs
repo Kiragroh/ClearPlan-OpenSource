@@ -107,6 +107,9 @@ namespace ClearPlan.Core.Tests
 
         public static void ConvertsCentigrayToGray()
         {
+            TestAssert.Equal("%", ClinicalReviewValueMapper.InferUnit("V26Gy[%]"));
+            TestAssert.Equal("Gy", ClinicalReviewValueMapper.InferUnit("D2cc[Gy]"));
+            TestAssert.Equal(ReviewUnitCodes.CubicCentimeter, ClinicalReviewValueMapper.InferUnit("V26Gy[cc]"));
             TestAssert.Equal(
                 2.5,
                 ClinicalReviewValueMapper.ConvertDoseToGray(250.0, "cGy"));

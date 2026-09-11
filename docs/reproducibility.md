@@ -1,53 +1,169 @@
-# ClearPlan v3.1.0 reproducibility
+# ClearPlan v3.2.0 candidate: reproducibility and evidence
 
-This workflow rebuilds and checks only the vendor-free public components. It
-does not require Eclipse, ESAPI, a patient database, or the untracked
-`VMS.TPS.*` assemblies used by the separate clinical build.
+Version 3.2.0 is an unpublished candidate until its tag, source and released
+assets have been independently checked. These instructions describe the current
+public workflow, not a completed release or a clinical acceptance record. The
+[v3.1.0 release record](releases/v3.1.0.md) remains historical.
 
-## Tested environment
+## Requirements and environment provenance
 
-- Windows x64 build 22631.7376 (23H2)
-- .NET Framework 4.8 target pack; installed runtime release key `533320`
-- MSBuild `18.5.4.18101`
-- PowerShell `7.4.14`
-- Python `3.13.13`
-- Git for Windows `2.54.0.windows.1`
-- Newtonsoft.Json assembly `13.0.0.0`, OxyPlot assemblies `2.0.0.0`,
-  and PDFsharp/MigraDoc assemblies `1.50.5147.0`
+The vendor-free build uses Windows x64, .NET Framework 4.8 developer tools and
+MSBuild. Python with `openpyxl` supports workbook and adapter tests. The optional
+DICOM project additionally requires SDK-style project support and its locked
+NuGet dependencies. Eclipse, a patient database and licensed `VMS.*` assemblies
+are not needed for the public Core, Simulator or synthetic DICOM tests.
 
-The Release projects use deterministic C# compilation and omit debug symbols.
-Scenario JSON is serialized with invariant numerical formatting. The package
-writer stores sorted entries with a fixed ZIP timestamp, avoiding
-runtime-specific Deflate output. The final archive was byte-identical when
-packaged from Windows PowerShell 5.1 and PowerShell 7.4.14.
+Use an institution-approved script execution policy and tool installation. These
+instructions do not require changing that policy or disabling endpoint controls.
+The default Python command is `python`; supply its executable path explicitly
+when it is not on PATH. No bundled private development runtime is required.
 
-## Rebuild and verify
+Record the actual OS, .NET runtime/targeting pack, MSBuild, PowerShell, Python,
+`openpyxl`, Git and dependency versions with each evaluated build. Do not reuse
+an earlier workstation inventory as evidence for another run. The collector's
+UTC values are execution timestamps, not independent validation of workstation
+or server clock accuracy; a deterministic fixture timestamp is not a test date.
 
-From the repository root of a checkout of tag `v3.1.0`, run:
+## Build and execute the candidate checks
+
+From the reviewed public checkout, use:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass `
-  -File tools\build-public-release.ps1
+$clearPlanPython = 'python'
+.\tools\build-public-release.ps1 -Version 3.2.0 `
+  -PythonExecutable $clearPlanPython -DevelopmentPreview
 ```
 
-The script builds the public test harness and simulator, runs 125 C# tests and
-20 fake-context Python tests, exports one Python-produced adapter snapshot and
-validates it with the C# contract validator, validates the workbook and public tree, performs
-the simulator layout/capture/report smoke test, checks that the packaged seven
-JSON files are byte-identical to the reviewed source scenarios, and creates
-the public ZIP twice. The two archive hashes must match before the release ZIP
-and its `.sha256` file are written to `artifacts\release`.
+`-DevelopmentPreview` permits candidate work while manuscript gates remain
+pending. For the final release gate, rerun without it. Do not use
+`-SkipSimulatorSmoke` for final verification; that switch explicitly leaves
+UI/report checks unexecuted.
 
-## Oracle and evidence boundaries
+The entry point builds only the public Core/Simulator targets and the separate
+locked DICOM project. It runs the suites below, validates a Python-produced
+snapshot with the C# contract validator, checks public-tree/package inputs and
+vendor-free assemblies, checks version identity, exercises simulator smoke
+capture/report paths and packages the same build twice.
 
-PQM values are calculated from sampled synthetic DVHs and independently
-recomputed in the C# harness. PlanCheck deviations, mapping ambiguity, and
-optional-source fallback are deliberate fixed scenario inputs. Field-name
-suggestions are produced by the tested naming implementation. The
-requirements-to-evidence links are listed in
-`paper/TRACEABILITY_MATRIX.md`.
+| Evidence scope | Actual execution | Boundary |
+| --- | --- | --- |
+| Core/contract | `ClearPlan.Core.Tests.exe` | Each registered group must have a matching successful execution row; nested subcase output does not inflate the group total. |
+| Synthetic DICOM | `ClearPlan.Dicom.Tests.exe` after locked restore/build | Generated RTPLAN byte-file tests, not patient exports or a commissioned native adapter. |
+| Illustrative RayStation | Python `unittest` plus Python-to-C# snapshot validation | Fake contexts; no proof of runtime compatibility or full metric equivalence in RayStation. |
+| Stock catalog | Python parser/transcription tests and the C# distributed-workbook loader test | The private source-transcription class is skipped on a clean public checkout. Skipped classes/tests are recorded separately, never as passes. |
 
-The workflow establishes deterministic behavior for the declared synthetic
-cases in the documented environment. It does not establish clinical
-sensitivity, specificity, runtime compatibility with RayStation, or
-site-specific Eclipse commissioning.
+The current execution receipt is
+`artifacts/public-release-test-evidence.json`. It records actual passed counts,
+skipped tests/groups, execution times, tested-input hashes and output digests.
+The active stock workbook and the smaller example workbook are inventoried
+separately. Neither registered test counts nor workbook row counts are evidence
+of clinical validity.
+
+To refresh software evidence after building, without rewriting a manuscript:
+
+```powershell
+& $clearPlanPython .\tools\collect-paper-evidence.py --configuration Release `
+  --release-version 3.2.0 --include-dicom `
+  --output artifacts\technical-note-evidence.json
+```
+
+The collector reruns the suites; it does not infer their results from source
+registration. Its output explicitly leaves manuscript, figure and remote-release
+verification pending. Copying a receipt into the paper evidence directory is a
+separate reviewed publication step, not a test execution.
+
+## Deterministic scenarios and figure inputs
+
+The seven checked-in baseline/fault scenarios are `baseline-pass`,
+`target-underdose`, `oar-overdose`, `metadata-plancheck`, `field-and-mapping`,
+`optional-path-fallback` and `mixed-review`. Their PlanCheck deviations, mapping
+ambiguities and optional-source failures are declared synthetic inputs. Numeric
+PQM values are calculated from their synthetic DVHs; field suggestions use the
+tested naming implementation.
+
+`publication-single-layer` and `publication-dual-layer` are two additional
+generated fixtures exposed by the same simulator selection/CLI. One mathematical
+ellipsoid phantom supplies their CT planes, contours, analytic dose, voxel-sampled
+DVHs and target-quality calculations. Their DRRs use the same synthetic anatomy.
+The distinct MLC apertures exercise single-layer or jawless dual-layer geometry
+and PAM; the estimated dose rate uses explicit synthetic profiles.
+
+**The analytic phantom dose is not calculated from the MLC apertures.** This
+consistency demonstration is not validation of dose calculation or machine
+delivery. The original seven scenarios retain their separately labeled image
+fixtures; do not infer anatomical correspondence from their adjacent panels.
+
+For example, generate a publication-fixture capture/report set with:
+
+```powershell
+.\artifacts\simulator\Release\ClearPlan.Simulator.exe `
+  --scenario publication-single-layer --capture-all artifacts\publication-single-layer
+.\artifacts\simulator\Release\ClearPlan.Simulator.exe `
+  --scenario publication-dual-layer --capture-all artifacts\publication-dual-layer
+```
+
+Capture success is not visual QA. Inspect every intended GUI image and PDF/HTML
+page for labels, dose/structure overlays, clipping, units, legends and privacy.
+The compiled synthetic factory can also be exported for numerical inspection:
+
+```powershell
+.\tools\export-publication-snapshots.ps1 -SimulatorDirectory artifacts\simulator\Release `
+  -OutputDirectory artifacts\publication-snapshots
+python tools\build-paper-figures.py --capture-dir artifacts\publication-dual-layer `
+  --output-dir artifacts\paper-figures
+```
+
+Figure generation requires Node.js, Playwright and its Chromium browser. It uses
+only local embedded captures and an original SVG; no clinical image or remote
+asset is loaded. Pass `--node-executable` for an explicit runtime path. Exported
+JSON omits rendering-only geometry; it is not a replacement for image inspection.
+The seven JSON fixture files remain separately enumerated package inputs; the
+two publication fixtures are generated by compiled public source, not additional
+patient-derived JSON files.
+
+## Checked source to released artifact
+
+Use the final reviewed source/artifact manifests and execution evidence for
+commit IDs, file inventories, environment details and SHA-256 values; do not
+substitute an older tag or a private development commit. Before publishing:
+
+1. Freeze the reviewed public source and configuration inventory. Record each
+   allowed relative path and exact-byte SHA-256, including original license and
+   third-party notices. Keep native captures, site-specific rules and credentials out.
+2. Build from that checkout and retain its commands, logs and execution receipt.
+   A dirty checkout requires an explicit manifest of the evaluated changes;
+   `repositoryCommit` alone does not identify those working-tree bytes.
+3. Verify that packaged files match the allowlisted build outputs and reviewed
+   synthetic inputs. The simulator package must not acquire licensed ESAPI or
+   optional DICOM dependencies merely because they exist in a development folder.
+4. Inspect publication artifacts separately, including metadata and embedded
+   resources. Link requirements to the final paper traceability/evidence records.
+5. Read back the newly published tag/commit and download the release assets.
+   Compare their inventory and hashes against the approved manifests. A release
+   URL in README or CFF does not establish that this step occurred.
+
+The ZIP writer uses sorted entries and a fixed archive timestamp. Matching two
+archives created from one build demonstrates deterministic **packaging**, not
+independent clean-build reproducibility. Claim the latter only after a separately
+recorded clean build and an explicitly defined output comparison.
+
+## Native, snapshot and publication boundaries
+
+Eclipse inspection is a separate licensed, read-only workflow. Its detached
+snapshots, dosimetry, CT/BEV images and reports remain confidential even if a
+display name is hidden. A neutral schema is not an anonymization guarantee.
+Public paper inputs must come exclusively from the synthetic fixtures or original
+diagrams, not native cases with identifying labels removed.
+
+Optional [ARIA document upload](ARIA_REPORT_UPLOAD.md) is an explicitly confirmed
+write to the patient record, separate from read-only treatment-plan access.
+Sparse FHIR readback can be verified against stored PDF bytes only through
+explicitly configured, restricted UNC roots; an empty root list disables this
+filesystem route. Metadata-only readback does not prove that the uploaded PDF
+was stored intact. This local interoperability path and its protected receipts
+are not part of the public synthetic evidence set.
+
+Software tests do not establish clinical sensitivity/specificity, dose-model
+agreement, actual delivery behavior or site-specific commissioning. See the
+[local commissioning scaffold](local-commissioning-scaffold.md) and the
+[candidate release record](releases/v3.2.0.md).

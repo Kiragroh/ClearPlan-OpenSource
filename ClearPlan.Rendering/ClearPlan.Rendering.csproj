@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x64</Platform>
+    <ProjectGuid>{A8367D71-6B67-4A95-98F4-00C6E8D6BD09}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>ClearPlan.Rendering</RootNamespace>
+    <AssemblyName>ClearPlan.Rendering</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <PlatformTarget>x64</PlatformTarget>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <DebugSymbols>true</DebugSymbols><DebugType>full</DebugType><Optimize>false</Optimize>
+    <OutputPath>..\artifacts\bin\Debug\</OutputPath><DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugSymbols>false</DebugSymbols><DebugType>none</DebugType><Optimize>true</Optimize>
+    <OutputPath>..\artifacts\bin\Release\</OutputPath><DefineConstants>TRACE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System"/><Reference Include="System.Core"/><Reference Include="System.Drawing"/>
+  </ItemGroup>
+  <ItemGroup><Compile Include="BeamEyeViewRenderer.cs"/><Compile Include="PlanImageRenderer.cs"/><Compile Include="Properties\AssemblyInfo.cs"/></ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClearPlan.Core\ClearPlan.Core.csproj">
+      <Project>{3715B5CB-1DD0-4129-8CFD-662EF928043D}</Project><Name>ClearPlan.Core</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
+</Project>

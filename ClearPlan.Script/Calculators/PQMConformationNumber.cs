@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using ClearPlan.Core.Constraints;
 using System.Threading.Tasks;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
@@ -38,10 +39,15 @@ namespace ClearPlan.Calculators
             }
             prescribedDose = new DoseValue(planDoseDouble, DoseValue.DoseUnit.Gy);
             Group eval = testMatch[0].Groups["evalpt"];
+            double evaluationPoint;
+            if (!PqmNumericEvaluator.TryParseNumber(eval.Value, out evaluationPoint) || evaluationPoint < 0)
+                return "Unable to calculate - invalid parameter";
             Group unit = testMatch[0].Groups["unit"];
+            if (unit.Value != "%" || (evalunit.Value != "" && evalunit.Value != "1"))
+                return "Unable to calculate - unsupported index units";
             DoseValue.DoseUnit du = (unit.Value.CompareTo("%") == 0) ? DoseValue.DoseUnit.Percent :
                 (unit.Value.CompareTo("Gy") == 0) ? DoseValue.DoseUnit.Gy : DoseValue.DoseUnit.Unknown;
-            var body = structureSet.Structures.Where(x => x.DicomType.ToUpper().Equals("EXTERNAL") || x.Id.ToUpper().Equals("BODY") || x.Id.ToUpper().Contains("OUTER CONTOUR") || x.Id.ToUpper().Equals("KÖRPER")).FirstOrDefault();
+            var body = structureSet.Structures.Where(x => x.DicomType.ToUpper().Equals("EXTERNAL") || x.Id.ToUpper().Equals("BODY") || x.Id.ToUpper().Contains("OUTER CONTOUR") || x.Id.ToUpper().Equals("KÃ–RPER")).FirstOrDefault();
             if (body == null)
             {
                 string msg2 = string.Format("No Body-Structure found in '{0}'.", structureSet.Id);
@@ -50,7 +56,7 @@ namespace ClearPlan.Calculators
             //VolumePresentation vpFinal = (evalunit.Value.CompareTo("%") == 0) ? VolumePresentation.Relative : VolumePresentation.AbsoluteCm3;
             VolumePresentation vpFinal = VolumePresentation.AbsoluteCm3;
             DoseValuePresentation dvpFinal = (evalunit.Value.CompareTo("%") == 0) ? DoseValuePresentation.Relative : DoseValuePresentation.Absolute;
-            DoseValue dv = new DoseValue(double.Parse(eval.Value) / 100 * prescribedDose.Dose, DoseValue.DoseUnit.Gy);
+            DoseValue dv = new DoseValue(evaluationPoint / 100 * prescribedDose.Dose, DoseValue.DoseUnit.Gy);
             double bodyWithPrescribedDoseVolume = planningItem.PlanningItemObject.GetVolumeAtDose(body, dv, vpFinal);
             double targetWithPrescribedDoseVolume = planningItem.PlanningItemObject.GetVolumeAtDose(evalStructure, dv, vpFinal);
             double targetVolume = evalStructure.Volume;

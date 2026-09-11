@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -12,6 +13,7 @@ from docx.enum.section import WD_SECTION
 from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.image.image import Image as DocxImage
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Inches, Pt, RGBColor
@@ -23,7 +25,10 @@ OUTPUT = ROOT / "paper" / "ClearPlan_ZMP_short_communication.docx"
 IMAGE_PATTERN = re.compile(r"^!\[(?P<caption>.+?)\]\((?P<path>.+?)\)$")
 NUMBERED_PATTERN = re.compile(r"^\d+\.\s+")
 INLINE_PATTERN = re.compile(
-    r"(\*\*[^*]+\*\*|`[^`]+`|\^[^^]+\^|\[[^\]]+\]\([^)]+\))"
+    r"(\*\*[^*]+\*\*|(?<!\*)\*(?=\S)(?:[^*\n]*\S)?\*(?!\*)|`[^`]+`|\^[^^]+\^|\[[^\]]+\]\([^)]+\))"
+)
+SHORT_MATH_PATTERN = re.compile(
+    r"(?<![A-Za-z0-9_])(?:TV_Rx|V_50%Rx|V_Rx|D_p|AM_j|T_j|O_j|Δθ_i|m_i|t_i|R_i|10\^[−-][0-9]+)(?![A-Za-z0-9_])"
 )
 TABLE_SEPARATOR_PATTERN = re.compile(
     r"^\|\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)+\|$"
@@ -49,17 +54,19 @@ def set_font(style, name, size, bold=None, color=None):
 
 def configure_styles(document):
     styles = document.styles
-    set_font(styles["Normal"], "Arial", 10.5)
+    set_font(styles["Normal"], "Arial", 11)
     styles["Normal"].paragraph_format.space_after = Pt(6)
     styles["Normal"].paragraph_format.line_spacing = 1.08
 
-    set_font(styles["Title"], "Arial", 17, bold=True, color=(23, 37, 84))
+    set_font(styles["Title"], "Arial", 17, bold=True, color=(0, 0, 0))
     styles["Title"].paragraph_format.space_after = Pt(12)
+    for border in styles["Title"]._element.findall(".//" + qn("w:pBdr")):
+        border.getparent().remove(border)
 
     for name, size, color in [
-        ("Heading 1", 14, (23, 37, 84)),
-        ("Heading 2", 12, (29, 78, 216)),
-        ("Heading 3", 11, (36, 50, 74)),
+        ("Heading 1", 14, (0, 0, 0)),
+        ("Heading 2", 12, (0, 0, 0)),
+        ("Heading 3", 11, (0, 0, 0)),
     ]:
         set_font(styles[name], "Arial", size, bold=True, color=color)
         styles[name].paragraph_format.space_before = Pt(10)
@@ -73,19 +80,20 @@ def configure_styles(document):
     set_font(figure_style, "Arial", 9, color=(55, 65, 81))
     figure_style.paragraph_format.space_after = Pt(8)
     figure_style.paragraph_format.keep_with_next = False
+    figure_style.paragraph_format.keep_together = True
 
     if "Author Line" not in styles:
         author_style = styles.add_style("Author Line", WD_STYLE_TYPE.PARAGRAPH)
     else:
         author_style = styles["Author Line"]
-    set_font(author_style, "Arial", 10.5, bold=True, color=(23, 37, 84))
+    set_font(author_style, "Arial", 11, bold=True, color=(0, 0, 0))
     author_style.paragraph_format.space_after = Pt(6)
 
     if "Table Text" not in styles:
         table_style = styles.add_style("Table Text", WD_STYLE_TYPE.PARAGRAPH)
     else:
         table_style = styles["Table Text"]
-    set_font(table_style, "Arial", 8.5)
+    set_font(table_style, "Arial", 9.5)
     table_style.paragraph_format.space_after = Pt(0)
     table_style.paragraph_format.line_spacing = 1.0
 
@@ -107,15 +115,38 @@ def add_page_number(section):
     run._r.extend([begin, instruction, end])
 
 
+def add_plain_runs(paragraph, text):
+    """Format only named mathematical tokens; never reinterpret plan/code IDs."""
+    position = 0
+    for match in SHORT_MATH_PATTERN.finditer(text):
+        if match.start() > position:
+            paragraph.add_run(text[position:match.start()])
+        token = match.group(0)
+        exponent = "^" in token
+        base, index = token.split("^" if exponent else "_", 1)
+        paragraph.add_run(base)
+        run = paragraph.add_run(index)
+        if exponent:
+            run.font.superscript = True
+        else:
+            run.font.subscript = True
+        position = match.end()
+    if position < len(text):
+        paragraph.add_run(text[position:])
+
+
 def add_inline_runs(paragraph, text):
     position = 0
     for match in INLINE_PATTERN.finditer(text):
         if match.start() > position:
-            paragraph.add_run(text[position:match.start()])
+            add_plain_runs(paragraph, text[position:match.start()])
         token = match.group(0)
         if token.startswith("**"):
             run = paragraph.add_run(token[2:-2])
             run.bold = True
+        elif token.startswith("*"):
+            run = paragraph.add_run(token[1:-1])
+            run.italic = True
         elif token.startswith("`"):
             run = paragraph.add_run(token[1:-1])
             run.font.name = "Courier New"
@@ -131,12 +162,52 @@ def add_inline_runs(paragraph, text):
             )
         position = match.end()
     if position < len(text):
-        paragraph.add_run(text[position:])
+        add_plain_runs(paragraph, text[position:])
 
 
 def add_paragraph(document, text, style=None):
+    if text == "t_i = max(Δθ_i/ω, 60m_i/R), and R_i = 60m_i/t_i.":
+        return add_rate_equation(document)
     paragraph = document.add_paragraph(style=style)
     add_inline_runs(paragraph, text)
+    return paragraph
+
+
+def add_rate_equation(document):
+    """Native editable OMML; no raw underscore or slash fractions in the DOCX."""
+    def run(text):
+        element = OxmlElement("m:r")
+        value = OxmlElement("m:t")
+        value.text = text
+        element.append(value)
+        return element
+
+    def sub(base, index):
+        element = OxmlElement("m:sSub")
+        for tag, text in (("e", base), ("sub", index)):
+            part = OxmlElement("m:" + tag)
+            part.append(run(text))
+            element.append(part)
+        return element
+
+    def fraction(numerator, denominator):
+        element = OxmlElement("m:f")
+        for tag, children in (("num", numerator), ("den", denominator)):
+            part = OxmlElement("m:" + tag)
+            part.extend(children)
+            element.append(part)
+        return element
+
+    paragraph = document.add_paragraph()
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    block = OxmlElement("m:oMathPara")
+    equation = OxmlElement("m:oMath")
+    equation.extend([
+        sub("t", "i"), run(" = max("), fraction([sub("Δθ", "i")], [run("ω")]), run(", "),
+        fraction([run("60"), sub("m", "i")], [run("R")]), run("),   "), sub("R", "i"), run(" = "),
+        fraction([run("60"), sub("m", "i")], [sub("t", "i")]), run(".")])
+    block.append(equation)
+    paragraph._p.append(block)
     return paragraph
 
 
@@ -146,8 +217,21 @@ def add_figure(document, image_path):
     paragraph.paragraph_format.space_before = Pt(4)
     paragraph.paragraph_format.space_after = Pt(3)
     paragraph.paragraph_format.keep_with_next = True
+    paragraph.paragraph_format.keep_together = True
+    # The manuscript embeds a preview; the full-size figure remains a separate
+    # submission file. Reserve vertical space for an unsplit caption.
+    section = document.sections[-1]
+    available_width = section.page_width - section.left_margin - section.right_margin
+    available_height = section.page_height - section.top_margin - section.bottom_margin
+    image = DocxImage.from_file(str(image_path))
+    width = min(Inches(6.45), available_width)
+    height = width * image.px_height / image.px_width
+    max_height = min(Inches(7.25), available_height - Inches(1.75))
+    if height > max_height:
+        width *= max_height / height
+        height = max_height
     run = paragraph.add_run()
-    run.add_picture(str(image_path), width=Inches(6.45))
+    run.add_picture(str(image_path), width=int(width), height=int(height))
 
 
 def parse_table_row(line):
@@ -173,7 +257,26 @@ def add_table(document, header, body, alignment_tokens):
     table = document.add_table(rows=1, cols=len(header))
     table.style = "Table Grid"
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
-    table.autofit = True
+    table.autofit = False
+    # Both manuscript tables compare three repeated fields; the equation/oracle
+    # column needs most of the width. Never fix row heights.
+    if len(header) == 3:
+        for column, width in zip(table.columns, (1.4, 2.9, 2.2)):
+            column.width = Inches(width)
+    borders = OxmlElement("w:tblBorders")
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        element = OxmlElement("w:" + edge)
+        for key, value in (("val", "single"), ("sz", "4"), ("color", "D9D9D9")):
+            element.set(qn("w:" + key), value)
+        borders.append(element)
+    table._tbl.tblPr.append(borders)
+    margins = OxmlElement("w:tblCellMar")
+    for edge in ("top", "bottom", "left", "right"):
+        element = OxmlElement("w:" + edge)
+        element.set(qn("w:w"), "85")
+        element.set(qn("w:type"), "dxa")
+        margins.append(element)
+    table._tbl.tblPr.append(margins)
 
     for index, value in enumerate(header):
         cell = table.rows[0].cells[index]
@@ -182,10 +285,16 @@ def add_table(document, header, body, alignment_tokens):
         paragraph = cell.paragraphs[0]
         paragraph.style = document.styles["Table Text"]
         paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        # Word honors paragraph keep-next across table rows; repeating a header
+        # alone does not prevent the first occurrence from being stranded.
+        paragraph.paragraph_format.keep_with_next = True
+        paragraph.paragraph_format.keep_together = True
         run = paragraph.add_run(value)
         run.bold = True
         run.font.color.rgb = RGBColor(255, 255, 255)
     prevent_row_split(table.rows[0])
+    repeated_header = OxmlElement("w:tblHeader")
+    table.rows[0]._tr.get_or_add_trPr().append(repeated_header)
 
     for row_index, values in enumerate(body):
         cells = table.add_row().cells
@@ -210,7 +319,9 @@ def add_table(document, header, body, alignment_tokens):
 
 
 def render_markdown(document, source_path):
-    lines = source_path.read_text(encoding="utf-8").splitlines()
+    # Citation/claim audit anchors belong to source, not visible manuscript prose.
+    text = re.sub(r"<!--.*?-->", "", source_path.read_text(encoding="utf-8"), flags=re.DOTALL)
+    lines = text.splitlines()
     index = 0
     while index < len(lines):
         raw = lines[index].rstrip()
@@ -266,12 +377,19 @@ def render_markdown(document, source_path):
             add_paragraph(document, stripped[2:], "List Bullet")
             index += 1
             continue
-        if stripped.startswith("**Figure "):
+        if stripped.startswith(("**Figure ", "**Supplementary Material ")):
             add_paragraph(document, stripped, "Figure Caption")
             index += 1
             continue
+        if stripped.startswith("**Table "):
+            paragraph = add_paragraph(document, stripped)
+            paragraph.paragraph_format.keep_with_next = True
+            paragraph.paragraph_format.keep_together = True
+            index += 1
+            continue
         if NUMBERED_PATTERN.match(stripped):
-            add_paragraph(document, stripped)
+            paragraph = add_paragraph(document, stripped)
+            paragraph.paragraph_format.keep_together = True
             index += 1
             continue
         if stripped.startswith("Maximilian Grohmann^"):
@@ -287,14 +405,14 @@ def render_markdown(document, source_path):
                     NUMBERED_PATTERN.match(candidate) or
                     IMAGE_PATTERN.match(candidate) or
                     candidate.startswith("|") or
-                    candidate.startswith("**Figure ")):
+                    candidate.startswith(("**Figure ", "**Supplementary Material ", "**Table "))):
                 break
             paragraph_lines.append(candidate)
             index += 1
         add_paragraph(document, " ".join(paragraph_lines))
 
 
-def validate_source(path):
+def validate_source(path, draft=False):
     text = path.read_text(encoding="utf-8")
     abstract_match = re.search(
         r"## Abstract\s+(.+?)\s+Keywords:\s*(.+?)\s+## 1\.",
@@ -306,7 +424,7 @@ def validate_source(path):
     abstract_words = re.findall(r"\b[\w’'-]+\b", abstract_match.group(1))
     if len(abstract_words) > 250:
         raise RuntimeError(
-            f"ZMP abstract limit exceeded: {len(abstract_words)} words."
+            f"Project abstract target exceeded: {len(abstract_words)} words (250 maximum). Journal limits require a separate current check."
         )
     keywords = [
         value.strip()
@@ -314,7 +432,10 @@ def validate_source(path):
         if value.strip()
     ]
     if not 1 <= len(keywords) <= 6:
-        raise RuntimeError(f"ZMP requires 1–6 keywords, found {len(keywords)}.")
+        raise RuntimeError(f"Project target is 1–6 keywords, found {len(keywords)}.")
+
+    if not draft and re.search(r"\[(?:FINAL_|CORE_TESTS|SUPPLEMENT_HASH)", text):
+        raise RuntimeError("Final manuscript still contains unresolved verification/release placeholders.")
 
     forbidden = [
         "To be completed",
@@ -335,9 +456,6 @@ def validate_source(path):
         "maximilian.grohmann@medizin.uni-leipzig.de",
         "0000-0002-6909-811X",
         "reports exclusively analytically generated synthetic scenario artifacts",
-        "125 C# tests",
-        "20 tests",
-        "releases/tag/v3.1.0",
     ]
     missing = [value for value in required if value not in text]
     if missing:
@@ -348,7 +466,7 @@ def validate_source(path):
     )
 
 
-def validate_docx(path):
+def validate_docx(path, source):
     document = Document(str(path))
     text_parts = [paragraph.text for paragraph in document.paragraphs]
     for table in document.tables:
@@ -359,11 +477,9 @@ def validate_docx(path):
         "Maximilian Grohmann",
         "Maria Jäckel",
         "University Medical Center Hamburg-Eppendorf",
-        "Excel workbook",
+        "Excel",
         "RefDB JSON",
         "179-181 T30 UZ",
-        "125 C# tests",
-        "v3.1.0",
         "did not receive any specific grant",
         "declare no competing interests",
     ]
@@ -372,13 +488,16 @@ def validate_docx(path):
         raise RuntimeError(f"DOCX is missing expected Unicode/content: {missing}")
     if "\ufffd" in text:
         raise RuntimeError("DOCX contains the Unicode replacement character.")
-    if len(document.inline_shapes) != 3:
+    source_text = source.read_text(encoding="utf-8")
+    figure_count = sum(bool(IMAGE_PATTERN.match(line)) for line in source_text.splitlines())
+    table_count = sum(bool(TABLE_SEPARATOR_PATTERN.match(line)) for line in source_text.splitlines())
+    if len(document.inline_shapes) != figure_count:
         raise RuntimeError(
-            f"DOCX must contain three figures, found {len(document.inline_shapes)}."
+            f"DOCX figure count differs from source: {len(document.inline_shapes)} versus {figure_count}."
         )
-    if len(document.tables) != 4:
+    if len(document.tables) != table_count:
         raise RuntimeError(
-            f"DOCX must contain four editable tables, found {len(document.tables)}."
+            f"DOCX table count differs from source: {len(document.tables)} versus {table_count}."
         )
     if len(document.sections) != 1:
         raise RuntimeError("The submission DOCX must remain single-section/single-column.")
@@ -389,6 +508,11 @@ def validate_docx(path):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, default=SOURCE)
+    parser.add_argument("--output", type=Path, default=OUTPUT)
+    parser.add_argument("--draft", action="store_true", help="Allow explicitly unresolved release/test placeholders for internal review only.")
+    args = parser.parse_args()
     document = Document()
     section = document.sections[0]
     set_cell_margins(section)
@@ -404,15 +528,16 @@ def main():
         "radiotherapy, plan review, quality assurance, software testing, "
         "treatment planning system, simulation"
     )
-    fixed_time = datetime(2026, 7, 30, 15, 0, 0, tzinfo=timezone.utc)
+    fixed_time = datetime(2026, 9, 11, 0, 0, 0, tzinfo=timezone.utc)
     properties.created = fixed_time
     properties.modified = fixed_time
 
-    validate_source(SOURCE)
-    render_markdown(document, SOURCE)
-    document.save(str(OUTPUT))
-    validate_docx(OUTPUT)
-    print(f"Wrote and reopened {OUTPUT}")
+    validate_source(args.source, draft=args.draft)
+    render_markdown(document, args.source)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    document.save(str(args.output))
+    validate_docx(args.output, args.source)
+    print(f"Wrote and reopened {args.output}")
 
 
 if __name__ == "__main__":

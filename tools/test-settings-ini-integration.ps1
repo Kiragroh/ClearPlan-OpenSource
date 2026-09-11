@@ -55,7 +55,6 @@ try {
 
     & powershell.exe `
         -NoProfile `
-        -ExecutionPolicy Bypass `
         -File $PSCommandPath `
         -RepositoryRoot $RepositoryRoot `
         -WorkerRoot $temporaryRoot

@@ -8,12 +8,14 @@ debug/
 *.bak
 .tools/
 .superpowers/
-docs/superpowers/
 Manuskript_Entwurf.docx
 ClearPlan-DLLs/VMS.TPS.Common.Model.API.dll
 ClearPlan-DLLs/VMS.TPS.Common.Model.Types.dll
 deployment/private/
 artifacts/
 .aris/
+.impeccable/review/
 __pycache__/
 *.pyc
+node_modules/
+outputs/

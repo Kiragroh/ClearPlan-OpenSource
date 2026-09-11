@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Globalization;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
@@ -13,77 +10,43 @@ namespace ClearPlan.Calculators
     {
         public static string GetMinMaxMean(StructureSet structureSet, PlanningItemViewModel planningItem, Structure evalStructure, MatchCollection testMatch, Group evalunit, Group type)
         {
-            if (type.Value.CompareTo("Volume") == 0)
+            if (type == null || evalunit == null || !type.Success || !evalunit.Success ||
+                evalStructure == null || evalStructure.IsEmpty)
+                return "Not evaluated - structure or metric is unavailable";
+
+            if (type.Value == "Volume")
             {
-                return string.Format("{0:0.00} {1}", evalStructure.Volume, evalunit.Value);
+                if (evalunit.Value != "cc") return "Not evaluated - structure volume requires cc";
+                double volume = evalStructure.Volume;
+                if (double.IsNaN(volume) || double.IsInfinity(volume) || volume <= 0)
+                    return "Not evaluated - structure volume is invalid";
+                return string.Format(CultureInfo.InvariantCulture, "{0:0.00} cc", volume);
             }
-            else
-            {
-                double planSumRxDose = 0;
-                DVHData dvh;                
-                DoseValuePresentation dvp = (evalunit.Value.CompareTo("%") == 0) ? DoseValuePresentation.Relative : DoseValuePresentation.Absolute;
-                if (dvp == DoseValuePresentation.Relative && planningItem.PlanningItemObject is PlanSum)
-                {                    
-                    PlanSum planSum = (PlanSum)planningItem.PlanningItemObject;                   
-                    foreach (PlanSetup planSetup in planSum.PlanSetups)
-                    {
-                        double planSetupRxDose = planSetup.TotalDose.Dose;
-                        planSumRxDose += planSetupRxDose;
-                    }
-                    dvh = planningItem.PlanningItemObject.GetDVHCumulativeData(evalStructure, DoseValuePresentation.Absolute, VolumePresentation.Relative, 0.1);
-                }
-                else
-                    dvh = planningItem.PlanningItemObject.GetDVHCumulativeData(evalStructure, dvp, VolumePresentation.Relative, 0.1);
-                if (type.Value.CompareTo("Max") == 0)
-                {
-                    //checking dose output unit and adapting to template
-                    //Gy to cGy
-                    if ((evalunit.Value.CompareTo("Gy") == 0) && (dvh.MaxDose.Unit.CompareTo(DoseValue.DoseUnit.cGy) == 0))
-                    {
-                        return new DoseValue(dvh.MaxDose.Dose / 100, DoseValue.DoseUnit.Gy).ToString();
-                    }
-                    //Gy to Gy or % to %
-                    else
-                    {
-                        if (dvp == DoseValuePresentation.Relative && planningItem.PlanningItemObject is PlanSum)
-                        {
-                            double maxDoseDouble = double.Parse(dvh.MaxDose.ValueAsString);
-                            //double 
-                            return (maxDoseDouble / planSumRxDose * 100).ToString("0.0") + " " + evalunit.Value;
-                        }                            
-                        else
-                            return dvh.MaxDose.ToString();
-                    }
-                }
-                else if (type.Value.CompareTo("Min") == 0)
-                {
-                    //checking dose output unit and adapting to template
-                    //Gy to cGy
-                    if ((evalunit.Value.CompareTo("Gy") == 0) && (dvh.MinDose.Unit.CompareTo(DoseValue.DoseUnit.cGy) == 0))
-                    {
-                        return new DoseValue(dvh.MinDose.Dose / 100, DoseValue.DoseUnit.Gy).ToString();
-                    }
-                    //Gy to Gy or % to %
-                    else
-                    {
-                        return dvh.MinDose.ToString();
-                    }
-                }
-                else
-                {
-                    //checking dose output unit and adapting to template
-                    //Gy to cGy
-                    if ((evalunit.Value.CompareTo("Gy") == 0) && (dvh.MeanDose.Unit.CompareTo(DoseValue.DoseUnit.cGy) == 0))
-                    {
-                        return new DoseValue(dvh.MeanDose.Dose / 100, DoseValue.DoseUnit.Gy).ToString();
-                    }
-                    //Gy to Gy or % to %
-                    else
-                    {
-                        return dvh.MeanDose.ToString();
-                    }
-                }
-            }
+
+            if (type.Value != "Min" && type.Value != "Max" && type.Value != "Mean")
+                return "Not evaluated - unsupported dose statistic";
+            if (evalunit.Value != "Gy" && evalunit.Value != "cGy" && evalunit.Value != "%")
+                return "Not evaluated - unsupported dose unit";
+            if (planningItem == null || planningItem.PlanningItemObject == null)
+                return "Not evaluated - planning item is unavailable";
+            if (planningItem.PlanningItemObject is PlanSum && evalunit.Value == "%")
+                return "Not evaluated - relative dose for plan sum is unsupported";
+            if (!(planningItem.PlanningItemObject is PlanSetup) && !(planningItem.PlanningItemObject is PlanSum))
+                return "Not evaluated - planning item is unsupported";
+
+            DoseValuePresentation presentation = evalunit.Value == "%"
+                ? DoseValuePresentation.Relative : DoseValuePresentation.Absolute;
+            DVHData dvh = planningItem.PlanningItemObject.GetDVHCumulativeData(
+                evalStructure, presentation, VolumePresentation.Relative, 0.1);
+            if (dvh == null) return "Not evaluated - DVH is unavailable";
+            if (double.IsNaN(dvh.SamplingCoverage) || double.IsInfinity(dvh.SamplingCoverage) ||
+                double.IsNaN(dvh.Coverage) || double.IsInfinity(dvh.Coverage) ||
+                dvh.SamplingCoverage < 0.9 || dvh.Coverage < 0.9)
+                return "Not evaluated - insufficient dose or sampling coverage";
+
+            DoseValue achieved = type.Value == "Min" ? dvh.MinDose :
+                type.Value == "Max" ? dvh.MaxDose : dvh.MeanDose;
+            return PQMDoseAtVolume.FormatDoseValue(achieved, evalunit.Value);
         }
     }
 }

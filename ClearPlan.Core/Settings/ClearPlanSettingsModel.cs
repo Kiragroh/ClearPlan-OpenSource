@@ -31,11 +31,18 @@ namespace ClearPlan.Core.Settings
 
         public string RefDbJsonPath { get; set; }
         public string ExcelWorkbookPath { get; set; }
+        public string StructureAliasesJsonPath { get; set; }
         public bool IncludeInactiveTables { get; set; }
     }
 
     public sealed class ClearPlanPathOptions
     {
+        public string MlcGeometryProfilesJsonPath { get; set; }
+        public string DoseRateProfilesJsonPath { get; set; }
+        public string AriaUploadConfigJsonPath { get; set; }
+        public string DefaultReviewRulesJsonPath { get; set; }
+        public string PlanCheckSelectionJsonPath { get; set; }
+        public string FieldNamingRulesJsonPath { get; set; }
         public string ConstraintTemplatesDirectory { get; set; }
         public string DefaultConventionalTemplate { get; set; }
         public string DefaultHypofractionatedTemplate { get; set; }
@@ -44,6 +51,7 @@ namespace ClearPlan.Core.Settings
         public string ReportsDirectory { get; set; }
         public string CsvExportDirectory { get; set; }
         public string StateDirectory { get; set; }
+        public string ConfigurationDirectory { get; set; }
         public string UsageLogFile { get; set; }
         public string ActivityLogFile { get; set; }
         public string VersionSeenUsersFile { get; set; }

@@ -10,6 +10,7 @@
     <SolidColorBrush x:Key="ClinicalBlueprintNavigation" Color="#17212B"/>
     <SolidColorBrush x:Key="ClinicalBlueprintNavigationSelected" Color="#313A46"/>
     <SolidColorBrush x:Key="ClinicalBlueprintAmber" Color="#D99B36"/>
+    <SolidColorBrush x:Key="ClinicalBlueprintWarningText" Color="#9A6508"/>
     <SolidColorBrush x:Key="ClinicalBlueprintTeal" Color="#0F766E"/>
     <SolidColorBrush x:Key="ClinicalBlueprintGreen" Color="#15803D"/>
     <SolidColorBrush x:Key="ClinicalBlueprintRed" Color="#B42318"/>
@@ -45,9 +46,11 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter Property="Background" Value="#115E59"/>
+                            <Setter Property="Foreground" Value="White"/>
                         </Trigger>
                         <Trigger Property="IsKeyboardFocused" Value="True">
                             <Setter Property="Background" Value="#134E4A"/>
+                            <Setter Property="Foreground" Value="White"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.45"/>
@@ -71,7 +74,6 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="6"/>
         <Setter Property="Padding" Value="16"/>
-        <Setter Property="Effect" Value="{StaticResource ClinicalBlueprintCardShadow}"/>
     </Style>
 
     <Style x:Key="ClinicalBlueprintSectionTitle" TargetType="TextBlock">
@@ -185,6 +187,11 @@
     </Style>
 
     <Style TargetType="DataGrid">
+        <Setter Property="FontFamily" Value="Segoe UI"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{StaticResource ClinicalBlueprintText}"/>
+        <Setter Property="MinRowHeight" Value="29"/>
         <Setter Property="Background" Value="White"/>
         <Setter Property="BorderBrush" Value="{StaticResource ClinicalBlueprintBorder}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -209,12 +216,13 @@
     </Style>
 
     <Style TargetType="DataGridRow">
+        <Setter Property="FontWeight" Value="Normal"/>
         <Style.Triggers>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="#FFF3D6"/>
                 <Setter Property="Foreground" Value="{StaticResource ClinicalBlueprintText}"/>
                 <Setter Property="BorderBrush" Value="{StaticResource ClinicalBlueprintAmber}"/>
-                <Setter Property="BorderThickness" Value="3,0,0,0"/>
+                <Setter Property="BorderThickness" Value="1,0,0,0"/>
             </Trigger>
         </Style.Triggers>
     </Style>
@@ -223,5 +231,15 @@
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="Padding" Value="6,4"/>
         <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+        <Style.Triggers>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="#E4F1EE"/>
+                <Setter Property="Foreground" Value="{StaticResource ClinicalBlueprintText}"/>
+            </Trigger>
+            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                <Setter Property="BorderBrush" Value="{StaticResource ClinicalBlueprintTeal}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </Trigger>
+        </Style.Triggers>
     </Style>
 </ResourceDictionary>

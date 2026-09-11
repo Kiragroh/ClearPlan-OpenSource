@@ -148,6 +148,7 @@ namespace ClearPlan.Core.Constraints
                     DisplayName = tableRows.Get(row, "display_name"),
                     Active = active,
                     IsPlanSum = ParseBoolean(tableRows.Get(row, "is_plan_sum"), false),
+                    RequiresConfirmation = ParseBoolean(tableRows.Get(row, "requires_confirmation"), false),
                     Site = tableRows.Get(row, "site"),
                     Regime = tableRows.Get(row, "regime"),
                     Source = tableRows.Get(row, "source")

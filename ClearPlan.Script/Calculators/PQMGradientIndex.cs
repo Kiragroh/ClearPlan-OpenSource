@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using ClearPlan.Core.Constraints;
 using VMS.TPS.Common.Model.API;
 using VMS.TPS.Common.Model.Types;
 
@@ -15,7 +16,12 @@ namespace ClearPlan.Calculators
                 return "insufficient dose or sampling coverage";
             }
             Group eval = testMatch[0].Groups["evalpt"];
+            double evaluationPoint;
+            if (!PqmNumericEvaluator.TryParseNumber(eval.Value, out evaluationPoint) || evaluationPoint < 0)
+                return "Unable to calculate - invalid parameter";
             Group unit = testMatch[0].Groups["unit"];
+            if (unit.Value != "%" || (evalunit.Value != "" && evalunit.Value != "1"))
+                return "Unable to calculate - unsupported index units";
             DoseValue prescribedDose;
             double planDoseDouble = 0;
             DoseValue.DoseUnit du = (unit.Value.CompareTo("%") == 0) ? DoseValue.DoseUnit.Percent :
@@ -38,7 +44,7 @@ namespace ClearPlan.Calculators
             //var body = structureSet.Structures.Where(x => x.Id.Contains("BODY")).First();
             VolumePresentation vpFinal = VolumePresentation.AbsoluteCm3;
             DoseValuePresentation dvpFinal = (evalunit.Value.CompareTo("%") == 0) ? DoseValuePresentation.Relative : DoseValuePresentation.Absolute;
-            DoseValue dv = new DoseValue(double.Parse(eval.Value) / 100 * prescribedDose.Dose, DoseValue.DoseUnit.Gy);
+            DoseValue dv = new DoseValue(evaluationPoint / 100 * prescribedDose.Dose, DoseValue.DoseUnit.Gy);
             //DoseValue d2 = new DoseValue(2 / 100 * prescribedDose.Dose, DoseValue.DoseUnit.Gy);
             //double d2 = planningItem.PlanningItemObject.GetDoseAtVolume(evalStructure, 2, VolumePresentation.Relative, DoseValuePresentation.Absolute).Dose;
             //double d98 = planningItem.PlanningItemObject.GetDoseAtVolume(evalStructure, 98, VolumePresentation.Relative, DoseValuePresentation.Absolute).Dose;

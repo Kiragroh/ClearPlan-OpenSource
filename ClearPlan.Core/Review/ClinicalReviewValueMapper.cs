@@ -259,6 +259,8 @@ namespace ClearPlan.Core.Review
 
         public static string InferUnit(string value)
         {
+            var outputUnit = Regex.Match(value ?? string.Empty, @"\[(?<unit>Gy|cGy|%|cc|cm3)\]\s*$", RegexOptions.IgnoreCase);
+            if (outputUnit.Success) value = outputUnit.Groups["unit"].Value;
             string normalized = Normalize(value);
             if (normalized.Contains("cgy") || normalized.Contains("gy"))
             {

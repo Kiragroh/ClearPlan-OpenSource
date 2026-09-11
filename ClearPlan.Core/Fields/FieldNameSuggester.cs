@@ -12,20 +12,27 @@ namespace ClearPlan.Core.Fields
         public static IList<FieldNameSuggestion> Suggest(
             IEnumerable<BeamNamingInput> beams)
         {
-            return SuggestInternal(null, beams, false);
+            return SuggestInternal(null, beams, false, FieldNamingRules.CreateDefault());
         }
 
         public static IList<FieldNameSuggestion> Suggest(
             string planId,
             IEnumerable<BeamNamingInput> beams)
         {
-            return SuggestInternal(planId, beams, true);
+            return SuggestInternal(planId, beams, true, FieldNamingRules.CreateDefault());
+        }
+
+        public static IList<FieldNameSuggestion> Suggest(string planId,
+            IEnumerable<BeamNamingInput> beams, FieldNamingRules rules)
+        {
+            return SuggestInternal(planId, beams, true, rules);
         }
 
         private static IList<FieldNameSuggestion> SuggestInternal(
             string planId,
             IEnumerable<BeamNamingInput> beams,
-            bool evaluateIds)
+            bool evaluateIds,
+            FieldNamingRules rules)
         {
             IList<BeamNamingInput> ordered = (beams ??
                 Enumerable.Empty<BeamNamingInput>())
@@ -35,9 +42,12 @@ namespace ClearPlan.Core.Fields
                 .ThenBy(beam => beam.BeamNumber)
                 .ThenBy(beam => beam.CurrentId, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            if (rules == null || !rules.Enabled || !rules.IsValid())
+                return ordered.Select((beam, index) => NotEvaluated(beam, index + 1,
+                    "Default field-naming rules are missing, disabled or invalid; no fallback suggestion.")).ToList();
             var baseNames = ordered.ToDictionary(
                 beam => beam,
-                BuildBaseName);
+                beam => BuildBaseName(beam, rules, null));
             var counts = baseNames.Values
                 .GroupBy(name => name, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.Count(),
@@ -61,7 +71,7 @@ namespace ClearPlan.Core.Fields
                         duplicateIndex = 0;
                     }
 
-                    suggested = AddDuplicateSuffix(baseName, duplicateIndex);
+                    suggested = BuildBaseName(beam, rules, DuplicateLetter(duplicateIndex));
                     indexes[baseName] = duplicateIndex + 1;
                 }
 
@@ -95,6 +105,13 @@ namespace ClearPlan.Core.Fields
             }
 
             return suggestions;
+        }
+
+        private static FieldNameSuggestion NotEvaluated(BeamNamingInput beam, int displayOrder, string message)
+        {
+            return new FieldNameSuggestion { CurrentId = beam.CurrentId ?? "", CurrentName = beam.CurrentName ?? "",
+                ExpectedId = "", SuggestedName = "", BeamNumber = beam.BeamNumber, DisplayOrder = displayOrder,
+                IsEvaluated = false, EvaluationMessage = message };
         }
 
         private static string GetTreatmentIdPrefix(
@@ -155,35 +172,26 @@ namespace ClearPlan.Core.Fields
                 : value.Substring(0, 16);
         }
 
-        private static string BuildBaseName(BeamNamingInput beam)
+        private static string BuildBaseName(BeamNamingInput beam, FieldNamingRules rules, string duplicateSuffix)
         {
             bool isArc = !SameAngle(
                 beam.GantryStartAngle,
                 beam.GantryStopAngle);
             string anglePart = isArc
-                ? AngleText(beam.GantryStartAngle) + "-" +
+                ? AngleText(beam.GantryStartAngle) + rules.AngleSeparator +
                   AngleText(beam.GantryStopAngle)
                 : AngleText(beam.GantryStartAngle);
             string tablePart = SameAngle(beam.PatientSupportAngle, 0)
                 ? string.Empty
-                : " T" + AngleText(beam.PatientSupportAngle);
+                : rules.TablePrefix + AngleText(beam.PatientSupportAngle);
             string directionPart = isArc
-                ? " " + ArcDirectionToken(beam.GantryDirection)
+                ? ArcDirectionToken(beam.GantryDirection, rules) + (duplicateSuffix ?? "")
                 : string.Empty;
-
-            return anglePart + tablePart + directionPart;
-        }
-
-        private static string AddDuplicateSuffix(string baseName, int index)
-        {
-            string letter = DuplicateLetter(index);
-            if (baseName.EndsWith(" UZ", StringComparison.OrdinalIgnoreCase) ||
-                baseName.EndsWith(" GUZ", StringComparison.OrdinalIgnoreCase))
-            {
-                return baseName + letter;
-            }
-
-            return baseName + " UZ" + letter;
+            var parts = new Dictionary<string, string> { { "angles", anglePart }, { "table", tablePart }, { "direction", directionPart } };
+            var result = string.Join(rules.PartSeparator, (isArc ? rules.ArcOrder : rules.StaticOrder)
+                .Select(token => parts[token]).Where(value => !string.IsNullOrEmpty(value)));
+            if (!isArc && duplicateSuffix != null) result += rules.PartSeparator + rules.StaticDuplicateToken + duplicateSuffix;
+            return result;
         }
 
         private static string DuplicateLetter(int index)
@@ -196,21 +204,21 @@ namespace ClearPlan.Core.Fields
             return (index + 1).ToString(CultureInfo.InvariantCulture);
         }
 
-        private static string ArcDirectionToken(string gantryDirection)
+        private static string ArcDirectionToken(string gantryDirection, FieldNamingRules rules)
         {
             string direction = (gantryDirection ?? string.Empty)
                 .ToUpperInvariant();
             if (direction.Contains("COUNTER") || direction.Contains("CCW"))
             {
-                return "GUZ";
+                return rules.CounterClockwiseToken;
             }
 
             if (direction.Contains("CLOCKWISE") || direction.Contains("CW"))
             {
-                return "UZ";
+                return rules.ClockwiseToken;
             }
 
-            return "UZ";
+            return rules.ClockwiseToken;
         }
 
         private static bool SameAngle(double first, double second)

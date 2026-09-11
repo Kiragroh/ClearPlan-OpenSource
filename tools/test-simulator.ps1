@@ -90,7 +90,7 @@ $scenarioIds = @(
     "optional-path-fallback",
     "mixed-review"
 )
-$tabIds = @("overview", "pqm", "plancheck", "fields", "dvh")
+$tabIds = @("overview", "pqm", "plancheck", "fields", "dvh", "parameters", "comparison", "bev")
 
 $scenarioDirectory = Join-Path $SimulatorDirectory "Scenarios"
 foreach ($scenarioId in $scenarioIds) {
@@ -200,6 +200,7 @@ function Invoke-Simulator {
     $process = Start-Process `
         -FilePath $exePath `
         -ArgumentList $quotedArguments `
+        -WindowStyle Hidden `
         -PassThru `
         -Wait
     if ($process.ExitCode -ne 0) {

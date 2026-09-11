@@ -84,6 +84,8 @@ finally {
 
 $clinicalArtifactNames = @(
     "ClearPlan.Core.dll",
+    "ClearPlan.Rendering.dll",
+    "MachineGeometry\MlcGeometryProfiles.example.json",
     "ClearPlan.Core.pdb",
     "ClearPlan.Presentation.dll",
     "ClearPlan.Presentation.pdb",
@@ -97,6 +99,21 @@ $clinicalArtifactNames = @(
     "ClearPlan.Runner.exe.config",
     "ClearPlan.Runner.pdb"
 )
+# The read-only RTPLAN adapter is a locked, separate dependency. Include its
+# entire runtime closure, and verify/copy those same bytes with the runner.
+$dicomRuntimeNames = @(
+    "ClearPlan.Dicom.dll", "CommunityToolkit.HighPerformance.dll", "fo-dicom.core.dll",
+    "Microsoft.Bcl.AsyncInterfaces.dll", "Microsoft.Bcl.HashCode.dll",
+    "Microsoft.Extensions.Configuration.Abstractions.dll", "Microsoft.Extensions.Configuration.Binder.dll",
+    "Microsoft.Extensions.DependencyInjection.Abstractions.dll", "Microsoft.Extensions.DependencyInjection.dll",
+    "Microsoft.Extensions.Logging.Abstractions.dll", "Microsoft.Extensions.Logging.dll",
+    "Microsoft.Extensions.Options.ConfigurationExtensions.dll", "Microsoft.Extensions.Options.dll",
+    "Microsoft.Extensions.Primitives.dll", "System.Buffers.dll", "System.Diagnostics.DiagnosticSource.dll",
+    "System.Memory.dll", "System.Numerics.Vectors.dll", "System.Runtime.CompilerServices.Unsafe.dll",
+    "System.Text.Encoding.CodePages.dll", "System.Text.Encodings.Web.dll", "System.Text.Json.dll",
+    "System.Threading.Channels.dll", "System.Threading.Tasks.Extensions.dll", "System.ValueTuple.dll"
+)
+$clinicalArtifactNames += $dicomRuntimeNames
 $clinicalBuildManifestPath =
     Join-Path $resolvedSource "built\clinical-build-manifest.json"
 
@@ -284,7 +301,6 @@ $scriptFiles = @(
     "CONTRIBUTING.md",
     "CITATION.cff",
     "THIRD-PARTY-NOTICES.md",
-    "docs\releases\v3.1.0.md",
     "ClearPlan.Script\ClearPlan.csproj",
     "ClearPlan.Script\Script.cs",
     "ClearPlan.Script\Properties\AssemblyInfo.cs",
@@ -294,6 +310,11 @@ $scriptFiles = @(
     "ClearPlan.Script\PlanSelectView.xaml.cs",
     "ClearPlan.Script\Review\ClinicalReviewWorkspaceHost.cs",
     "ClearPlan.Script\Review\EsapiReviewSnapshotBuilder.cs",
+    "ClearPlan.Script\Review\EsapiPlanAnalysisBuilder.cs",
+    "ClearPlan.Script\Review\EsapiNativeMlcAdapter.cs",
+    "ClearPlan.Script\Review\EsapiNativeGeometryFingerprint.cs",
+    "ClearPlan.Script\Review\EsapiBevBuilder.cs",
+    "ClearPlan.Script\Review\EsapiPlanImageBuilder.cs",
     "ClearPlan.Script\Helpers\ClearPlanSettings.cs",
     "ClearPlan.Script\Calculators\PQMSummaryCalculator.cs",
     "ClearPlan.Script\Calculators\FieldNamingPreviewCalculator.cs",
@@ -313,9 +334,12 @@ $scriptFiles = @(
     "ClearPlan.Script\Views\SettingsView.xaml.cs",
     "ClearPlan.Script\Distribution\CHANGELOG.md",
     "ClearPlan.Script\Distribution\ConstraintTemplates\ClearPlan_DefaultConstraints.xlsx",
+    "ClearPlan.Script\Distribution\ConstraintTemplates\TG263_StructureAliases.example.json",
+    "ClearPlan.Script\Distribution\MachineGeometry\MlcGeometryProfiles.example.json",
     "ClearPlan.Runner\ClearPlan.Runner.csproj",
     "ClearPlan.Runner\App.xaml",
     "ClearPlan.Runner\App.xaml.cs",
+    "ClearPlan.Runner\App.config",
     "ClearPlan.Runner\RunnerFailureReporter.cs",
     "ClearPlan.Runner\RunnerWindowStyler.cs",
     "ClearPlan.Runner\Properties\AssemblyInfo.cs",
@@ -373,11 +397,16 @@ foreach ($file in $presentationFiles) {
 
 $additionalRecursiveRoots = @(
     "ClearPlan.Core.Tests",
+    "ClearPlan.Dicom",
+    "ClearPlan.Dicom.Tests",
     "ClearPlan.Reporting",
+    "ClearPlan.Rendering",
     "ClearPlan.Reporting.MigraDoc",
     "ClearPlan.Simulator",
     "examples\raystation",
     "paper",
+    "docs",
+    "licenses",
     "tools"
 )
 foreach ($relativeRoot in $additionalRecursiveRoots) {
@@ -403,6 +432,8 @@ foreach ($relativeRoot in $additionalRecursiveRoots) {
 
 $builtFiles = @(
     "ClearPlan.Core.dll",
+    "ClearPlan.Rendering.dll",
+    "MachineGeometry\MlcGeometryProfiles.example.json",
     "ClearPlan.Core.pdb",
     "ClearPlan.Presentation.dll",
     "ClearPlan.Presentation.pdb",
@@ -418,6 +449,7 @@ $builtFiles = @(
     "clinical-build-manifest.json",
     "CHANGELOG.md"
 )
+$builtFiles += $dicomRuntimeNames
 foreach ($fileName in $builtFiles) {
     $copyItems.Add([pscustomobject]@{
         source = Join-Path $resolvedSource ("built\" + $fileName)

@@ -20,6 +20,8 @@ namespace ClearPlan.Core.Review
             StructureMappings = new List<ReviewStructureMapping>();
             DvhSeries = new List<ReviewDvhSeries>();
             Report = new ReviewReportMetadata();
+            PlanAnalysis = new PlanAnalysis.ReviewPlanAnalysis();
+            PlanImages = new List<ReviewPlanImage>();
         }
 
         [JsonProperty("schemaVersion", Order = 0)]
@@ -67,6 +69,9 @@ namespace ClearPlan.Core.Review
         [JsonProperty("planCheckRows", Order = 14)]
         public List<ReviewCheckRow> PlanCheckRows { get; set; }
 
+        [JsonProperty("disabledCheckCount", Order = 21)]
+        public int DisabledCheckCount { get; set; }
+
         [JsonProperty("fieldRows", Order = 15)]
         public List<ReviewFieldRow> FieldRows { get; set; }
 
@@ -79,6 +84,12 @@ namespace ClearPlan.Core.Review
         [JsonProperty("report", Order = 18)]
         public ReviewReportMetadata Report { get; set; }
 
+        [JsonProperty("planAnalysis", Order = 19)]
+        public PlanAnalysis.ReviewPlanAnalysis PlanAnalysis { get; set; }
+
+        [JsonProperty("planImages", Order = 20)]
+        public List<ReviewPlanImage> PlanImages { get; set; }
+
         [OnDeserialized]
         internal void RestoreOptionalCollections(StreamingContext context)
         {
@@ -90,6 +101,8 @@ namespace ClearPlan.Core.Review
             StructureMappings = StructureMappings ?? new List<ReviewStructureMapping>();
             DvhSeries = DvhSeries ?? new List<ReviewDvhSeries>();
             Report = Report ?? new ReviewReportMetadata();
+            PlanAnalysis = PlanAnalysis ?? new PlanAnalysis.ReviewPlanAnalysis();
+            PlanImages = PlanImages ?? new List<ReviewPlanImage>();
         }
     }
 

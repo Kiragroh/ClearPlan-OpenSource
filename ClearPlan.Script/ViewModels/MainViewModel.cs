@@ -1,5 +1,6 @@
 using ClearPlan.Helpers;
 using ClearPlan.Core.Constraints;
+using ClearPlan.Core.Fields;
 using ClearPlan.Core.Review;
 using ClearPlan.Calculators;
 using System;
@@ -63,6 +64,7 @@ namespace ClearPlan
         public ObservableCollection<PlanningItemDetailsViewModel> PlanningItemSummaries { get; set; }
         public ObservableCollection<StructureViewModel> StructureList { get; set; }
         public ObservableCollection<FieldNamePreviewViewModel> FieldNamePreviews { get; set; }
+        public FieldNamingRuleConfiguration FieldNamingConfiguration { get; private set; }
         public OverviewViewModel Overview { get; private set; }
         public double SliderValue { get; set; }
         public Model3DGroup ModelGroup { get; set; }
@@ -122,7 +124,9 @@ namespace ClearPlan
             isoctr = new Point3D(0, 0, 0);  //just to initalize
             cameraPosition = new Point3D(0, 0, -4500);
             PlanningItemSummaries = GetPlanningItemSummary(ActivePlanningItem, PlanningItemList);
-            FieldNamePreviews = FieldNamingPreviewCalculator.Calculate(ActivePlanningItem);
+            FieldNamingConfiguration = FieldNamingRuleConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.FieldNamingRulesJsonPath)
+                ? null : settings.ResolvePath(settings.Paths.FieldNamingRulesJsonPath));
+            FieldNamePreviews = FieldNamingPreviewCalculator.Calculate(ActivePlanningItem, FieldNamingConfiguration);
             RefreshOverview();
             //NotifyPropertyChanged("Structure");
         }
@@ -168,9 +172,9 @@ namespace ClearPlan
                     loadResult == null ? string.Empty : loadResult.ActiveSource);
             }
 
-            ConstraintTableSelection selection = ConstraintTableSelector.Select(
-                loadResult.Catalog.Tables,
-                BuildConstraintContext(planningItem));
+            var context = BuildConstraintContext(planningItem);
+            context.StructureDefinitions = loadResult.Catalog.Structures;
+            ConstraintTableSelection selection = ConstraintTableSelector.Select(loadResult.Catalog.Tables, context);
             ConstraintTableDefinition selectedTable = selection.SelectedTable ??
                                                       selection.Candidates
                                                           .Select(candidate => candidate.Table)
@@ -207,9 +211,26 @@ namespace ClearPlan
                 StructureIds = planningItem.PlanningItemStructureSet == null
                     ? new List<string>()
                     : planningItem.PlanningItemStructureSet.Structures
+                        .Where(structure => !structure.IsEmpty && structure.HasSegment)
                         .Select(structure => structure.Id)
                         .ToList()
             };
+            var plan = planningItem.PlanningItemObject as PlanSetup;
+            if (plan != null)
+            {
+                try
+                {
+                    var prescription = plan.RTPrescription;
+                    if (prescription != null)
+                    {
+                        context.PrescriptionLabels = new[] { prescription.Id, prescription.Name }
+                            .Where(label => !string.IsNullOrWhiteSpace(label)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                        context.SiteHint = prescription.Site;
+                        context.PrescriptionFractionCount = prescription.NumberOfFractions;
+                    }
+                }
+                catch (Exception) { /* An unavailable prescription does not authorize a name guess. */ }
+            }
             return context;
         }
 
@@ -250,7 +271,19 @@ namespace ClearPlan
                 return;
             }
 
-            var dvh = CalculateDvh(structure);
+            DVHData dvh;
+            try
+            {
+                if (structure.IsEmpty) return;
+                dvh = CalculateDvh(structure);
+                if (dvh == null || dvh.CurveData == null || dvh.CurveData.Length == 0) return;
+            }
+            catch (Exception)
+            {
+                // Keep the selection: the detached snapshot records the unavailable DVH.
+                // One unavailable native curve must not abort the remaining selections.
+                return;
+            }
             PlotModel.Series.Add(CreateDvhSeries(structure.Id, dvh));
             OverviewPlotModel.Series.Add(CreateDvhSeries(structure.Id, dvh));
             UpdatePlot();
@@ -270,10 +303,20 @@ namespace ClearPlan
 
         public void ApplyDefaultDvhSelections()
         {
+            var requiredTargets = new ClearPlan.Review.EsapiTargetReviewBuilder()
+                .BuildSelection(ActivePlanningItem.PlanningItemObject).RequiredStructureIds;
+            string nativeSelectionNote;
+            var nativeSelection = ClearPlan.Review.EsapiReviewSnapshotBuilder.ReadNativeDvhSelection(
+                ActivePlanningItem.PlanningItemObject, out nativeSelectionNote);
+            ReviewSourceStatus nativeGoalSource;
+            var nativeGoals = new ClearPlan.Review.EsapiClinicalGoalBuilder().Build(
+                ActivePlanningItem.PlanningItemObject, out nativeGoalSource);
             var requested = (PqmSummaries ??
                              new ObservableCollection<PQMSummaryViewModel>())
-                .Where(item => item != null && item.Structure != null)
-                .Select(item => item.Structure.StructureName)
+                .Where(item => item != null)
+                .Select(item => item.Structure == null ? item.StructureName : item.Structure.StructureName)
+                .Concat(nativeSelection)
+                .Concat(nativeGoals.Select(item => item.ResolvedStructureId))
                 .Concat((RefGrid ?? new List<RefViewModel>())
                     .Where(item => item != null)
                     .Select(item => item.RefPointId))
@@ -283,9 +326,9 @@ namespace ClearPlan
 
             foreach (DvhStructureViewModel item in DvhStructures)
             {
-                item.IsSelected = DvhSelectionPolicy.ShouldSelect(
-                    item.Id,
-                    requested);
+                item.RequiredForTargetReview = requiredTargets.Contains(item.Id, StringComparer.Ordinal);
+                item.IsSelected = item.IsSelected || item.RequiredForTargetReview ||
+                    DvhSelectionPolicy.ShouldSelect(item.Id, requested);
             }
         }
 
@@ -338,7 +381,8 @@ namespace ClearPlan
             pm.LegendBackground = OxyColor.FromAColor(225, OxyColors.White);
             pm.LegendPosition = LegendPosition.RightTop;
             pm.LegendOrientation = LegendOrientation.Vertical;
-            pm.LegendPlacement = LegendPlacement.Inside;
+            pm.LegendPlacement = LegendPlacement.Outside;
+            pm.LegendMaxWidth = 220;
             pm.LegendMaxHeight = 240;
         }
 
@@ -497,178 +541,25 @@ namespace ClearPlan
 
         public void GetPQMSummaries(ConstraintViewModel constraintPath, PlanningItemViewModel planningItem, Patient patient)
         {
-            var nextPqmSummaries =
-                new ObservableCollection<PQMSummaryViewModel>();
-            StructureSet structureSet = planningItem.PlanningItemStructureSet;
-            //PlanSetup plaSetup = planningItem.PlanningItemId;
-            Structure evalStructure;
-            var calculator = new PQMSummaryCalculator();
-            var nextObjectives = calculator.GetObjectives(constraintPath);
-            if (planningItem.PlanningItemObject is PlanSum)
-            {
-                var waitWindowPQM = new WaitWindowPQM();
-                PlanSum plansum = (PlanSum)planningItem.PlanningItemObject;
-                if (plansum.IsDoseValid() == true)
-                {
-                    waitWindowPQM.ShowInTaskbar = false;
-                    waitWindowPQM.Show();
-                    try
-                    {
-                        foreach (PQMSummaryViewModel objective in nextObjectives)
-                        {
-                            evalStructure = calculator.FindStructureFromAlias(structureSet, planningItem, objective.TemplateId, objective.TemplateAliases, objective.TemplateCodes, objective.TemplateType);
-                            if (evalStructure != null)
-                            {
-                                var evalStructureVM = new StructureViewModel(evalStructure);
-                                var obj = calculator.GetObjectiveProperties(objective, planningItem, structureSet, evalStructureVM);
-                                nextPqmSummaries.Add(obj);
-                                NotifyPropertyChanged("Structure");
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        waitWindowPQM.Close();
-                    }
-                }
-            }
-            if (planningItem.PlanningItemObject is PlanSetup) //is plansetup
-            {
-                var waitWindowPQM = new WaitWindowPQM();
-
-                PlanSetup planSetup = (PlanSetup)planningItem.PlanningItemObject;
-                if (planSetup.IsDoseValid() == true)
-                {
-                    waitWindowPQM.ShowInTaskbar = false;
-                    waitWindowPQM.Show();
-                    try
-                    {
-                        //waitWindowPQM.Topmost = true;
-                        foreach (PQMSummaryViewModel objective in nextObjectives)
-                        {
-                            evalStructure = calculator.FindStructureFromAlias(structureSet, planningItem, objective.TemplateId, objective.TemplateAliases, objective.TemplateCodes, objective.TemplateType);
-                            if (evalStructure != null)
-                            {
-                            /*if (evalStructure.StructureCodeInfos.FirstOrDefault().Code != null)
-                            {
-                                if (evalStructure.StructureCodeInfos.FirstOrDefault().Code.Contains("PTV") == true)
-                                {
-                                    foreach (Structure s in structureSet.Structures)
-                                    {
-                                        if (s.Id == planSetup.TargetVolumeID)
-                                        {
-                                            evalStructure = s;
-                                        }
-
-                                    }
-                                }
-                            }*/
-                            if (objective.TemplateId == "Tumor" && planSetup.TargetVolumeID != "")
-                            {
-                                var targetVolume = planSetup.StructureSet.Structures.FirstOrDefault(y => y.Id == planSetup.TargetVolumeID)?.Volume;
-                                if (targetVolume == null)
-                                {
-                                    evalStructure = null;
-                                    continue;
-                                }
-
-                                //evalStructure = structureSet.Structures.Where(x => (x.DicomType == "ITV" || x.DicomType == "CTV" || x.DicomType == "GTV") & !x.IsEmpty & !x.Id.ToLower().StartsWith("z") & !x.Id.ToLower().StartsWith("h") && planSetup.StructureSet.Structures.Where(y => y.Id == planSetup.TargetVolumeID).FirstOrDefault().IsPointInsideSegment(x.CenterPoint)).FirstOrDefault();
-                                // Suche zuerst nach einer ITV Struktur
-                                var itvStructure = structureSet.Structures
-                                    .Where(x => x.DicomType == "GTV" &&
-                                                x.Id.ToLower().StartsWith("itv") &&
-                                                !x.IsEmpty &&
-                                                !x.Id.ToLower().StartsWith("z") &&
-                                                !x.Id.ToLower().StartsWith("h") &&
-                                                x.Volume < targetVolume &&
-                                                planSetup.StructureSet.Structures
-                                                    .Where(y => y.Id == planSetup.TargetVolumeID)
-                                                    .FirstOrDefault()
-                                                    .IsPointInsideSegment(x.CenterPoint))
-                                    .OrderByDescending(x=>x.Volume)
-                                    .FirstOrDefault();
-
-                                // Wenn keine ITV Struktur gefunden wurde, suche nach einer CTV Struktur
-                                if (itvStructure == null)
-                                {
-                                    itvStructure = structureSet.Structures
-                                        .Where(x => x.DicomType == "CTV" &&
-                                                    !x.IsEmpty &&
-                                                    !x.Id.ToLower().StartsWith("z") &&
-                                                    !x.Id.ToLower().StartsWith("h") &&
-                                                    x.Volume < targetVolume &&
-                                                    planSetup.StructureSet.Structures
-                                                        .Where(y => y.Id == planSetup.TargetVolumeID)
-                                                        .FirstOrDefault()
-                                                        .IsPointInsideSegment(x.CenterPoint))
-                                        .OrderByDescending(x => x.Volume)
-                                        .FirstOrDefault();
-                                }
-
-                                // Wenn weder ITV noch CTV gefunden wurden, suche nach einer GTV Struktur
-                                if (itvStructure == null)
-                                {
-                                    itvStructure = structureSet.Structures
-                                        .Where(x => x.DicomType == "GTV" &&
-                                                    !x.IsEmpty &&
-                                                    !x.Id.ToLower().StartsWith("z") &&
-                                                    !x.Id.ToLower().StartsWith("h") &&
-                                                    x.Volume < targetVolume &&
-                                                    planSetup.StructureSet.Structures
-                                                        .Where(y => y.Id == planSetup.TargetVolumeID)
-                                                        .FirstOrDefault()
-                                                        .IsPointInsideSegment(x.CenterPoint))
-                                        .OrderByDescending(x => x.Volume)
-                                        .FirstOrDefault();
-                                }
-
-                                // Die gefundene Struktur wird zugewiesen oder bleibt null, wenn keine gefunden wurde
-                                evalStructure = itvStructure;
-                            }
-
-                            if ((objective.TemplateId == "Target" || objective.TemplateId == "Zielvolumen") && planSetup.TargetVolumeID != "")
-                            {
-                                evalStructure = structureSet.Structures.Where(x => x.Id == planSetup.TargetVolumeID).FirstOrDefault();
-                            }
-                            if ((objective.TemplateId == "Target" || objective.TemplateId == "Zielvolumen") && planSetup.TargetVolumeID == "")
-                            {
-                                if (planSetup.PrimaryReferencePoint != null)
-                                {
-                                    if (structureSet.Structures.Where(x => x.Id.ToLower().Replace(" ", "").StartsWith(planSetup.PrimaryReferencePoint.Id.ToLower().Replace(" ", "")) & !x.IsEmpty).Any())
-                                    {
-
-                                        evalStructure = structureSet.Structures.Where(x => x.Id.ToLower().Replace(" ", "").StartsWith(planSetup.PrimaryReferencePoint.Id.ToLower().Replace(" ", ""))).FirstOrDefault();
-
-                                    }
-                                    else
-                                        evalStructure = structureSet.Structures.Where(x => x.DicomType == "PTV" & !x.IsEmpty).FirstOrDefault();
-                                }
-                                else
-                                {
-                                    evalStructure = structureSet.Structures.Where(x => x.DicomType == "PTV" & !x.IsEmpty).FirstOrDefault();
-                                }
-                               
-                            }
-                            var evalStructureVM = new StructureViewModel(evalStructure);
-                            try
-                            {
-                                var obj = calculator.GetObjectiveProperties(objective, planningItem, structureSet, evalStructureVM);
-                                nextPqmSummaries.Add(obj);
-                            }
-                            catch { continue; }
-                            NotifyPropertyChanged("Structure");
-                            }
-                        }
-                    }
-                    finally
-                    {
-                        waitWindowPQM.Close();
-                    }
-                }
-            }
-            Objectives = nextObjectives;
-            PqmSummaries = nextPqmSummaries;
+            var objectives = new PQMSummaryCalculator().EvaluateTable(constraintPath, planningItem,
+                ConstraintCatalogStatus == null ? null : ConstraintCatalogStatus.Catalog);
+            Objectives = objectives;
+            PqmSummaries = new ObservableCollection<PQMSummaryViewModel>(objectives);
             NotifyPropertyChanged("PqmSummaries");
+        }
+
+        public void ConfirmConstraintSelection(ConstraintViewModel selection)
+        {
+            selection.RequiresConfirmation = false;
+            selection.SelectionReason = "Explicitly selected by the reviewer";
+            ConstraintSelectionRequiresConfirmation = false;
+            NotifyPropertyChanged("ConstraintSelectionRequiresConfirmation");
+        }
+
+        internal void RestoreConstraintConfirmation(bool requiresConfirmation)
+        {
+            ConstraintSelectionRequiresConfirmation = requiresConfirmation;
+            NotifyPropertyChanged("ConstraintSelectionRequiresConfirmation");
         }
 
         internal PqmReviewState CapturePqmReviewState()
@@ -754,6 +645,10 @@ namespace ClearPlan
                             //pqmSummaries.Add(pqmSummary);
                             //foundStructureList.Add(new StructureViewModel(evalStructure));
                         }
+                        else
+                        {
+                            calculator.GetObjectiveProperties(pqm, planningItem, structureSet, null);
+                        }
                     }
                     //FoundStructureList = foundStructureList;
                     waitWindowPQM.Close();
@@ -774,17 +669,13 @@ namespace ClearPlan
                         evalStructure = calculator.FindStructureFromAlias(structureSet, planningItem, pqm.TemplateId, pqm.TemplateAliases, pqm.TemplateCodes, pqm.TemplateType);
                         if (evalStructure != null)
                         {
-                            if (evalStructure.Id.Contains("PTV") == true)
-                            {
-                                foreach (Structure s in structureSet.Structures)
-                                {
-                                    if (s.Id == planSetup.TargetVolumeID)
-                                        evalStructure = s;
-                                }
-                            }
                             var pqmSummary = calculator.GetObjectiveProperties(pqm, planningItem, structureSet, new StructureViewModel(evalStructure));
                             //pqm.Achieved_Comparison = pqmSummary.Achieved;
                             //foundStructureList.Add(new StructureViewModel(evalStructure));
+                        }
+                        else
+                        {
+                            calculator.GetObjectiveProperties(pqm, planningItem, structureSet, null);
                         }
                     }
                     //FoundStructureList = foundStructureList;

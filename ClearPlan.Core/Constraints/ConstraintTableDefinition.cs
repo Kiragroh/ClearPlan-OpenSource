@@ -14,6 +14,7 @@ namespace ClearPlan.Core.Constraints
         public string DisplayName { get; set; }
         public bool Active { get; set; }
         public bool IsPlanSum { get; set; }
+        public bool RequiresConfirmation { get; set; }
         public int? FractionCountMinimum { get; set; }
         public int? FractionCountMaximum { get; set; }
         public decimal? DosePerFractionMinimumGy { get; set; }

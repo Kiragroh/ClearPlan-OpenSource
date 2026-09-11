@@ -67,11 +67,20 @@
     <Compile Include="Plot\ReviewPlotFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResourceAssemblyAnchor.cs" />
+    <Compile Include="Views\HtmlReportPreviewWindow.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
     <Compile Include="ViewModels\ReviewDvhSeriesViewModel.cs" />
     <Compile Include="ViewModels\ReviewPqmRowViewModel.cs" />
     <Compile Include="ViewModels\ReviewWorkspaceHostController.cs" />
     <Compile Include="ViewModels\ReviewWorkspaceViewModel.cs" />
+    <Compile Include="ViewModels\PlanAnalysisViewModel.cs" />
+    <Compile Include="ViewModels\BeamEyeViewViewModel.cs" />
+    <Compile Include="ViewModels\PlanImagesViewModel.cs" />
+    <Compile Include="Views\PlanImagesView.xaml.cs"><DependentUpon>PlanImagesView.xaml</DependentUpon></Compile>
+    <Compile Include="Views\BeamEyeView.xaml.cs"><DependentUpon>BeamEyeView.xaml</DependentUpon></Compile>
+    <Compile Include="ViewModels\PlanComparisonViewModel.cs" />
+    <Compile Include="Views\PlanParametersView.xaml.cs"><DependentUpon>PlanParametersView.xaml</DependentUpon></Compile>
+    <Compile Include="Views\PlanComparisonView.xaml.cs"><DependentUpon>PlanComparisonView.xaml</DependentUpon></Compile>
     <Compile Include="Views\ReviewWorkspaceView.xaml.cs">
       <DependentUpon>ReviewWorkspaceView.xaml</DependentUpon>
     </Compile>
@@ -81,6 +90,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\PlanParametersView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
+    <Page Include="Views\BeamEyeView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
+    <Page Include="Views\PlanImagesView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
+    <Page Include="Views\PlanComparisonView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
     <Page Include="Views\ReviewWorkspaceView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -91,6 +104,7 @@
       <Project>{3715B5CB-1DD0-4129-8CFD-662EF928043D}</Project>
       <Name>ClearPlan.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ClearPlan.Rendering\ClearPlan.Rendering.csproj"><Project>{A8367D71-6B67-4A95-98F4-00C6E8D6BD09}</Project><Name>ClearPlan.Rendering</Name></ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

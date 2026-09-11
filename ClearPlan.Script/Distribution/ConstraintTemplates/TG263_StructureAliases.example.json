@@ -1,0 +1,14 @@
+{
+  "schema": "ClearPlan.structure_aliases.v1",
+  "nomenclature_source": "https://www.aapm.org/pubs/reports/RPT_263_Supplemental/default.asp",
+  "structures": [
+    { "canonical_name": "External", "aliases": ["Body", "Outer Contour", "KORPER"], "laterality": "", "side_aliases_left": [], "side_aliases_right": [] },
+    { "canonical_name": "SpinalCord", "aliases": ["Myelon"], "laterality": "", "side_aliases_left": [], "side_aliases_right": [] },
+    { "canonical_name": "SpinalCanal", "aliases": ["Spinalkanal", "Spinalkanal OAR"], "laterality": "", "side_aliases_left": [], "side_aliases_right": [] },
+    { "canonical_name": "Brainstem", "aliases": ["Hirnstamm", "Hirnstamm OAR"], "laterality": "", "side_aliases_left": [], "side_aliases_right": [] },
+    { "canonical_name": "Heart", "aliases": ["Herz", "Herz OAR"], "laterality": "", "side_aliases_left": [], "side_aliases_right": [] },
+    { "canonical_name": "Lungs", "aliases": ["Lung", "LungeB", "Lungen"], "laterality": "R+L", "side_aliases_left": [], "side_aliases_right": [] },
+    { "canonical_name": "Lung_L", "aliases": ["Lung L"], "laterality": "L", "side_aliases_left": [], "side_aliases_right": [] },
+    { "canonical_name": "Lung_R", "aliases": ["Lung R"], "laterality": "R", "side_aliases_left": [], "side_aliases_right": [] }
+  ]
+}

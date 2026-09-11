@@ -11,5 +11,7 @@ namespace ClearPlan.Core.Fields
         public bool IdWouldChange { get; set; }
         public bool NameWouldChange { get; set; }
         public bool WouldChange { get; set; }
+        public bool IsEvaluated { get; set; } = true;
+        public string EvaluationMessage { get; set; }
     }
 }

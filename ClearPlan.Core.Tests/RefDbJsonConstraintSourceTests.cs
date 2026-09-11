@@ -7,6 +7,22 @@ namespace ClearPlan.Core.Tests
 {
     internal static class RefDbJsonConstraintSourceTests
     {
+        public static void SummaryRangesSurviveSparseDetails()
+        {
+            string path = Path.Combine(Path.GetTempPath(), "clearplan-refdb-merge-" + Guid.NewGuid().ToString("N") + ".json");
+            try
+            {
+                File.WriteAllText(path, @"{""schema"":""RSAlign.local_refdb_constraints.v1"",""structures"":[],""tables"":[{""id"":1,""name"":""Synthetic prescription"",""status"":""active"",""fx_min"":18,""fx_max"":20,""dpf_min"":2.5,""td_min"":45,""prescriptions"":[{""name"":""Synthetic Rx"",""status"":""active""}]}],""details"":{""1"":{""id"":1,""name"":""Synthetic prescription"",""fx_min"":null,""fx_max"":"""",""dpf_min"":null,""td_min"":null,""constraints"":[]}}}");
+                var table = new RefDbJsonConstraintSource().Load(path).Tables.Single();
+                TestAssert.Equal((int?)18, table.FractionCountMinimum);
+                TestAssert.Equal((int?)20, table.FractionCountMaximum);
+                TestAssert.Equal((decimal?)2.5m, table.DosePerFractionMinimumGy);
+                TestAssert.Equal((decimal?)45m, table.TotalDoseMinimumGy);
+                TestAssert.True(table.PrescriptionLabels.Contains("Synthetic Rx"));
+            }
+            finally { if (File.Exists(path)) File.Delete(path); }
+        }
+
         public static void RejectsUnexpectedSchema()
         {
             string fixture = GetFixturePath();

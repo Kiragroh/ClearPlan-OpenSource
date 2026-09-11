@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using ClearPlan.Core.Review;
+using ClearPlan.Core.PlanAnalysis;
 
 namespace ClearPlan.Reporting
 {
@@ -16,6 +19,10 @@ namespace ClearPlan.Reporting
             StructureMappings =
                 new List<ReviewReportStructureMappingRow>();
             DvhSeries = new List<ReviewReportDvhSeries>();
+            PlanImages = new List<ReviewPlanImage>();
+            IncludeBeamEyeViews = true;
+            HideUnmatched = true;
+            HiddenStructureIds = new List<string>();
         }
 
         public int SchemaVersion { get; set; }
@@ -47,6 +54,47 @@ namespace ClearPlan.Reporting
         }
 
         public List<ReviewReportDvhSeries> DvhSeries { get; set; }
+        public List<ReviewPlanImage> PlanImages { get; set; }
+        public ReviewPlanAnalysis PlanAnalysis { get; set; }
+        public bool IncludeBeamEyeViews { get; set; }
+        public bool HideUnmatched { get; set; }
+        public List<string> HiddenStructureIds { get; set; }
+        public int DisabledCheckCount { get; set; }
+
+        public List<ReviewReportPqmRow> VisiblePqmRows()
+        {
+            return (PqmRows ?? new List<ReviewReportPqmRow>()).Where(row => row != null &&
+                (!HideUnmatched || !string.IsNullOrWhiteSpace(row.ResolvedStructureId))).ToList();
+        }
+
+        public List<ReviewReportStructureMappingRow> VisibleStructureMappings()
+        {
+            return (StructureMappings ?? new List<ReviewReportStructureMappingRow>()).Where(row => row != null &&
+                (!HideUnmatched || !string.IsNullOrWhiteSpace(row.SelectedStructureId))).ToList();
+        }
+
+        public List<ReviewReportDvhSeries> VisibleDvhSeries()
+        {
+            return (DvhSeries ?? new List<ReviewReportDvhSeries>()).Where(row => row != null && !IsStructureHidden(row.StructureId)).ToList();
+        }
+
+        public bool IsStructureHidden(string structureId)
+        {
+            return !string.IsNullOrWhiteSpace(structureId) && (HiddenStructureIds ?? new List<string>())
+                .Any(id => string.Equals(id, structureId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public string VisibilityDisclosure()
+        {
+            int hidden = HideUnmatched ? (PqmRows ?? new List<ReviewReportPqmRow>()).Count(row => row != null && string.IsNullOrWhiteSpace(row.ResolvedStructureId)) : 0;
+            var parts = new List<string>();
+            if (hidden > 0) parts.Add(hidden + (hidden == 1 ? " unmatched goal hidden" : " unmatched goals hidden"));
+            int hiddenMappings = HideUnmatched ? (StructureMappings ?? new List<ReviewReportStructureMappingRow>())
+                .Count(row => row != null && string.IsNullOrWhiteSpace(row.SelectedStructureId)) : 0;
+            if (hiddenMappings > 0) parts.Add(hiddenMappings + (hiddenMappings == 1 ? " unmatched mapping hidden" : " unmatched mappings hidden"));
+            if (DisabledCheckCount > 0) parts.Add(DisabledCheckCount + (DisabledCheckCount == 1 ? " check disabled" : " checks disabled"));
+            return parts.Count == 0 ? "" : string.Join("; ", parts) + ". Not assessed as passed.";
+        }
     }
 
     public sealed class ReviewReportSourceRow
@@ -94,6 +142,8 @@ namespace ClearPlan.Reporting
         public string Status { get; set; }
         public string Severity { get; set; }
         public string Explanation { get; set; }
+        public string SourceLabel { get; set; }
+        public string MappingDescription { get; set; }
     }
 
     public sealed class ReviewReportCheckRow
@@ -141,6 +191,7 @@ namespace ClearPlan.Reporting
         public ReviewReportDvhSeries()
         {
             Points = new List<ReviewReportDvhPoint>();
+            Statistics = new ReviewDvhStatistics();
         }
 
         public string StableId { get; set; }
@@ -154,6 +205,10 @@ namespace ClearPlan.Reporting
         public string DoseUnit { get; set; }
         public string VolumeUnit { get; set; }
         public List<ReviewReportDvhPoint> Points { get; set; }
+        public ReviewDvhStatistics Statistics { get; set; }
+        public string TargetKind { get; set; }
+        public bool RequiredForTargetReview { get; set; }
+        public string TargetSelectionReason { get; set; }
     }
 
     public sealed class ReviewReportDvhPoint

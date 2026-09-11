@@ -248,15 +248,15 @@ if ($allFilesPresent) {
     }
     else {
         Require-Text -Text $dvhPlotBlock.Value `
-            -Pattern 'MinWidth="720"' `
-            -Description 'DvhDetailPlot MinWidth=720'
+            -Pattern 'MinWidth="0"' `
+            -Description 'DvhDetailPlot uses finite host width'
         Require-Text -Text $dvhPlotBlock.Value `
-            -Pattern 'MinHeight="520"' `
-            -Description 'DvhDetailPlot MinHeight=520'
+            -Pattern 'MinHeight="0"' `
+            -Description 'DvhDetailPlot uses finite host height'
     }
     Require-Text -Text $viewText `
-        -Pattern '<ColumnDefinition\s+Width="230"\s*/>' `
-        -Description '230 px DVH structure panel'
+        -Pattern '<ColumnDefinition\s+x:Name="DvhStructureColumn"[\s\S]*?Width="210"[\s\S]*?MinWidth="190"[\s\S]*?MaxWidth="300"\s*/>' `
+        -Description 'bounded resizable DVH structure panel'
     Require-Text -Text $viewText `
         -Pattern '<ColumnDefinition\s+Width="5"\s*/>' `
         -Description '5 px DVH splitter column'

@@ -1,11 +1,118 @@
 using System.Collections.Generic;
 using System.Linq;
+using System;
+using System.IO;
 using ClearPlan.Core.Fields;
 
 namespace ClearPlan.Core.Tests
 {
     internal static class FieldNamingPreviewTests
     {
+        public static void ConfiguredDefaultsPreserveEstablishedNamesAndIds()
+        {
+            var rules = FieldNamingRuleConfiguration.Parse(Newtonsoft.Json.JsonConvert.SerializeObject(FieldNamingRules.CreateDefault()));
+            TestAssert.Equal("available", rules.Status);
+            var first = BeamNamingInput.Arc("7GA01", 1, 120, 30, "CounterClockwise");
+            first.PatientSupportAngle = 300;
+            var second = BeamNamingInput.Arc("7GA02", 2, 120, 30, "CounterClockwise");
+            second.PatientSupportAngle = 300;
+            var inputs = new[] { first, second, BeamNamingInput.Static("7GA03", 3, 90), BeamNamingInput.Static("7GA04", 4, 90) };
+            var existing = FieldNameSuggester.Suggest("7GA_plan", inputs);
+            var configured = FieldNameSuggester.Suggest("7GA_plan", inputs, rules.Rules);
+            TestAssert.Equal("120-30 T300 GUZa", configured[0].SuggestedName);
+            TestAssert.Equal("90 UZa", configured[2].SuggestedName);
+            for (int index = 0; index < inputs.Length; index++)
+            {
+                TestAssert.Equal(existing[index].SuggestedName, configured[index].SuggestedName);
+                TestAssert.Equal(existing[index].ExpectedId, configured[index].ExpectedId);
+                TestAssert.True(configured[index].IsEvaluated);
+            }
+        }
+
+        public static void ConfiguredOrderTokensAndDuplicateDirectionAreApplied()
+        {
+            var rules = FieldNamingRules.CreateDefault();
+            rules.ArcOrder = new List<string> { "direction", "angles", "table" };
+            rules.StaticOrder = new List<string> { "table", "angles" };
+            rules.PartSeparator = "_";
+            rules.AngleSeparator = ":";
+            rules.TablePrefix = "Couch";
+            rules.ClockwiseToken = "CW";
+            rules.CounterClockwiseToken = "CCW";
+            rules.StaticDuplicateToken = "DUP";
+            var inputs = new[] { BeamNamingInput.Arc("A01", 1, 179, 181, "Clockwise"),
+                BeamNamingInput.Arc("A02", 2, 179, 181, "Clockwise"),
+                BeamNamingInput.Arc("A03", 3, 181, 179, "CounterClockwise"),
+                BeamNamingInput.Static("A04", 4, 90), BeamNamingInput.Static("A05", 5, 90) };
+            foreach (var beam in inputs) beam.PatientSupportAngle = 30;
+            var names = FieldNameSuggester.Suggest("A_plan", inputs, rules);
+            TestAssert.Equal("CWa_179:181_Couch30", names[0].SuggestedName);
+            TestAssert.Equal("CWb_179:181_Couch30", names[1].SuggestedName);
+            TestAssert.Equal("CCW_181:179_Couch30", names[2].SuggestedName);
+            TestAssert.Equal("Couch30_90_DUPa", names[3].SuggestedName);
+            TestAssert.Equal("Couch30_90_DUPb", names[4].SuggestedName);
+            TestAssert.Equal("A01", names[0].ExpectedId);
+        }
+
+        public static void InvalidMissingAndDisabledRulesNeverInferConformance()
+        {
+            var invalidOrders = new[] {
+                new List<string> { "angles", "direction" },
+                new List<string> { "angles", "table", "table" },
+                new List<string> { "angles", "table", "unknown" }
+            };
+            foreach (var order in invalidOrders)
+            {
+                var rules = FieldNamingRules.CreateDefault();
+                rules.ArcOrder = order;
+                var invalid = FieldNamingRuleConfiguration.Parse(Newtonsoft.Json.JsonConvert.SerializeObject(rules));
+                TestAssert.Equal("unavailable", invalid.Status);
+                AssertNotEvaluated(invalid.Rules);
+            }
+            var duplicateTokens = FieldNamingRules.CreateDefault();
+            duplicateTokens.CounterClockwiseToken = duplicateTokens.ClockwiseToken;
+            TestAssert.False(duplicateTokens.IsValid());
+            AssertNotEvaluated(duplicateTokens);
+            var disabled = FieldNamingRules.CreateDefault();
+            disabled.Enabled = false;
+            var configuration = FieldNamingRuleConfiguration.Parse(Newtonsoft.Json.JsonConvert.SerializeObject(disabled));
+            TestAssert.Equal("not-configured", configuration.Status);
+            AssertNotEvaluated(configuration.Rules);
+            foreach (string text in new[] { "{}", "not-json", "null" })
+            {
+                var invalid = FieldNamingRuleConfiguration.Parse(text);
+                TestAssert.Equal("unavailable", invalid.Status);
+                AssertNotEvaluated(invalid.Rules);
+            }
+            string missingPath = Path.Combine(Path.GetTempPath(), "clearplan-naming-missing-" + Guid.NewGuid().ToString("N") + ".json");
+            var missing = FieldNamingRuleConfiguration.Load(missingPath);
+            TestAssert.Equal("not-configured", missing.Status);
+            TestAssert.False(File.Exists(missingPath));
+            AssertNotEvaluated(missing.Rules);
+            TestAssert.Equal("not-configured", FieldNamingRuleConfiguration.Load("").Status);
+        }
+
+        public static void FieldNamingConfigurationPathRoundTripsIni()
+        {
+            var settings = new ClearPlan.Core.Settings.ClearPlanSettingsModel();
+            settings.Paths.FieldNamingRulesJsonPath = "Config\\FieldNamingRules.json";
+            var copy = new ClearPlan.Core.Settings.ClearPlanSettingsModel();
+            ClearPlan.Core.Settings.PathSettingsIni.Apply(copy, ClearPlan.Core.Settings.PathSettingsIni.Serialize(settings));
+            TestAssert.Equal(settings.Paths.FieldNamingRulesJsonPath, copy.Paths.FieldNamingRulesJsonPath);
+        }
+
+        private static void AssertNotEvaluated(FieldNamingRules rules)
+        {
+            var beam = BeamNamingInput.Static("7GA01", 1, 90);
+            beam.CurrentName = "90";
+            var suggestion = FieldNameSuggester.Suggest("7GA_plan", new[] { beam }, rules).Single();
+            TestAssert.False(suggestion.IsEvaluated);
+            TestAssert.Equal("", suggestion.ExpectedId);
+            TestAssert.Equal("", suggestion.SuggestedName);
+            TestAssert.False(suggestion.WouldChange);
+            TestAssert.True(suggestion.EvaluationMessage.Contains("no fallback"));
+        }
+
         public static void NamesStaticAndArcFields()
         {
             IList<FieldNameSuggestion> suggestions = FieldNameSuggester.Suggest(

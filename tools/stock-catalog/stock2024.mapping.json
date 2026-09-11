@@ -1,0 +1,241 @@
+{
+  "schema": "ClearPlan.stock_catalog.mapping.v1",
+  "naming_evidence": {
+    "url": "https://www.aapm.org/pubs/reports/rpt_263_supplemental/TG263_Nomenclature_Worksheet_20170815.xls",
+    "version": "2017-08-15",
+    "sha256": "5ff0b9e2ebf578793f6fa8f59c2357b3feb61fdc0f87171e9103a0495d93d150",
+    "verification": "Canonical names below were checked against column F of the official AAPM workbook. This validates spelling, not clinical equivalence of local contours."
+  },
+  "source_sha256": "b4624a60ec074635e181c8661b48b9698971134ae090c0989916944dd65df9d3",
+  "tables": [
+    {
+      "sheet": "T_1Fx",
+      "table_id": "stock2024_1fx",
+      "display_name": "Stock 2024 - 1 fraction",
+      "fx_min": 1,
+      "fx_max": 1,
+      "requires_confirmation": true
+    },
+    {
+      "sheet": "T_3Fx",
+      "table_id": "stock2024_3fx",
+      "display_name": "Stock 2024 - 3 fractions",
+      "fx_min": 3,
+      "fx_max": 3,
+      "requires_confirmation": true
+    },
+    {
+      "sheet": "T_5Fx",
+      "table_id": "stock2024_5fx",
+      "display_name": "Stock 2024 - 5 fractions",
+      "fx_min": 5,
+      "fx_max": 5,
+      "requires_confirmation": true
+    },
+    {
+      "sheet": "T_8Fx",
+      "table_id": "stock2024_8fx",
+      "display_name": "Stock 2024 - 8 fractions",
+      "fx_min": 8,
+      "fx_max": 8,
+      "requires_confirmation": true
+    },
+    {
+      "sheet": "T_10Fx",
+      "table_id": "stock2024_10fx",
+      "display_name": "Stock 2024 - 10 fractions",
+      "fx_min": 10,
+      "fx_max": 10,
+      "requires_confirmation": true
+    },
+    {
+      "sheet": "T_15Fx",
+      "table_id": "stock2024_15fx",
+      "display_name": "Stock 2024 - 15 fractions",
+      "fx_min": 15,
+      "fx_max": 15,
+      "requires_confirmation": true
+    },
+    {
+      "sheet": "T_20Fx",
+      "table_id": "stock2024_20fx",
+      "display_name": "Stock 2024 - 20 fractions",
+      "fx_min": 20,
+      "fx_max": 20,
+      "requires_confirmation": true
+    },
+    {
+      "sheet": "T_Conv",
+      "table_id": "stock2024_conventional",
+      "display_name": "Stock 2024 - conventional (confirm regimen)",
+      "fx_min": null,
+      "fx_max": null,
+      "requires_confirmation": true
+    }
+  ],
+  "excluded_sheets": {
+    "Mamma_5Fx": "Special breast regimen; contains contralateral rules mixed with generic copied OAR rows. Requires separate laterality and prescription definition.",
+    "Mamma_15Fx": "Special breast regimen; ipsilateral/contralateral names are unresolved and copied generic rules include #N/A. Requires separate laterality and prescription definition.",
+    "CHHiP_20Fx": "Special prostate regimen; do not equate every 20-fraction course with CHHiP. Requires protocol-specific prescription and target mapping."
+  },
+  "canonical_map": {
+    "Body": "Body",
+    "AugeL": "Eye_L",
+    "AugeR": "Eye_R",
+    "Chiasma": "OpticChiasm",
+    "CochleaL": "Cochlea_L",
+    "CochleaR": "Cochlea_R",
+    "Brain": "Brain",
+    "HippocampusL": "Hippocampus_L",
+    "HippocampusR": "Hippocampus_R",
+    "Hirnstamm": "Brainstem",
+    "HirnstammPRV": "Brainstem_PRV",
+    "LinseL": "Lens_L",
+    "LinseR": "Lens_R",
+    "Lippen": "Lips",
+    "NOpticusL": "OpticNrv_L",
+    "NOpticusR": "OpticNrv_R",
+    "TränendrüseL": "Glnd_Lacrimal_L",
+    "TränendrüseR": "Glnd_Lacrimal_R",
+    "Glottis": "Glottis",
+    "Larynx": "Larynx",
+    "Mandibula": "Bone_Mandible",
+    "Oral cavity": "Cavity_Oral",
+    "ParotisL": "Parotid_L",
+    "ParotisR": "Parotid_R",
+    "Pharynx": "Pharynx",
+    "Pituitary gland": "Pituitary",
+    "Plexus BrachialisL": "BrachialPlex_L",
+    "Plexus BrachialisR": "BrachialPlex_R",
+    "Sacral Plexus": "SacralPlex",
+    "SubmandibularL": "Glnd_Submand_L",
+    "SubmandibularR": "Glnd_Submand_R",
+    "Supraglottic Larynx": "Larynx_SG",
+    "Thyroid gland": "Glnd_Thyroid",
+    "Great vessels": "GreatVes",
+    "Herz": "Heart",
+    "LungeB": "Lungs",
+    "LungeL": "Lung_L",
+    "LungeR": "Lung_R",
+    "Oesophagus": "Esophagus",
+    "Rippen": "Rib",
+    "RIVA": "A_LAD",
+    "Thoraxwand": "Chestwall",
+    "Trachea": "Trachea",
+    "Darm": "Bowel",
+    "Duodenum": "Duodenum",
+    "Jejunum": "Jejunum",
+    "Leber": "Liver",
+    "Magen": "Stomach",
+    "Milz": "Spleen",
+    "NiereL": "Kidney_L",
+    "NiereR": "Kidney_R",
+    "Nieren": "Kidneys",
+    "Pancreas": "Pancreas",
+    "Analkanal": "Canal_Anal",
+    "Anus": "Anus",
+    "Dünndarm": "Bowel_Small",
+    "FemurkopfL": "Femur_Head_L",
+    "FemurkopfR": "Femur_Head_R",
+    "Genitalia": "Genitals",
+    "Harnblase": "Bladder",
+    "Ovarien": "Ovaries",
+    "Penile Bulb": "PenileBulb",
+    "Rektum": "Rectum",
+    "Vulva": "Vulva",
+    "Cauda Equina": "CaudaEquina",
+    "Haut": "Skin",
+    "Myelon": "SpinalCord",
+    "Myelon PRV": "SpinalCord_PRV",
+    "Spinalkanal": "SpinalCanal",
+    "Spinalkanal PRV": "SpinalCanal_PRV"
+  },
+  "unresolved_structures": {
+    "Target": "Generic target role; prescription-specific dose and exact target assignment required.",
+    "Tumor": "Generic tumor role; source threshold is a placeholder and target assignment is unspecified.",
+    "AugenlidL": "Source mixes eyelid and meibomian gland; no safe canonical anatomical equivalence.",
+    "AugenlidR": "Source mixes eyelid and meibomian gland; no safe canonical anatomical equivalence.",
+    "Dickdarm": "Source mixes colon, sigmoid, generic bowel and incompatible anatomical codes; no single stock mapping.",
+    "Gallengang": "Common bile duct is TG263-defined, but source says unspecified bile duct.",
+    "Bronchus": "Source specifies smaller airways; not equivalent to the full bronchial tree or main bronchus.",
+    "Temporal Lobe": "No side or explicit bilateral contour definition supplied.",
+    "TM joint": "No side or explicit bilateral contour definition supplied.",
+    "Hoden": "No side or explicit bilateral contour definition supplied.",
+    "Schluckmusk.": "Swallowing muscles is broader than TG263 pharyngeal constrictors.",
+    "Ureter": "No side or explicit bilateral contour definition supplied.",
+    "ParotisB": "No executable stock rules; combined contour needs explicit local definition.",
+    "SubmandibularB": "No executable stock rules; combined contour needs explicit local definition.",
+    "LungL_CL?": "Contralateral designation cannot be inferred from left/right anatomy alone.",
+    "LungR_CL?": "Contralateral designation cannot be inferred from left/right anatomy alone.",
+    "BreastL_CL?": "Contralateral designation cannot be inferred from left/right anatomy alone.",
+    "BreastR_CL?": "Contralateral designation cannot be inferred from left/right anatomy alone."
+  },
+  "excluded_aliases": {
+    "Brain": [
+      "Normal Brain",
+      "zNormal Brain_0"
+    ],
+    "Myelon": [
+      "Spinalkanal OAR"
+    ],
+    "Myelon PRV": [
+      "Spinalkanal PRV",
+      "Spinal PRV"
+    ],
+    "Spinalkanal": [
+      "Myelon OAR"
+    ],
+    "Spinalkanal PRV": [
+      "Myelon PRV",
+      "Spinal PRV"
+    ],
+    "Plexus BrachialisL": [
+      "PlexusBrachB",
+      "PlexusBrachB OAR"
+    ],
+    "Rippen": [
+      "Thoraxwand",
+      "Chestwall",
+      "ThoraxwandOAR",
+      "ChestwallOAR"
+    ],
+    "Trachea": [
+      "Large bronchus",
+      "BronchialTree"
+    ],
+    "Darm": [
+      "Bowel_Lg",
+      "Bowelbag"
+    ],
+    "Nieren": [
+      "Nierenrinde",
+      "Renal cortex"
+    ]
+  },
+  "excluded_alias_patterns": [
+    "[-+~^!=/]",
+    "\\b(?:PTV|CTV|GTV|ITV|PRV)\\b",
+    "^_delete$",
+    "^delete$",
+    "#N/A",
+    "\\?"
+  ],
+  "allowed_context_notes": [
+    "mandatory",
+    "optimal",
+    "Brain including target",
+    "not medulla",
+    "(not medulla)",
+    "(with urin)",
+    "(with urine)",
+    "(including stool)"
+  ],
+  "policy_notes": [
+    "All stock tables require explicit reviewer confirmation. Fraction count alone is not clinical validation.",
+    "Only exact numeric objectives are executable. Source goals and variation values are not optimized, rounded or corrected.",
+    "Other source context notes require local review; no cropped organ, suborgan, disease, sex or laterality assumptions.",
+    "Legacy CI/GI/HI percentage-output expressions and generic MG target/body placeholders remain review-only.",
+    "Source Structure Codes are retained for audit only and are not loaded as matching codes: several are inconsistent with the official nomenclature list.",
+    "No prescription linkage, clinical approval or primary-literature validation is implied by the 2024 snapshot."
+  ]
+}

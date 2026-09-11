@@ -1,0 +1,20 @@
+{
+  "SchemaVersion": 1,
+  "Enabled": false,
+  "BaseUrl": "",
+  "TokenUrl": "",
+  "ClientId": "",
+  "Scope": "system/DocumentReference.cruds system/Patient.rs system/Organization.rs system/ValueSet.rs",
+  "CredentialEnvironmentVariable": "ARIA_FHIR_CLIENT_SECRET",
+  "CredentialEnvFilePath": "",
+  "ProviderReference": "",
+  "PatientIdentifierSystem": "",
+  "DocumentTypeCode": "",
+  "DocumentTypeDisplay": "",
+  "CategoryCode": "PDF",
+  "FhirCertificateSha256": "",
+  "TokenCertificateSha256": "",
+  "TimeoutSeconds": 45,
+  "DocumentDateSafetyMinutes": 0,
+  "AttachmentReadbackRoots": []
+}

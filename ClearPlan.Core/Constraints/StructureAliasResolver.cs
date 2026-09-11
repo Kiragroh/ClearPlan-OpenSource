@@ -99,7 +99,8 @@ namespace ClearPlan.Core.Constraints
                 if (!sideSpecificRequest)
                 {
                     AddCodeMatches(ranked, candidateList, definition.Codes);
-                    AddDicomTypeMatches(ranked, candidateList, definition.DicomTypes);
+                    // ORGAN, PTV, etc. describe a category, not anatomical identity.
+                    // They must never resolve a missing named structure automatically.
                 }
             }
 
@@ -140,8 +141,11 @@ namespace ClearPlan.Core.Constraints
                 if (category == UnicodeCategory.UppercaseLetter ||
                     category == UnicodeCategory.LowercaseLetter ||
                     category == UnicodeCategory.TitlecaseLetter ||
-                    category == UnicodeCategory.DecimalDigitNumber)
+                    category == UnicodeCategory.DecimalDigitNumber ||
+                    "~-+^!=/".IndexOf(character) >= 0)
                 {
+                    // TG-263 markers encode partial, cropped, combined and qualified structures.
+                    // Dropping them can turn a different anatomical/evaluation volume into an exact match.
                     builder.Append(char.ToLowerInvariant(character));
                 }
             }
@@ -155,14 +159,14 @@ namespace ClearPlan.Core.Constraints
         {
             if (!string.IsNullOrWhiteSpace(constraint.StructureId))
             {
-                StructureDefinition byId = definitions.FirstOrDefault(
+                List<StructureDefinition> byId = definitions.Where(
                     item => string.Equals(
                         item.StructureId,
                         constraint.StructureId,
-                        StringComparison.OrdinalIgnoreCase));
-                if (byId != null)
+                        StringComparison.OrdinalIgnoreCase)).ToList();
+                if (byId.Count > 0)
                 {
-                    return byId;
+                    return byId.Count == 1 ? byId[0] : null;
                 }
             }
 
@@ -174,7 +178,7 @@ namespace ClearPlan.Core.Constraints
                 return null;
             }
 
-            return definitions
+            var ranked = definitions
                 .Select(item => new
                 {
                     Definition = item,
@@ -182,9 +186,14 @@ namespace ClearPlan.Core.Constraints
                 })
                 .Where(item => item.Rank > 0)
                 .OrderByDescending(item => item.Rank)
-                .ThenBy(item => item.Definition.StructureId, StringComparer.OrdinalIgnoreCase)
-                .Select(item => item.Definition)
-                .FirstOrDefault();
+                .ToList();
+            if (ranked.Count == 0 ||
+                (ranked.Count > 1 && ranked[0].Rank == ranked[1].Rank))
+            {
+                return null;
+            }
+
+            return ranked[0].Definition;
         }
 
         private static int DefinitionRank(StructureDefinition definition, string requested)
@@ -306,36 +315,6 @@ namespace ClearPlan.Core.Constraints
                         Rule = StructureMatchRule.Code,
                         Confidence = 60,
                         Message = "Matched by structure code."
-                    });
-                }
-            }
-        }
-
-        private static void AddDicomTypeMatches(
-            IList<RankedCandidate> matches,
-            IEnumerable<StructureCandidate> candidates,
-            IEnumerable<string> definitionTypes)
-        {
-            var expected = new HashSet<string>(
-                (definitionTypes ?? Enumerable.Empty<string>())
-                    .Where(item => !string.IsNullOrWhiteSpace(item))
-                    .Select(item => item.Trim()),
-                StringComparer.OrdinalIgnoreCase);
-            if (expected.Count == 0)
-            {
-                return;
-            }
-
-            foreach (StructureCandidate candidate in candidates)
-            {
-                if (expected.Contains(candidate.DicomType ?? string.Empty))
-                {
-                    matches.Add(new RankedCandidate
-                    {
-                        Candidate = candidate,
-                        Rule = StructureMatchRule.DicomType,
-                        Confidence = 50,
-                        Message = "Matched by DICOM type."
                     });
                 }
             }

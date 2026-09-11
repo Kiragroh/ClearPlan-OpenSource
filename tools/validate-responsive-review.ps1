@@ -104,7 +104,9 @@ foreach ($contract in @(
     @('workspaceFitsViewport', "rendered workspace viewport result"),
     @('footerFullyVisible', "rendered footer result"),
     @('sourceStatusFullyVisible', "rendered source-status result"),
-    @('dvhScrollableHeight', "rendered DVH vertical overflow result"),
+    @('dvhContentWidth', "rendered DVH content width"),
+    @('dvhPlotWidth', "rendered DVH plot width"),
+    @('dvhPlotHeight', "rendered DVH plot height"),
     @('UpdateLayout', "real WPF layout execution")
 )) {
     Require-Pattern `
@@ -206,15 +208,16 @@ Require-Pattern `
     -Description "simulator vertical content stretch"
 
 foreach ($contract in @(
-    @('x:Name="DvhOverflowScrollViewer"', "named DVH overflow scroller"),
-    @('HorizontalScrollBarVisibility="Auto"', "horizontal DVH overflow"),
-    @('VerticalScrollBarVisibility="Auto"', "vertical DVH overflow"),
-    @('<ColumnDefinition Width="230"/>', "DVH structure pane width"),
+    @('x:Name="DvhContentGrid"', "named stretching DVH content grid"),
+    @('x:Name="DvhStructurePanel"', "named DVH structure panel"),
+    @('Width="210"', "compact DVH structure pane width"),
+    @('MinWidth="190"', "resizable DVH structure pane minimum"),
+    @('MaxWidth="300"', "resizable DVH structure pane maximum"),
     @('<ColumnDefinition Width="5"/>', "DVH splitter width"),
     @('<ColumnDefinition Width="\*"/>', "DVH plot star width"),
     @('x:Name="DvhDetailPlot"', "DVH detail plot"),
-    @('MinWidth="720"', "DVH plot minimum width"),
-    @('MinHeight="520"', "DVH plot minimum height")
+    @('MinWidth="0"', "DVH plot can consume finite host width"),
+    @('MinHeight="0"', "DVH plot can consume finite host height")
 )) {
     Require-Pattern `
         -Text $sharedXaml `
@@ -232,6 +235,10 @@ Require-Pattern `
     -Text $dvhTabBlock `
     -Pattern 'Grid\.Column="2"[^>]*\sPadding="10"' `
     -Description "compact DVH plot-card padding"
+if ($dvhTabBlock -match '<ScrollViewer') {
+    $failures.Add(
+        "DVH detail layout must not be measured through a ScrollViewer.")
+}
 
 $legacyRoot = [regex]::Match(
     $legacyXaml,
