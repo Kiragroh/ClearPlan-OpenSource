@@ -237,8 +237,15 @@ namespace ClearPlan.Core.Tests
                 Points = new List<ReviewReportDvhPoint> { new ReviewReportDvhPoint { DoseGy = 0, VolumePercent = 100 }, new ReviewReportDvhPoint { DoseGy = 60, VolumePercent = 0 } }
             });
             string html = Render(document);
-            TestAssert.Equal(2, ImageCount(html, "plot"), "All selected curves require chart panels, not a truncated legend.");
-            TestAssert.True(html.Contains("DVH panel 1 of 2") && html.Contains("DVH panel 2 of 2"));
+            TestAssert.Equal(1, ImageCount(html, "plot"), "All selected curves share one DVH and complete wrapped legend.");
+            TestAssert.False(html.Contains("DVH panel"));
+            for (int i=0;i<14;i++) TestAssert.True(html.Contains("Synthetic structure " + i));
+            var staircase = document.DvhSeries[0]; document.DvhSeries = new List<ReviewReportDvhSeries> { staircase };
+            staircase.Points = new List<ReviewReportDvhPoint> {
+                new ReviewReportDvhPoint { DoseGy=0, VolumePercent=100 }, new ReviewReportDvhPoint { DoseGy=10, VolumePercent=100 },
+                new ReviewReportDvhPoint { DoseGy=10, VolumePercent=50 }, new ReviewReportDvhPoint { DoseGy=20, VolumePercent=0 } };
+            TestAssert.Equal(1, ImageCount(Render(document),"plot"),"Equal-dose staircase points are valid, not a missing curve.");
+            TestAssert.Equal(4, staircase.Points.Count,"Do not reorder or deduplicate native DVH samples.");
         }
 
         public static void EveryCachedBeamHasAnImagePanel()
@@ -252,6 +259,11 @@ namespace ClearPlan.Core.Tests
             string html = Render(document);
             TestAssert.Equal(14, ImageCount(html, "bev-raster"), "Available fields must not be silently truncated.");
             TestAssert.Equal(14, ImageCount(html, "parameter-traces"));
+            TestAssert.Equal(14, Regex.Matches(html, "class=\"field-review\"").Count,
+                "Each field must group its BEV and stacked dose-rate/aperture plots in one printable panel.");
+            int firstField = html.IndexOf("class=\"field-review\"", StringComparison.Ordinal);
+            TestAssert.True(html.IndexOf("class=\"parameter-traces\"", StringComparison.Ordinal) > firstField,
+                "Parameter traces must live with the field, not on a separate preceding page.");
         }
 
         public static void CompanionExportNeverOverwritesExistingFiles()

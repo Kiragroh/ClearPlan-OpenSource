@@ -133,6 +133,39 @@ namespace ClearPlan.Core.Tests
                 ClinicalReviewValueMapper.MapFieldStatus(null, "7GA02"));
         }
 
+        public static void MissingPlanDoseDoesNotAbortOverview()
+        {
+            var read = typeof(ClinicalReviewValueMapper).GetMethod("ReadOptionalDoseInGray");
+            TestAssert.NotNull(read, "Optional native plan dose must not abort the whole overview.");
+            Func<Func<double>, double?> capture = provider => (double?)read.Invoke(null, new object[] { provider });
+            foreach (double missing in new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity, -1.0 })
+            {
+                TestAssert.Equal<double?>(null, capture(() => missing));
+                TestAssert.Equal<double?>(null, capture(() => ClinicalReviewValueMapper.ConvertDoseToGray(missing, "Gy")));
+            }
+            TestAssert.Equal<double?>(null, capture(() => { throw new InvalidOperationException("Native value unavailable"); }));
+            TestAssert.Equal<double?>(null, capture(() => ClinicalReviewValueMapper.ConvertDoseToGray(100, "%")));
+            TestAssert.Equal<double?>(0.0, capture(() => 0.0));
+            TestAssert.Equal<double?>(2.5, capture(() => ClinicalReviewValueMapper.ConvertDoseToGray(250, "cGy")));
+            TestAssert.Equal<double?>(70.0, capture(() => ClinicalReviewValueMapper.ConvertDoseToGray(70, "Gy")));
+            // Missing total dose does not erase an independently readable prescription.
+            var plan = new ReviewPlanRow { DosePerFractionGy = capture(() => 2.0),
+                TotalDoseGy = capture(() => ClinicalReviewValueMapper.ConvertDoseToGray(double.NaN, "Gy")), FractionCount = 33 };
+            TestAssert.Equal<double?>(2, plan.DosePerFractionGy);
+            TestAssert.Equal<double?>(null, plan.TotalDoseGy);
+            TestAssert.Equal<int?>(33, plan.FractionCount);
+            // The strict converter still rejects invalid values for actual calculations.
+            TestAssert.Throws<ArgumentOutOfRangeException>(() => ClinicalReviewValueMapper.ConvertDoseToGray(double.NaN, "Gy"));
+            var root = new System.IO.DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+            while (root != null && !System.IO.File.Exists(System.IO.Path.Combine(root.FullName, "ClearPlan.sln"))) root = root.Parent;
+            TestAssert.NotNull(root);
+            string adapter = System.IO.File.ReadAllText(System.IO.Path.Combine(root.FullName, "ClearPlan.Script", "Review", "EsapiReviewSnapshotBuilder.cs"));
+            TestAssert.True(adapter.Contains("GetDvhDoseOrNull(() => planSetup.DosePerFraction)"));
+            TestAssert.True(adapter.Contains("GetDvhDoseOrNull(() => planSetup.TotalDose)"));
+            // Private headless-runner integration is tested in the local deployment,
+            // not shipped in the vendor-free public source/test package.
+        }
+
         public static void SanitizesPathsAndDicomUids()
         {
             TestAssert.Equal(

@@ -52,9 +52,12 @@ namespace ClearPlan
                 var parsed = PlanCheckSelectionConfiguration.Parse(json);
                 if (parsed.Status == ReviewStatusCodes.Unavailable) throw new FormatException(parsed.Message);
             }
+            else if (key == "isodose-display") IsodoseDisplayConfiguration.Parse(json);
             else if (key == "aliases") StructureAliasConfiguration.Deserialize(json);
             else if (key == "aria-upload") ClearPlan.Core.Integration.AriaUploadConfiguration.Parse(json);
             else if (key == "mlc-profiles") NativeMlcProfileCatalog.Parse(json);
+            else if (key == "collision-profiles") ClearPlan.Core.Collision.CollisionProfileCatalog.Parse(json);
+            else if (key == "collision-source-models") ClearPlan.Core.Collision.SourceCollisionModelCatalog.Parse(json);
             else if (key == "dose-rate-profiles")
             {
                 if (content.Length > 65536) throw new FormatException("Dosisraten-Profile dürfen 64 KiB nicht überschreiten.");

@@ -27,6 +27,7 @@ namespace ClearPlan.Simulator
             "fields",
             "dvh",
             "images",
+            "collision",
             "parameters",
             "comparison",
             "bev",

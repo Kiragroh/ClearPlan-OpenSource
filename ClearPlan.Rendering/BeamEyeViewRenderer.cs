@@ -24,6 +24,11 @@ namespace ClearPlan.Rendering
         public bool Synthetic { get; internal set; }
         public string LayoutDescription { get; internal set; }
         public string[] JawLabels { get; internal set; }
+        public string[] JawCoordinateLabels { get; internal set; }
+        public bool UprightDisplay { get; internal set; }
+        public double DisplayRotationDegrees { get; internal set; }
+        public double DisplayExtentMm { get; internal set; }
+        public string FrameDescription { get; internal set; }
     }
 
     /// <summary>
@@ -44,12 +49,40 @@ namespace ClearPlan.Rendering
         private static readonly Color Canvas = Color.FromArgb(23, 33, 43);
         private static readonly Color Teal = Color.FromArgb(15, 118, 110);
         private static readonly Color Amber = Color.FromArgb(255, 196, 93);
-        private static readonly Color Cyan = Color.FromArgb(71, 215, 247);
+        private static readonly Color ApertureGreen = Color.FromArgb(75, 245, 105);
         private static readonly Color JawColor = Color.FromArgb(255, 230, 96);
         private static readonly Color SimulationRed = Color.FromArgb(180, 35, 24);
         private const float LogicalWidth = 1500;
         private const float LogicalHeight = 1000;
         private static readonly RectangleF Viewport = new RectangleF(50, 54, 900, 900);
+
+        /// <summary>Captured aperture in BLD coordinates only. No DRR, patient orientation
+        /// or interpolation is implied; the host supplies the CP and collimator labels.</summary>
+        public static byte[] RenderApertureInset(ReviewBeamAnalysis beam, ReviewControlPointSample cp, int size = 360)
+        {
+            if (size < 160 || size > 1024) throw new ArgumentOutOfRangeException(nameof(size));
+            bool available = GeometryProblem(beam, cp) == null;
+            using (var bitmap = new Bitmap(size, size, PixelFormat.Format24bppRgb))
+            using (var g = Graphics.FromImage(bitmap))
+            {
+                g.Clear(Canvas); g.SmoothingMode = SmoothingMode.AntiAlias;
+                g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
+                g.ScaleTransform(size / 940f, size / 940f);
+                g.TranslateTransform(20 - Viewport.Left, 20 - Viewport.Top);
+                g.SetClip(Viewport);
+                if (available) DrawAperture(g, cp.Aperture, GeometryExtent(cp, true), true);
+                else Text(g, "MLC unavailable", new RectangleF(70,400,860,100), 44, Color.White, false, StringAlignment.Center);
+                var center = Map(0,0,1);
+                using(var pen = new Pen(Color.White,3))
+                {
+                    g.DrawLine(pen,center.X-16,center.Y,center.X+16,center.Y);
+                    g.DrawLine(pen,center.X,center.Y-16,center.X,center.Y+16);
+                }
+                Text(g,"+Y",new RectangleF(470,65,80,44),32,Color.White);
+                Text(g,"+X",new RectangleF(852,465,88,44),32,Color.White);
+                using(var stream = new MemoryStream()) { bitmap.Save(stream,ImageFormat.Png); return stream.ToArray(); }
+            }
+        }
 
         public static byte[] Render(ReviewBeamAnalysis beam, ReviewControlPointSample cp, BeamEyeViewImage image, bool synthetic, int width = 1500, int height = 1000, bool compactStatus = false)
         {
@@ -69,23 +102,25 @@ namespace ClearPlan.Rendering
                 Fill(graphics, Canvas, new RectangleF(0, 0, 1000, LogicalHeight));
                 Fill(graphics, Color.White, new RectangleF(1000, 0, 500, LogicalHeight));
                 Text(graphics, "Beam's-eye view", new RectangleF(50, 12, 320, 34), 25, Color.White, true);
-                Text(graphics, "Isocentre plane · BLD coordinates · cm", new RectangleF(367, 17, 583, 30), 21, Color.FromArgb(192, 205, 217), false, StringAlignment.Far);
+                Text(graphics, state.FrameDescription, new RectangleF(367, 17, 583, 30), 20, Color.FromArgb(192, 205, 217), false, StringAlignment.Far);
 
-                double extent = state.ImageAvailable ? image.ExtentMm : GeometryExtent(cp, state.GeometryAvailable);
+                double extent = state.DisplayExtentMm;
+                Fill(graphics, Color.FromArgb(25, 32, 40), Viewport);
+                var clipping = graphics.Save();
+                graphics.SetClip(Viewport);
+                var bldTransform = graphics.Save();
+                RotateAboutIso(graphics, state.DisplayRotationDegrees);
                 if (state.ImageAvailable)
                 {
                     using (var pixels = GrayscaleBitmap(image))
                     {
                         graphics.InterpolationMode = InterpolationMode.HighQualityBilinear;
-                        graphics.DrawImage(pixels, Viewport);
+                        var destination = Map(new ApertureRectangle(-image.ExtentMm, -image.ExtentMm, image.ExtentMm, image.ExtentMm), extent);
+                        graphics.DrawImage(pixels, destination);
                     }
                 }
-                else
-                    Fill(graphics, Color.FromArgb(25, 32, 40), Viewport);
-
-                var clipping = graphics.Save();
-                graphics.SetClip(Viewport);
                 if (state.GeometryAvailable) DrawAperture(graphics, cp.Aperture, extent);
+                graphics.Restore(bldTransform);
                 DrawRuler(graphics, extent);
                 graphics.Restore(clipping);
                 using (var pen = new Pen(Color.FromArgb(104, 121, 136), 1)) graphics.DrawRectangle(pen, Viewport.X, Viewport.Y, Viewport.Width, Viewport.Height);
@@ -94,7 +129,7 @@ namespace ClearPlan.Rendering
                 // Reports keep the full in-image notice by default.
                 if (!state.ImageAvailable && !compactStatus) DrawUnavailable(graphics, state.ImageMessage);
                 if (state.GeometryAvailable) DrawApertureLegend(graphics, cp.Aperture, state);
-                if (state.PhysicalJawsVisible) DrawJawLabels(graphics, cp.Aperture.Jaws, extent);
+                if (state.PhysicalJawsVisible) DrawJawLabels(graphics, cp.Aperture.Jaws, extent, state.DisplayRotationDegrees);
                 if (!state.GeometryAvailable)
                     OverlayLabel(graphics, "MLC / jaw geometry unavailable", new RectangleF(68, 73, 420, 40), Amber, 23);
 
@@ -119,6 +154,7 @@ namespace ClearPlan.Rendering
             {
                 Synthetic = synthetic || (image != null && image.Synthetic),
                 JawLabels = new string[0],
+                JawCoordinateLabels = new string[0],
                 LayoutDescription = "Geometry unavailable"
             };
             state.ImageMessage = ImageProblem(cp, image, synthetic);
@@ -131,9 +167,18 @@ namespace ClearPlan.Rendering
                 state.PhysicalJawsVisible = cp.Aperture.Jaws != null;
                 state.FixedBoundsVisible = cp.Aperture.FixedBoundingBox != null;
                 state.JawLabels = state.PhysicalJawsVisible ? new[] { "X1", "X2", "Y1", "Y2" } : new string[0];
+                state.JawCoordinateLabels = state.PhysicalJawsVisible ? JawCoordinateLabels(cp.Aperture.Jaws) : new string[0];
                 state.LayoutDescription = (state.PhysicalJawsVisible ? "Physical jaws" : "Jawless") + " · " + cp.Aperture.Layers.Count + " MLC " + (cp.Aperture.Layers.Count == 1 ? "layer" : "layers");
+                if (state.FixedBoundsVisible) state.LayoutDescription += " · maximum " + FieldSize(cp.Aperture.FixedBoundingBox);
                 state.GeometryMessage = state.LayoutDescription;
             }
+            state.UprightDisplay = state.ImageAvailable && image.BldToDisplayRotationDegrees.HasValue && Finite(image.BldToDisplayRotationDegrees.Value);
+            state.DisplayRotationDegrees = state.UprightDisplay ? Math.IEEERemainder(image.BldToDisplayRotationDegrees.Value, 360) : 0;
+            state.FrameDescription = state.UprightDisplay ? "Upright gantry (C0) · collimator " + Value(cp.CollimatorAngleDegrees, "0.#", "°") : "BLD frame · upright calibration unavailable";
+            double extent = state.ImageAvailable ? image.ExtentMm : GeometryExtent(cp, state.GeometryAvailable);
+            if (state.GeometryAvailable) extent = Math.Max(extent, GeometryExtent(cp, true));
+            double radians = state.DisplayRotationDegrees * Math.PI / 180;
+            state.DisplayExtentMm = extent * (Math.Abs(Math.Cos(radians)) + Math.Abs(Math.Sin(radians)));
             return state;
         }
 
@@ -222,15 +267,16 @@ namespace ClearPlan.Rendering
             return bitmap;
         }
 
-        private static void DrawAperture(Graphics g, ApertureGeometry aperture, double extent)
+        private static void DrawAperture(Graphics g, ApertureGeometry aperture, double extent, bool compact = false)
         {
             for (int layerIndex = 0; layerIndex < aperture.Layers.Count; layerIndex++)
             {
                 var layer = aperture.Layers[layerIndex];
                 Color color = LayerColor(layerIndex);
-                using (var outline = new Pen(Color.FromArgb(210, color), 1.65f))
-                using (var tint = new SolidBrush(Color.FromArgb(12, color)))
+                using (var outline = new Pen(Color.FromArgb(190, color), compact ? 3f : 1.2f))
+                using (var tint = new SolidBrush(Color.FromArgb(compact ? 22 : 8, color)))
                 {
+                    if (layerIndex % 2 != 0) outline.DashStyle = DashStyle.Dash;
                     for (int pair = 0; pair < layer.Bank1PositionsMm.Length; pair++)
                     {
                         double low = layer.LeafBoundariesMm[pair], high = layer.LeafBoundariesMm[pair + 1];
@@ -243,6 +289,7 @@ namespace ClearPlan.Rendering
                 }
             }
             // Only outlines: an opaque effective-opening fill would obscure the radiograph.
+            DrawEffectiveBoundary(g, aperture.EffectiveOpenings, extent);
             if (aperture.FixedBoundingBox != null)
                 using (var pen = new Pen(Color.FromArgb(224, 230, 235), 2))
                 {
@@ -259,6 +306,50 @@ namespace ClearPlan.Rendering
             var rectangle = Map(leaf, extent);
             g.FillRectangle(tint, rectangle);
             DrawRectangle(g, outline, rectangle);
+        }
+
+        private static void DrawEffectiveBoundary(Graphics g, IList<ApertureRectangle> openings, double extent)
+        {
+            // Effective openings are non-overlapping cells from the aperture calculation. Cancel
+            // coincident opposing edges, including partially shared edges, instead of drawing seams.
+            var horizontal = new Dictionary<double, SortedDictionary<double, int>>();
+            var vertical = new Dictionary<double, SortedDictionary<double, int>>();
+            foreach (var rectangle in openings.Where(r => r.X2 > r.X1 && r.Y2 > r.Y1))
+            {
+                AddBoundaryEdge(horizontal, rectangle.Y1, rectangle.X1, rectangle.X2, 1);
+                AddBoundaryEdge(horizontal, rectangle.Y2, rectangle.X1, rectangle.X2, -1);
+                AddBoundaryEdge(vertical, rectangle.X1, rectangle.Y1, rectangle.Y2, 1);
+                AddBoundaryEdge(vertical, rectangle.X2, rectangle.Y1, rectangle.Y2, -1);
+            }
+            using (var pen = new Pen(ApertureGreen, 2.8f))
+            {
+                DrawBoundaryEdges(g, horizontal, extent, pen, true);
+                DrawBoundaryEdges(g, vertical, extent, pen, false);
+            }
+        }
+
+        private static void AddBoundaryEdge(Dictionary<double, SortedDictionary<double, int>> edges, double fixedCoordinate, double low, double high, int sign)
+        {
+            SortedDictionary<double, int> events;
+            if (!edges.TryGetValue(fixedCoordinate, out events)) edges[fixedCoordinate] = events = new SortedDictionary<double, int>();
+            if (!events.ContainsKey(low)) events[low] = 0;
+            if (!events.ContainsKey(high)) events[high] = 0;
+            events[low] += sign; events[high] -= sign;
+        }
+
+        private static void DrawBoundaryEdges(Graphics g, Dictionary<double, SortedDictionary<double, int>> edges, double extent, Pen pen, bool horizontal)
+        {
+            foreach (var edge in edges)
+            {
+                double previous = 0; int active = 0;
+                foreach (var change in edge.Value)
+                {
+                    if (active != 0)
+                        g.DrawLine(pen, horizontal ? Map(previous, edge.Key, extent) : Map(edge.Key, previous, extent),
+                            horizontal ? Map(change.Key, edge.Key, extent) : Map(edge.Key, change.Key, extent));
+                    previous = change.Key; active += change.Value;
+                }
+            }
         }
 
         private static void DrawRuler(Graphics g, double extent)
@@ -278,38 +369,37 @@ namespace ClearPlan.Rendering
                     float length = tick % 5 == 0 ? 10 : 5;
                     g.DrawLine(pen, horizontal.X, centre.Y - length, horizontal.X, centre.Y + length);
                     g.DrawLine(pen, centre.X - length, vertical.Y, centre.X + length, vertical.Y);
-                    if (tick != 0 && tick % 5 == 0 && Math.Abs(tick * 10) < extent - 15)
-                    {
-                        OverlayLabel(g, tick.ToString(CultureInfo.InvariantCulture), new RectangleF(horizontal.X - 30, centre.Y + 14, 60, 28), Color.FromArgb(242, 239, 211), 19);
-                        OverlayLabel(g, tick.ToString(CultureInfo.InvariantCulture), new RectangleF(centre.X + 14, vertical.Y - 14, 60, 28), Color.FromArgb(242, 239, 211), 19);
-                    }
                 }
                 g.DrawEllipse(pen, centre.X - 7, centre.Y - 7, 14, 14);
             }
             OverlayLabel(g, "+Y", new RectangleF(centre.X + 12, Viewport.Top + 8, 60, 30), Color.FromArgb(244, 241, 214), 21);
             OverlayLabel(g, "+X", new RectangleF(Viewport.Right - 67, centre.Y - 49, 60, 30), Color.FromArgb(244, 241, 214), 21);
-            OverlayLabel(g, "ISO · 0,0 cm", new RectangleF(centre.X+18,centre.Y+49,166,32),Color.White,22);
+            OverlayLabel(g, "ISO", new RectangleF(centre.X+14,centre.Y-44,60,30),Color.White,21);
+            OverlayLabel(g, "Ticks: 1 cm", new RectangleF(Viewport.Right-175,Viewport.Top+16,157,30),Color.White,20);
         }
 
-        private static void DrawJawLabels(Graphics g, ApertureRectangle jaws, double extent)
+        private static void DrawJawLabels(Graphics g, ApertureRectangle jaws, double extent, double rotationDegrees)
         {
-            RectangleF rectangle = Map(jaws, extent);
-            float midY = Clamp((rectangle.Top + rectangle.Bottom) / 2, Viewport.Top + 140, Viewport.Bottom - 80);
-            float midX = Clamp((rectangle.Left + rectangle.Right) / 2, Viewport.Left + 100, Viewport.Right - 100);
-            OverlayLabel(g, "X1 " + Cm(jaws.X1), new RectangleF(Clamp(rectangle.Left - 145, 58, 782), midY - 44, 160, 34), JawColor, 22);
-            OverlayLabel(g, "X2 " + Cm(jaws.X2), new RectangleF(Clamp(rectangle.Right + 8, 58, 782), midY - 44, 160, 34), JawColor, 22);
-            float yLabelLeft = YJawLabelLeft(midX);
-            OverlayLabel(g, "Y2 " + Cm(jaws.Y2), new RectangleF(yLabelLeft, Clamp(rectangle.Top - 43, 127, 867), 160, 34), JawColor, 22);
-            OverlayLabel(g, "Y1 " + Cm(jaws.Y1), new RectangleF(yLabelLeft, Clamp(rectangle.Bottom + 8, 127, 867), 160, 34), JawColor, 22);
+            double midX = (jaws.X1 + jaws.X2) / 2, midY = (jaws.Y1 + jaws.Y2) / 2;
+            var midpoints = new[] { Map(jaws.X1, midY, extent), Map(jaws.X2, midY, extent), Map(midX, jaws.Y1, extent), Map(midX, jaws.Y2, extent) };
+            // Unit screen normals locate labels outside the actual rotated jaw, while text stays horizontal.
+            var normals = new[] { new PointF(-1, 0), new PointF(1, 0), new PointF(0, 1), new PointF(0, -1) };
+            var labels = JawCoordinateLabels(jaws);
+            double radians = rotationDegrees * Math.PI / 180;
+            for (int i = 0; i < midpoints.Length; i++)
+            {
+                PointF point = RotatePoint(midpoints[i], rotationDegrees);
+                float nx = (float)(normals[i].X * Math.Cos(radians) - normals[i].Y * Math.Sin(radians));
+                float ny = (float)(normals[i].X * Math.Sin(radians) + normals[i].Y * Math.Cos(radians));
+                float x = Clamp(point.X - 80 + nx * 92, Viewport.Left + 8, Viewport.Right - 168);
+                float y = Clamp(point.Y - 17 + ny * 32, Viewport.Top + 140, Viewport.Bottom - 80);
+                OverlayLabel(g, labels[i], new RectangleF(x, y, 160, 34), JawColor, 22);
+            }
         }
 
-        private static float YJawLabelLeft(float apertureMidpoint)
+        private static string[] JawCoordinateLabels(ApertureRectangle jaws)
         {
-            float axisX = Viewport.Left + Viewport.Width / 2;
-            float left = Clamp(apertureMidpoint - 80, Viewport.Left + 8, Viewport.Right - 168);
-            // Reserve the ruler stroke and its right-hand tick-label band, with a clear gap.
-            if (left < axisX + 86 && left + 160 > axisX - 12) left = axisX - 190;
-            return left;
+            return new[] { "X1 " + Cm(jaws.X1), "X2 " + Cm(jaws.X2), "Y1 " + Cm(jaws.Y1), "Y2 " + Cm(jaws.Y2) };
         }
 
         private static void DrawApertureLegend(Graphics g, ApertureGeometry aperture, BeamEyeViewRenderState state)
@@ -317,12 +407,13 @@ namespace ClearPlan.Rendering
             float y = 72;
             for (int i = 0; i < aperture.Layers.Count; i++)
             {
-                string label = Clean(aperture.Layers[i].Label, "MLC layer " + (i + 1), 40) + " · " + aperture.Layers[i].Bank1PositionsMm.Length + " pairs";
+                string label = Clean(aperture.Layers[i].Label, "MLC layer " + (i + 1), 40) + " · " + aperture.Layers[i].Bank1PositionsMm.Length + " pairs · " + (i % 2 == 0 ? "solid" : "dashed");
                 OverlayLabel(g, label, new RectangleF(68, y, 438, 34), LayerColor(i), 22);
                 OverlayLabel(g, LeafWidthLabel(aperture.Layers[i]),new RectangleF(68,y+33,438,30),LayerColor(i),20);
                 y += 68;
             }
-            string boundary = state.PhysicalJawsVisible ? "Solid yellow: physical jaws" : (state.FixedBoundsVisible ? "Dashed white: fixed virtual field boundary" : "Jawless · no physical jaws");
+            OverlayLabel(g, "Bright green: effective aperture", new RectangleF(68, 836, 680, 32), ApertureGreen, 21);
+            string boundary = state.PhysicalJawsVisible ? "Solid yellow: physical jaws" : (state.FixedBoundsVisible ? "Dashed white: maximum field " + FieldSize(aperture.FixedBoundingBox) + " · fixed" : "Jawless · maximum field not supplied");
             OverlayLabel(g, boundary, new RectangleF(68, 874, 680, 34), state.PhysicalJawsVisible ? JawColor : Color.White, 22);
             OverlayLabel(g, "CT proxy, not diagnostic. Leaf bodies extend to viewport edge.", new RectangleF(68, 913, 864, 29), Color.FromArgb(213, 222, 230), 20);
         }
@@ -377,57 +468,109 @@ namespace ClearPlan.Rendering
                 Text(g, detail, new RectangleF(x, 710, w, 55), 20, Muted);
             }
             Text(g, state.GeometryAvailable ? "Complete MLC / boundary geometry" : "MLC / boundary geometry unavailable", new RectangleF(x, compactStatus ? 640 : 675, w, 28), 21, state.GeometryAvailable ? Ink : Color.FromArgb(151, 88, 19));
-            DrawOrientation(g, cp);
+            DrawOrientation(g, cp, state);
         }
 
-        private static void DrawOrientation(Graphics g, ReviewControlPointSample cp)
+        private static void DrawOrientation(Graphics g, ReviewControlPointSample cp, BeamEyeViewRenderState state)
         {
-            const float leftX = 1130, rightX = 1378, centreY = 858;
+            const float gantryX = 1103, couchX = 1250, collimatorX = 1397, centreY = 861;
             Text(g, "Orientation schematic", new RectangleF(1030, 780, 440, 29), 23, Ink, true);
-            if (cp == null || !Finite(cp.GantryAngleDegrees) || !Finite(cp.PatientSupportAngleDegrees))
-            {
-                Text(g, "Finite angles unavailable", new RectangleF(1030, 825, 440, 35), 21, Muted);
-                return;
-            }
-            PointF source = LinacOrientationPoint(cp.GantryAngleDegrees);
-            using (var pen = new Pen(Border, 2)) g.DrawEllipse(pen, leftX - 34, centreY - 34, 68, 68);
+            double gantry = cp == null ? double.NaN : cp.GantryAngleDegrees;
+            double couch = cp == null ? double.NaN : cp.PatientSupportAngleDegrees;
+            double collimator = cp == null ? double.NaN : cp.CollimatorAngleDegrees;
+            bool calibrated = state != null && state.UprightDisplay;
+            DrawOrientationReference(g, gantryX, centreY, "0°");
+            DrawOrientationReference(g, couchX, centreY, "0°");
+            DrawOrientationReference(g, collimatorX, centreY, calibrated ? "Up" : "0°");
+            if (Finite(gantry)) DrawGantryOrientation(g, gantryX, centreY, NormalizeAngle(gantry));
+            if (Finite(couch)) DrawCouchOrientation(g, couchX, centreY, NormalizeAngle(couch));
+            if (Finite(collimator)) DrawCollimatorOrientation(g, collimatorX, centreY, calibrated ? state.DisplayRotationDegrees : NormalizeAngle(collimator));
+            DrawOrientationCaption(g, gantryX, "Gantry", gantry, "Room · front");
+            DrawOrientationCaption(g, couchX, "Couch", couch, "Table · top");
+            DrawOrientationCaption(g, collimatorX, "Collimator", collimator, calibrated ? "BLD · screen" : "BLD · nominal");
+            // Only InspectState validates the image frame used by both aperture and inset.
+            // Otherwise disclose the nominal convention; never infer a patient transform.
+            Text(g, "Orientation only · not a collision check.", new RectangleF(1030, 946, 440, 20), 16, Muted, false, StringAlignment.Center);
+        }
+
+        private static void DrawOrientationReference(Graphics g, float centreX, float centreY, string reference)
+        {
+            using (var pen = new Pen(Border, 1.5f)) g.DrawEllipse(pen, centreX - 30, centreY - 30, 60, 60);
+            using (var pen = new Pen(Muted, 1.5f)) g.DrawLine(pen, centreX, centreY - 43, centreX, centreY - 35);
+            Text(g, reference, new RectangleF(centreX + 33, 815, 25, 19), 14, Muted);
+        }
+
+        private static void DrawGantryOrientation(Graphics g, float centreX, float centreY, double angle)
+        {
+            PointF source = LinacOrientationPoint(angle);
             using (var pen = new Pen(Color.FromArgb(119, 143, 156), 1))
             {
-                g.DrawLine(pen, leftX - 46, centreY, leftX + 46, centreY);
-                g.DrawLine(pen, leftX, centreY - 39, leftX, centreY + 39);
+                g.DrawLine(pen, centreX - 34, centreY, centreX + 34, centreY);
+                g.DrawLine(pen, centreX, centreY - 30, centreX, centreY + 30);
             }
-            using (var pen = new Pen(Teal, 2.5f)) g.DrawLine(pen, leftX, centreY, leftX + source.X * 32, centreY + source.Y * 32);
+            using (var pen = new Pen(Teal, 2.5f)) g.DrawLine(pen, centreX, centreY, centreX + source.X * 27, centreY + source.Y * 27);
             var transform = g.Save();
-            g.TranslateTransform(leftX + source.X * 32, centreY + source.Y * 32);
-            g.RotateTransform((float)(cp.GantryAngleDegrees % 360));
-            Fill(g, Color.FromArgb(22, 50, 74), new RectangleF(-12, -8, 24, 17));
-            Fill(g, Teal, new RectangleF(-7, 6, 14, 5));
+            g.TranslateTransform(centreX + source.X * 27, centreY + source.Y * 27);
+            g.RotateTransform((float)angle);
+            Fill(g, Color.FromArgb(22, 50, 74), new RectangleF(-10, -7, 20, 14));
+            Fill(g, Teal, new RectangleF(-6, 5, 12, 4));
             g.Restore(transform);
-            using (var brush = new SolidBrush(Teal)) g.FillEllipse(brush, leftX - 4, centreY - 4, 8, 8);
-            Text(g, "90°", new RectangleF(leftX + 57, centreY - 12, 51, 25), 18, Muted);
+            using (var brush = new SolidBrush(Teal)) g.FillEllipse(brush, centreX - 3, centreY - 3, 6, 6);
+        }
 
+        private static void DrawCouchOrientation(Graphics g, float centreX, float centreY, double angle)
+        {
             // Separate top view: couch rotates the table and patient symbol, never the gantry.
-            using (var pen = new Pen(Border, 1.5f)) g.DrawEllipse(pen, rightX - 38, centreY - 38, 76, 76);
-            transform = g.Save();
-            g.TranslateTransform(rightX, centreY);
-            g.RotateTransform((float)(cp.PatientSupportAngleDegrees % 360));
-            Fill(g, Color.FromArgb(224, 232, 237), new RectangleF(-15, -37, 30, 74));
-            using (var pen = new Pen(Color.FromArgb(117, 134, 148), 1.5f)) g.DrawRectangle(pen, -15, -37, 30, 74);
+            var transform = g.Save();
+            g.TranslateTransform(centreX, centreY);
+            g.RotateTransform((float)angle);
+            Fill(g, Color.FromArgb(224, 232, 237), new RectangleF(-12, -28, 24, 56));
+            using (var pen = new Pen(Color.FromArgb(117, 134, 148), 1.5f)) g.DrawRectangle(pen, -12, -28, 24, 56);
             using (var brush = new SolidBrush(Teal))
             {
-                g.FillEllipse(brush, -5, -25, 10, 10);
-                g.FillRectangle(brush, -5, -11, 10, 30);
+                g.FillEllipse(brush, -4, -21, 8, 8);
+                g.FillRectangle(brush, -4, -10, 8, 24);
             }
             g.Restore(transform);
             using (var pen = new Pen(Ink, 1))
             {
-                g.DrawLine(pen, rightX - 6, centreY, rightX + 6, centreY);
-                g.DrawLine(pen, rightX, centreY - 6, rightX, centreY + 6);
+                g.DrawLine(pen, centreX - 5, centreY, centreX + 5, centreY);
+                g.DrawLine(pen, centreX, centreY - 5, centreX, centreY + 5);
             }
-            Text(g, "Front room view", new RectangleF(1025, 901, 222, 28), 20, Muted, false, StringAlignment.Center);
-            Text(g, "Couch · top view", new RectangleF(1270, 901, 220, 28), 20, Muted, false, StringAlignment.Center);
-            Text(g, "0° above; +90° right. Not a collision check.", new RectangleF(1024, 935, 452, 26), 19, Muted, false, StringAlignment.Center);
         }
+
+        private static void DrawCollimatorOrientation(Graphics g, float centreX, float centreY, double angle)
+        {
+            // Directed, labelled axes avoid the 180-degree ambiguity of a square/leaf icon.
+            // The input is the validated BLD-to-screen rotation when available; otherwise
+            // nominal C0 starts +X right / +Y above with positive rotation clockwise.
+            // This is a direction indicator, not an inferred drawing of actual leaves.
+            double radians = angle * Math.PI / 180;
+            var x = new PointF((float)Math.Cos(radians), (float)Math.Sin(radians));
+            var y = new PointF(x.Y, -x.X);
+            using (var cap = new AdjustableArrowCap(3, 4))
+            using (var xPen = new Pen(Teal, 2.3f))
+            using (var yPen = new Pen(Ink, 1.7f))
+            {
+                xPen.CustomEndCap = cap;
+                yPen.CustomEndCap = cap;
+                yPen.DashStyle = DashStyle.Dash;
+                g.DrawLine(xPen, centreX, centreY, centreX + x.X * 19, centreY + x.Y * 19);
+                g.DrawLine(yPen, centreX, centreY, centreX + y.X * 19, centreY + y.Y * 19);
+            }
+            Text(g, "+X", new RectangleF(centreX + x.X * 32 - 13, centreY + x.Y * 32 - 9, 26, 19), 14, Teal, true, StringAlignment.Center);
+            Text(g, "+Y", new RectangleF(centreX + y.X * 32 - 13, centreY + y.Y * 32 - 9, 26, 19), 14, Ink, true, StringAlignment.Center);
+        }
+
+        private static void DrawOrientationCaption(Graphics g, float centreX, string name, double angle, string view)
+        {
+            bool available = Finite(angle);
+            string value = available ? NormalizeAngle(angle).ToString("0.#", CultureInfo.InvariantCulture) + "°" : "—";
+            Text(g, name + " " + value, new RectangleF(centreX - 73, 906, 146, 24), 16, Ink, true, StringAlignment.Center);
+            Text(g, available ? view : "Angle unavailable", new RectangleF(centreX - 73, 929, 146, 20), 16, Muted, false, StringAlignment.Center);
+        }
+
+        private static double NormalizeAngle(double angle) { return ((angle % 360) + 360) % 360; }
 
         private static void Row(Graphics g, string label, string value, float y, float valueSize = 22)
         {
@@ -476,6 +619,25 @@ namespace ClearPlan.Rendering
                 Viewport.Y + (float)((extent - y) / (2 * extent)) * Viewport.Height);
         }
 
+        private static void RotateAboutIso(Graphics g, double rotationDegrees)
+        {
+            // CreateFrame's X=u*cos-v*sin, Y=u*sin+v*cos requires +theta in GDI's Y-down
+            // screen coordinates. The same transform applies to raster, leaves and all boundaries.
+            var centre = Map(0, 0, 1);
+            g.TranslateTransform(centre.X, centre.Y);
+            g.RotateTransform((float)rotationDegrees);
+            g.TranslateTransform(-centre.X, -centre.Y);
+        }
+
+        private static PointF RotatePoint(PointF point, double rotationDegrees)
+        {
+            var centre = Map(0, 0, 1);
+            double radians = rotationDegrees * Math.PI / 180;
+            double x = point.X - centre.X, y = point.Y - centre.Y;
+            return new PointF(centre.X + (float)(x * Math.Cos(radians) - y * Math.Sin(radians)),
+                centre.Y + (float)(x * Math.Sin(radians) + y * Math.Cos(radians)));
+        }
+
         private static RectangleF Map(ApertureRectangle rectangle, double extent)
         {
             PointF topLeft = Map(rectangle.X1, rectangle.Y2, extent), bottomRight = Map(rectangle.X2, rectangle.Y1, extent);
@@ -504,7 +666,13 @@ namespace ClearPlan.Rendering
 
         private static Color LayerColor(int index)
         {
-            return index == 0 ? Cyan : index == 1 ? Amber : Color.FromArgb(179, 158, 235);
+            return index % 2 == 0 ? Color.FromArgb(75, 245, 105) : Color.FromArgb(78, 155, 255);
+        }
+
+        private static string FieldSize(ApertureRectangle field)
+        {
+            return ((field.X2 - field.X1) / 10).ToString("0.#", CultureInfo.InvariantCulture) + " × " +
+                ((field.Y2 - field.Y1) / 10).ToString("0.#", CultureInfo.InvariantCulture) + " cm";
         }
 
         private static bool MatchingAngle(double first, double second)

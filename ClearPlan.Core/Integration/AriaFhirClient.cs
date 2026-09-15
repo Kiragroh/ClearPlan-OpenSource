@@ -33,6 +33,16 @@ namespace ClearPlan.Core.Integration
         public string Display { get; internal set; }
     }
 
+    public sealed class AriaAuthorResolutionException : Exception
+    {
+        internal AriaAuthorResolutionException() : base("The interactive ESAPI user could not be mapped to exactly one active ARIA Practitioner. Ask the ARIA administrator to check the user/staff association and grant Practitioner read/search scope. No document was sent.") { }
+    }
+
+    public sealed class AriaResolvedAuthor
+    {
+        public string Reference { get; internal set; }
+    }
+
     public sealed class AriaResolvedDocumentType
     {
         public string System { get; internal set; }
@@ -112,6 +122,31 @@ namespace ClearPlan.Core.Integration
             }, cancellation);
         }
 
+        public async Task<AriaResolvedAuthor> ResolveAuthorAsync(string interactiveUserId, CancellationToken cancellation)
+        {
+            try
+            {
+                return await ReadOperation(async token => {
+                    RequireText(interactiveUserId, 256);
+                    if (interactiveUserId.IndexOfAny(new[] { '|', ',', '$', '/' }) >= 0 ||
+                        interactiveUserId.Split('\\').Any(string.IsNullOrWhiteSpace) || interactiveUserId.Count(c => c == '\\') > 1)
+                        throw new AriaAuthorResolutionException();
+                    // User.Name is display text, never an identity. Do not infer or remove a Windows domain.
+                    bool qualified = interactiveUserId.Contains("\\");
+                    string system = "http://varian.com/fhir/identifier/Practitioner/" + (qualified ? "UserName" : "Id");
+                    string search = system + "|" + interactiveUserId.Replace("\\", "\\\\"); // FHIR token escaping, then URI escaping.
+                    var resources = await ReadResources("Practitioner?identifier=" + Uri.EscapeDataString(search), "Practitioner", token).ConfigureAwait(false);
+                    var matches = resources.Where(p => p["active"] == null || (bool?)p["active"] != false).Where(p =>
+                        Array(p["identifier"]).OfType<JObject>().Any(i => (string)i["system"] == system &&
+                            string.Equals((string)i["value"], interactiveUserId, qualified ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))).ToList();
+                    if (matches.Count != 1) throw new AriaAuthorResolutionException();
+                    return new AriaResolvedAuthor { Reference = "Practitioner/" + ResourceId(matches[0]) };
+                }, cancellation).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception) { throw new AriaAuthorResolutionException(); }
+        }
+
         public Task<AriaResolvedProvider> ResolveProviderAsync(string configuredReference, CancellationToken cancellation)
         {
             return ReadOperation(async token => {
@@ -186,6 +221,10 @@ namespace ClearPlan.Core.Integration
                 try
                 {
                     timeout.Token.ThrowIfCancellationRequested();
+                    // Old constructor signatures remain available, but a legacy unbound request cannot write.
+                    if (request == null || request.TemplateName == null || request.AuthorReference == null || request.InteractiveUserId == null)
+                        return UploadResult(AriaUploadState.Rejected, null,
+                            "The document was not submitted. Bind the active plan name and the resolved interactive ESAPI author before sending.", processingStageCode: "preparing");
                     JObject payload = AriaReportDocumentBuilder.Build(request);
                     Uri target = RequireTarget("DocumentReference");
                     using (var message = new HttpRequestMessage(HttpMethod.Post, target))
@@ -272,6 +311,14 @@ namespace ClearPlan.Core.Integration
                         (string)document["custodian"]?["reference"] == request.OrganizationReference &&
                         HasCoding(document["type"], request.DocumentTypeSystem, request.DocumentTypeCode) &&
                         Array(document["category"]).Any(c => HasCoding(c, CategorySystem, request.CategoryCode));
+                    if (request.TemplateName != null)
+                    {
+                        var templates = Array(document["extension"]).OfType<JObject>().Where(e =>
+                            (string)e["url"] == "http://varian.com/fhir/v1/StructureDefinition/documentreference-templateName").ToList();
+                        var authors = Array(document["author"]);
+                        metadata = metadata && templates.Count == 1 && (string)templates[0]["valueString"] == request.TemplateName &&
+                            authors.Count == 1 && (string)authors[0]["reference"] == request.AuthorReference;
+                    }
                     var contents = Array(document["content"]);
                     var attachment = contents.Count == 1 ? contents[0]["attachment"] as JObject : null;
                     bool titlePresent = attachment != null && attachment["title"] != null && attachment["title"].Type != JTokenType.Null;

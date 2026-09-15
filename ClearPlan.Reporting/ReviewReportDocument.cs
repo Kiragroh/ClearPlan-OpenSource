@@ -8,8 +8,12 @@ namespace ClearPlan.Reporting
 {
     public sealed class ReviewReportDocument
     {
+        public const string ReportTitle = "Plan Quality Report";
         public ReviewReportDocument()
         {
+            var version = (System.Reflection.AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute(
+                typeof(ReviewReportDocument).Assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
+            SoftwareVersion = version == null ? typeof(ReviewReportDocument).Assembly.GetName().Version.ToString() : version.InformationalVersion;
             Notes = new List<string>();
             Sources = new List<ReviewReportSourceRow>();
             Plans = new List<ReviewReportPlanRow>();
@@ -26,6 +30,7 @@ namespace ClearPlan.Reporting
         }
 
         public int SchemaVersion { get; set; }
+        public string SoftwareVersion { get; set; }
         public string ScenarioId { get; set; }
         public string ScenarioTitle { get; set; }
         public string ScenarioDescription { get; set; }
@@ -55,6 +60,9 @@ namespace ClearPlan.Reporting
 
         public List<ReviewReportDvhSeries> DvhSeries { get; set; }
         public List<ReviewPlanImage> PlanImages { get; set; }
+        public byte[] CollisionPreviewPng { get; set; }
+        public string CollisionPreviewCaption { get; set; }
+        public List<ClearPlan.Core.Review.CollisionReportBeam> CollisionBeams { get; set; } = new List<ClearPlan.Core.Review.CollisionReportBeam>();
         public ReviewPlanAnalysis PlanAnalysis { get; set; }
         public bool IncludeBeamEyeViews { get; set; }
         public bool HideUnmatched { get; set; }

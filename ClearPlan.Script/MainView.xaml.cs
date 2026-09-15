@@ -675,6 +675,7 @@ namespace ClearPlan
             }
             try
             {
+                ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspace.Collision);
                 // Map/copy first; preview selection must never mutate the clinical snapshot.
                 var document = new ReviewSnapshotReportMapper().Map(snapshot);
                 ApplyReportOptions(document, workspace);
@@ -731,6 +732,7 @@ namespace ClearPlan
                     var selection = workspace.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
                     if (selection != null) series.Selected = selection.IsSelected;
                 }
+                ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspace.Collision);
                 var document =
                     new ReviewSnapshotReportMapper().Map(snapshot);
                 ApplyReportOptions(document, workspace);
@@ -785,6 +787,7 @@ namespace ClearPlan
                     var selection = workspace.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
                     if (selection != null) series.Selected = selection.IsSelected;
                 }
+                ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspace.Collision);
                 var document = new ReviewSnapshotReportMapper().Map(snapshot);
                 document.PlanAnalysis = reportAnalysis;
                 ApplyReportOptions(document, workspace);
@@ -813,6 +816,7 @@ namespace ClearPlan
             document.IncludeBeamEyeViews = workspace.IncludeBeamEyeViews;
             document.HideUnmatched = workspace.HideUnmatched;
             document.HiddenStructureIds = workspace.HiddenStructureIds.ToList();
+            document.PlanImages = workspace.PlanImages.ApplyToReport(document.PlanImages);
         }
 
         private void ShowSavedReportStatus(string pdfPath, ReviewReportDocument document)

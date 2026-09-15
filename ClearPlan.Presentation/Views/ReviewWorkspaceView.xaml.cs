@@ -32,6 +32,8 @@ namespace ClearPlan.Presentation.Views
             }
 
             viewModel.NavigateCommand.Execute(selectedTab.Name);
+            if (selectedTab.Name == "CollisionTab" && viewModel.IsSynthetic && !viewModel.Collision.HasScene)
+                viewModel.Collision.ReloadCommand.Execute(null);
         }
     }
 }

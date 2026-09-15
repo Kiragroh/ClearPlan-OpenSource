@@ -265,6 +265,7 @@ namespace ClearPlan.Core.Simulation
             var image = CtDrrProjector.Project(volume, frame, 192, 140, CancellationToken.None);
             image.Synthetic = true; image.ControlPointIndex = cp.Index;
             image.GantryAngleDegrees = cp.GantryAngleDegrees; image.CollimatorAngleDegrees = cp.CollimatorAngleDegrees;
+            image.BldToDisplayRotationDegrees = cp.CollimatorAngleDegrees % 360;
             image.PatientSupportAngleDegrees = cp.PatientSupportAngleDegrees;
             image.ProjectionDescription = "Control-point projection of the same analytical phantom as the three CT planes; synthetic HU-equivalent values. " +
                 "Declared synthetic HFS frame, couch 0, SAD 1000 mm. " + CtDrrProjector.MethodDescription;
@@ -355,6 +356,8 @@ namespace ClearPlan.Core.Simulation
                     TopOrientation = kind == "transversal" ? "A" : "S", BottomOrientation = kind == "transversal" ? "P" : "I",
                     OverlaySummary = "Analytical ellipsoid intersections and isodoses; sampled from the same phantom dose function as all displayed DVHs."
                 };
+                image.DosePlane = new ReviewImageDosePlane { Columns = size, Rows = size, PrescriptionGy = PrescriptionGy,
+                    SamplesGy = new double[size * size], Source = "Synthetic analytical phantom dose sampled on the displayed plane" };
                 double minX = size, maxX = 0, minY = size, maxY = 0;
                 for (int row = 0; row < size; row++)
                 for (int column = 0; column < size; column++)
@@ -363,6 +366,7 @@ namespace ClearPlan.Core.Simulation
                     int index = row * size + column;
                     image.GrayscalePixels[index] = OrthogonalImageGeometry.WindowHu(PhantomHu(world[0], world[1], world[2], structures), 40, 400);
                     double dose = DoseGy(structures[0].RadiusSquared(world[0], world[1], world[2]));
+                    image.DosePlane.SamplesGy[index] = dose;
                     if (dose >= PrescriptionGy * 0.02)
                     { minX = Math.Min(minX, column); maxX = Math.Max(maxX, column); minY = Math.Min(minY, row); maxY = Math.Max(maxY, row); }
                 }

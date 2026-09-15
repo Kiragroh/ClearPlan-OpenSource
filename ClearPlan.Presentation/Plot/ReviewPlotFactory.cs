@@ -52,6 +52,8 @@ namespace ClearPlan.Presentation.Plot
                 {
                     Position = AxisPosition.Bottom,
                     Title = "Dosis [Gy]",
+                    IsZoomEnabled = false,
+                    IsPanEnabled = false,
                     Minimum = 0,
                     Maximum = Math.Max(1.0, maximumDose * 1.05),
                     MajorGridlineStyle = LineStyle.Solid,
@@ -64,6 +66,8 @@ namespace ClearPlan.Presentation.Plot
                 {
                     Position = AxisPosition.Left,
                     Title = "Relatives Volumen [%]",
+                    IsZoomEnabled = false,
+                    IsPanEnabled = false,
                     Minimum = 0,
                     Maximum = 100,
                     AbsoluteMinimum = 0,

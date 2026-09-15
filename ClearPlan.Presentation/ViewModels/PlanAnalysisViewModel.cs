@@ -133,8 +133,10 @@ namespace ClearPlan.Presentation.ViewModels
                 LegendFontSize = 11, LegendBorderThickness = 0
             };
             plot.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = xLabel, Minimum = 0,
+                IsZoomEnabled = false, IsPanEnabled = false,
                 MajorGridlineStyle = LineStyle.None, AxislineColor = OxyColor.Parse("#BAC5CE") });
             plot.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = yLabel, Minimum = 0,
+                IsZoomEnabled = false, IsPanEnabled = false,
                 MajorGridlineStyle = LineStyle.Solid, MajorGridlineColor = OxyColor.Parse("#E8EDF0"),
                 AxislineColor = OxyColor.Parse("#BAC5CE") });
             return plot;

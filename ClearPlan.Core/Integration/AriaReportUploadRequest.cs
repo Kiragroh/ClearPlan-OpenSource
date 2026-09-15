@@ -105,6 +105,25 @@ namespace ClearPlan.Core.Integration
         public string Description { get; private set; }
         public string CategoryCode { get; private set; }
         public string CategoryDisplay { get; private set; }
+        public string TemplateName { get; private set; }
+        public string AuthorReference { get; private set; }
+        public string InteractiveUserId { get; private set; }
+
+        /// <summary>Binds exact native plan/user metadata without mutating the prepared PDF or legacy request.</summary>
+        public AriaReportUploadRequest WithClinicalMetadata(string activePlanName, string authorReference, string interactiveUserId)
+        {
+            // TemplateName is ARIA metadata, not a filename: retain spaces, Unicode and punctuation exactly.
+            ValidateText(activePlanName, 252, "The active plan name is missing or invalid for ARIA TemplateName.", false);
+            ValidateReference(authorReference, "Practitioner");
+            ValidateText(interactiveUserId, 256, "The interactive ESAPI user identity is missing or invalid.", false);
+            var bound = new AriaReportUploadRequest(ReportPatientId, ResolvedPatientId, PatientReference, ActivePlanKey,
+                OrganizationReference, DocumentTypeSystem, DocumentTypeCode, DocumentTypeDisplay, pdfBytes, Title,
+                CreatedUtc, Description, CategoryCode, CategoryDisplay, DocumentDateUtc);
+            bound.TemplateName = "PQM_" + activePlanName;
+            bound.AuthorReference = authorReference;
+            bound.InteractiveUserId = interactiveUserId;
+            return bound;
+        }
 
         private static void ValidateReference(string value, string resourceType)
         {

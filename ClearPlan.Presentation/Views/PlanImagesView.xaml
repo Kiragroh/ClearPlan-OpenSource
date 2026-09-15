@@ -87,11 +87,56 @@
   </ItemsControl>
   </ScrollViewer>
   <StackPanel Grid.Row="4" Margin="0,12,0,0">
+   <Border Background="#0D1828" Padding="12,8" Margin="0,0,0,10" Visibility="{Binding HasIsodoseScale, Converter={StaticResource VisibleWhenTrue}}">
+    <StackPanel>
+     <TextBlock Text="Isodosen · gemeinsame Legende aller drei Ebenen" FontSize="12" Foreground="#C6D5E2" Margin="0,0,0,5"/>
+     <ScrollViewer MaxHeight="68" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <ItemsControl x:Name="SharedIsodoseLegend" ItemsSource="{Binding IsodoseScaleItems}" AutomationProperties.Name="Gemeinsame Isodosenlegende in Prozent der Planverordnung und Gy">
+       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+       <ItemsControl.ItemTemplate><DataTemplate>
+        <StackPanel Orientation="Horizontal" Margin="0,0,20,4">
+         <Border Width="22" Height="4" Background="{Binding Color}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+         <TextBlock Text="{Binding Label}" FontSize="12" Foreground="#EDF3F8"/>
+        </StackPanel>
+       </DataTemplate></ItemsControl.ItemTemplate>
+      </ItemsControl>
+     </ScrollViewer>
+    </StackPanel>
+   </Border>
+   <Expander x:Name="IsodoseEditor" Header="Isodosen · Stufen und Farben bearbeiten" FontSize="12" Margin="0,0,0,8" AutomationProperties.Name="Isodosenanzeige für GUI und Report bearbeiten">
+    <Grid Margin="0,8,0,0">
+     <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+     <DataGrid ItemsSource="{Binding IsodoseEditorRows}" SelectedItem="{Binding SelectedIsodose, Mode=TwoWay}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="True"
+               MaxHeight="148" MinHeight="90" HeadersVisibility="Column" RowHeaderWidth="0" SelectionMode="Single" Margin="0,0,16,0"
+               EnableRowVirtualization="True" HorizontalAlignment="Left" Width="410" AutomationProperties.Name="Isodosenstufen in Prozent und RGB-Farben">
+      <DataGrid.Columns>
+       <DataGridCheckBoxColumn Header="Anzeigen" Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" Width="76"/>
+       <DataGridTextColumn Header="% Rx" Binding="{Binding PercentText, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
+       <DataGridTemplateColumn Header="Farbe" Width="46"><DataGridTemplateColumn.CellTemplate><DataTemplate><Border Background="{Binding Color}" BorderBrush="#64748B" BorderThickness="1" Width="24" Height="14" Margin="5"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+       <DataGridTextColumn Header="#RRGGBB" Binding="{Binding ColorHex, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+      </DataGrid.Columns>
+     </DataGrid>
+     <StackPanel Grid.Column="1">
+     <TextBlock Text="Anzeigen: einzelne Stufen ein-/ausblenden. Änderungen erst mit Anwenden übernehmen." FontSize="12" Margin="0,0,0,4" TextWrapping="Wrap"/>
+     <TextBlock Text="{Binding IsodoseAvailabilityText}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+     <WrapPanel Margin="0,6,0,0">
+      <Button Content="Stufe hinzufügen" Command="{Binding AddIsodoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0" Padding="10,5"/>
+      <Button Content="Markierte entfernen" Command="{Binding RemoveIsodoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,5"/>
+     </WrapPanel>
+     <WrapPanel Margin="0,8,0,6">
+      <Button Content="Anwenden" Command="{Binding ApplyIsodosesCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0"/>
+      <Button Content="Geladene Defaults" Command="{Binding ResetIsodosesCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0"/>
+      <Button Content="Defaults in Settings …" Command="{Binding EditIsodoseDefaultsCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" ToolTip="Unter Konfiguration: Default · Isodosen. Mit Bearbeiter, Version und Wiederherstellung."/>
+     </WrapPanel>
+     <TextBlock Text="{Binding IsodoseEditorMessage}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+     </StackPanel>
+    </Grid>
+   </Expander>
    <TextBlock Text="R / L: rechts / links · A / P: anterior / posterior · S / I: superior / inferior · Kreuz: Isozentrum"
               Foreground="{StaticResource ClinicalBlueprintTextMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,7"/>
-   <Expander Header="{Binding LegendSummary}" FontSize="12" AutomationProperties.Name="Legende der eingeblendeten Strukturen und Isodosen öffnen">
+   <Expander Header="Strukturlegende und Quellen" FontSize="12" AutomationProperties.Name="Legende der eingeblendeten Strukturen öffnen">
     <ScrollViewer MaxHeight="112" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-     <ItemsControl ItemsSource="{Binding LegendItems}" Margin="0,7,0,0">
+     <ItemsControl ItemsSource="{Binding StructureLegendItems}" Margin="0,7,0,0">
       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate><DataTemplate>
        <StackPanel Orientation="Horizontal" Margin="0,0,18,8" ToolTip="{Binding Description}">

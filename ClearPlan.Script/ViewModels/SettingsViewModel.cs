@@ -29,10 +29,13 @@ namespace ClearPlan
         public string StructureAliasesJsonPath { get; set; }
         public string MlcGeometryProfilesJsonPath { get; set; }
         public string DoseRateProfilesJsonPath { get; set; }
+        public string CollisionProfilesJsonPath { get; set; }
+        public string SourceCollisionModelsJsonPath { get; set; }
         public string AriaUploadConfigJsonPath { get; set; }
         public string DefaultReviewRulesJsonPath { get; set; }
         public string PlanCheckSelectionJsonPath { get; set; }
         public string FieldNamingRulesJsonPath { get; set; }
+        public string IsodoseDisplayJsonPath { get; set; }
         public string ConfigurationDirectory { get; set; }
         public ConfigurationWorkspaceViewModel Configuration { get; private set; }
         public bool IncludeInactiveTables { get; set; }
@@ -121,10 +124,13 @@ namespace ClearPlan
                 StructureAliasesJsonPath = settings.ConstraintSource.StructureAliasesJsonPath,
                 MlcGeometryProfilesJsonPath = settings.Paths.MlcGeometryProfilesJsonPath,
                 DoseRateProfilesJsonPath = settings.Paths.DoseRateProfilesJsonPath,
+                CollisionProfilesJsonPath = settings.Paths.CollisionProfilesJsonPath,
+                SourceCollisionModelsJsonPath = settings.Paths.SourceCollisionModelsJsonPath,
                 AriaUploadConfigJsonPath = settings.Paths.AriaUploadConfigJsonPath,
                 DefaultReviewRulesJsonPath = settings.Paths.DefaultReviewRulesJsonPath,
                 PlanCheckSelectionJsonPath = settings.Paths.PlanCheckSelectionJsonPath,
                 FieldNamingRulesJsonPath = settings.Paths.FieldNamingRulesJsonPath,
+                IsodoseDisplayJsonPath = settings.Paths.IsodoseDisplayJsonPath,
                 ConfigurationDirectory = settings.Paths.ConfigurationDirectory,
                 IncludeInactiveTables = settings.ConstraintSource.IncludeInactiveTables,
                 ConstraintTemplatesDirectory =
@@ -166,10 +172,13 @@ namespace ClearPlan
             settings.ConstraintSource.Mode = SourceMode;
             settings.Paths.MlcGeometryProfilesJsonPath = MlcGeometryProfilesJsonPath ?? string.Empty;
             settings.Paths.DoseRateProfilesJsonPath = DoseRateProfilesJsonPath ?? string.Empty;
+            settings.Paths.CollisionProfilesJsonPath = CollisionProfilesJsonPath ?? string.Empty;
+            settings.Paths.SourceCollisionModelsJsonPath = SourceCollisionModelsJsonPath ?? string.Empty;
             settings.Paths.AriaUploadConfigJsonPath = AriaUploadConfigJsonPath ?? string.Empty;
             settings.Paths.DefaultReviewRulesJsonPath = DefaultReviewRulesJsonPath ?? string.Empty;
             settings.Paths.PlanCheckSelectionJsonPath = PlanCheckSelectionJsonPath ?? string.Empty;
             settings.Paths.FieldNamingRulesJsonPath = FieldNamingRulesJsonPath ?? string.Empty;
+            settings.Paths.IsodoseDisplayJsonPath = IsodoseDisplayJsonPath ?? string.Empty;
             settings.Paths.ConfigurationDirectory = ConfigurationDirectory ?? "Configuration";
             settings.ConstraintSource.RefDbJsonPath =
                 RefDbJsonPath ?? string.Empty;
@@ -214,11 +223,14 @@ namespace ClearPlan
             var entries = new[]
             {
                 Entry("default-rules", "Default-Zielregeln", "Zieltypen, DVH-Metriken und Verordnungsanteile. Deaktivierte oder entfernte Regeln werden nicht ersetzt.", ".json", () => DefaultReviewRulesJsonPath),
+                Entry("isodose-display", "Default · Isodosen", "Anzeige in Schnittbildern und Reports: Prozent der Plan-Gesamtverordnung, Farbe #RRGGBB und Aktivierung. Nur Darstellung, keine Änderung der Plandosis oder Goals. Änderungen und Rückkehr zu älteren Versionen werden protokolliert.", ".json", () => IsodoseDisplayJsonPath),
                 Entry("plancheck-selection", "PlanCheck · Review-Auswahl", "Einbeziehen bestehender PlanCheck-Befunde in Review und Bericht. Die externe Berechnung läuft weiterhin; native Eclipse-Warnungen bleiben sichtbar. Nur Check-Codes und Aktivierung werden gespeichert.", ".json", () => PlanCheckSelectionJsonPath),
                 Entry("constraints", "Constraints · Excel", "ClearPlan-Katalog mit Tables, Constraints und Structures. Excel-Entwürfe werden erst nach ausdrücklicher Prüfung übernommen.", ".xlsx", () => ExcelWorkbookPath),
                 Entry("aliases", "Strukturnamen & Aliase", "Explizite alternative Strukturnamen. Keine Umbenennung von Strukturen im Planungssystem.", ".json", () => StructureAliasesJsonPath),
                 Entry("field-naming", "Default · Feldnamen", "Nomenklatur, z. B. 120-30 T300 GUZ: Tisch vorletzter Bestandteil, Richtung letzter. Reihenfolge, Trennzeichen und Richtungstoken sind konfigurierbar. Nur Namensvorschau; keine Änderung an Bestrahlungsfeldern.", ".json", () => FieldNamingRulesJsonPath),
                 Entry("mlc-profiles", "MLC-Geometrieprofile", "Exakte Modellnamen, Blattgrenzen und bestätigte Lagenzuordnung. Keine klinische Kommissionierung durch die Dateiprüfung.", ".json", () => MlcGeometryProfilesJsonPath),
+                Entry("collision-profiles", "Kollision · Gerätehüllen", "Vermessene Kopf-/Bore-Hüllen mit exakter Geräte-ID, Revision und Kommissionierungsnachweis. Keine Geräteabmessungen aus MLC-Typen ableiten. Fehlende Profile bleiben nicht bewertbar; Versionen sind wiederherstellbar.", ".json", () => CollisionProfilesJsonPath),
+                Entry("collision-source-models", "Kollision · Quellmodelle", "Analytische Quellmodelle und exakte lokale Gerätezuordnungen für ein Punkt-Screening. Herkunft und Messangaben werden dokumentiert; keine klinische Freigabe, keine kommissionierte Abstandsberechnung.", ".json", () => SourceCollisionModelsJsonPath),
                 Entry("dose-rate-profiles", "Dosisrate · Schätzmodell", "PlanCheck-Schätzung mit expliziten Maschinenzuordnungen und angenommener Gantry-Geschwindigkeit. Keine gemessene Abgabe; Beschleunigung, MLC-/Blendenbewegung und Beam-Holds sind nicht modelliert. Versionen können geprüft und wiederhergestellt werden.", ".json", () => DoseRateProfilesJsonPath),
                 Entry("aria-upload", "ARIA · Berichtversand", "Lokale HTTPS-Endpunkte, Dokumenttyp und Verweis auf externe Zugangsdaten. Keine Secrets im JSON. Jeder Upload wird bestätigt; kein Schreiben am Bestrahlungsplan.", ".json", () => AriaUploadConfigJsonPath),
                 Entry("refdb", "RefDB · optionale Kopie", "Externe RefDB bleibt unverändert. Ein ausdrücklicher Import erzeugt eine getrennte Momentaufnahme; spätere RefDB-Aktualisierungen werden nicht automatisch übernommen.", ".json", () => RefDbJsonPath)
@@ -237,11 +249,14 @@ namespace ClearPlan
             Configuration = new ConfigurationWorkspaceViewModel(root, entries, (key, path) =>
             {
                 if (key == "default-rules") DefaultReviewRulesJsonPath = path;
+                else if (key == "isodose-display") IsodoseDisplayJsonPath = path;
                 else if (key == "plancheck-selection") PlanCheckSelectionJsonPath = path;
                 else if (key == "constraints") ExcelWorkbookPath = path;
                 else if (key == "aliases") StructureAliasesJsonPath = path;
                 else if (key == "field-naming") FieldNamingRulesJsonPath = path;
                 else if (key == "mlc-profiles") MlcGeometryProfilesJsonPath = path;
+                else if (key == "collision-profiles") CollisionProfilesJsonPath = path;
+                else if (key == "collision-source-models") SourceCollisionModelsJsonPath = path;
                 else if (key == "dose-rate-profiles") DoseRateProfilesJsonPath = path;
                 else if (key == "aria-upload") AriaUploadConfigJsonPath = path;
                 else if (key == "refdb") RefDbJsonPath = path;

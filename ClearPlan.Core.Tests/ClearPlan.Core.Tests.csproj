@@ -73,6 +73,7 @@
     <Reference Include="System.Drawing" />
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AriaReportUploadTests.cs" />
@@ -138,6 +139,7 @@
     <Compile Include="TestAssert.cs" />
     <Compile Include="ReviewComparisonTests.cs" />
     <Compile Include="PlanImageTests.cs" />
+    <Compile Include="IsodoseDisplayTests.cs" />
     <Compile Include="PlanImageViewportTests.cs" />
     <Compile Include="ReportPresentationTests.cs" />
     <Compile Include="HtmlReportTests.cs" />
@@ -145,6 +147,14 @@
     <Compile Include="PlanImageOverlayTests.cs" />
     <Compile Include="NativeWarningsTests.cs" />
     <Compile Include="PlanAnalysisTests.cs" />
+    <Compile Include="CollisionIntegrationTests.cs" />
+    <Compile Include="CollisionSweepInteractionTests.cs" />
+    <Compile Include="CollisionCtCoverageTests.cs" />
+    <Compile Include="CollisionSweepReportTests.cs" />
+    <Compile Include="CollisionSweepTests.cs" />
+    <Compile Include="CollisionTests.cs" />
+    <Compile Include="SourceCollisionScreeningTests.cs" />
+    <Compile Include="BevCollimatorDisplayTests.cs" />
     <Compile Include="DoseRateEstimatorTests.cs" />
     <Compile Include="TargetQualityTests.cs" />
     <Compile Include="StructureMappingSafetyTests.cs" />

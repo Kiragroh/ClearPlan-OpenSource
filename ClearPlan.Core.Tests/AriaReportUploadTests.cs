@@ -12,6 +12,47 @@ namespace ClearPlan.Core.Tests
 {
     internal static class AriaReportUploadTests
     {
+        public static void ClinicalMetadataIsDetachedAndExact()
+        {
+            var original = Request();
+            var request = BindClinicalMetadata(original, "Plan / Ä+boost", "Practitioner/synthetic-author", "DOMAIN\\physicist");
+            var payload = AriaReportDocumentBuilder.Build(request);
+            TestAssert.Equal("PQM_Plan / Ä+boost", (string)payload["extension"].Single(e =>
+                (string)e["url"] == "http://varian.com/fhir/v1/StructureDefinition/documentreference-templateName")["valueString"]);
+            TestAssert.Equal("Practitioner/synthetic-author", (string)payload["author"][0]["reference"]);
+            TestAssert.Equal(1, payload["author"].Count());
+            TestAssert.True(original.PdfBytes.SequenceEqual(request.PdfBytes));
+            TestAssert.Equal(original.ActivePlanKey, request.ActivePlanKey);
+            TestAssert.Equal(original.DocumentDateUtc, request.DocumentDateUtc);
+            TestAssert.True(AriaReportDocumentBuilder.Build(original)["author"] == null, "Binding must not mutate an existing prepared request.");
+            foreach (string invalid in new[] { null, "", " Plan", "Plan\n", new string('x', 253) })
+                Reject(() => BindClinicalMetadata(original, invalid, "Practitioner/synthetic-author", "DOMAIN\\physicist"));
+            foreach (string invalid in new[] { null, "", "Organization/service", "https://example.invalid/Practitioner/p1", "Practitioner/.." })
+                Reject(() => BindClinicalMetadata(original, "Plan", invalid, "DOMAIN\\physicist"));
+            Reject(() => BindClinicalMetadata(original, "Plan", "Practitioner/p1", null));
+        }
+
+        public static void NativeAuthorComesFromEsapiAndIsDisclosed()
+        {
+            string source = System.IO.File.ReadAllText(System.IO.Path.Combine("ClearPlan.Script", "MainView.AriaUpload.cs"));
+            TestAssert.True(source.Contains("_vm.User.Id") && source.Contains("ResolveAuthorAsync(interactiveUserId"));
+            TestAssert.True(source.Contains("WithClinicalMetadata(activePlanName,author.Reference,interactiveUserId)"));
+            TestAssert.True(source.Contains("TemplateName:") && source.Contains("Autor:") && source.Contains("AriaAuthorResolutionException"));
+            TestAssert.False(source.Contains("Environment.UserName") || source.Contains("WindowsIdentity.GetCurrent"));
+            var example = JObject.Parse(System.IO.File.ReadAllText(System.IO.Path.Combine("ClearPlan.Script", "Distribution", "AriaUpload.example.json")));
+            TestAssert.True(((string)example["Scope"]).Split(' ').Contains("system/Practitioner.rs"));
+            TestAssert.True(AriaUploadConfiguration.Parse("{\"Enabled\":false}").Scope.Split(' ').Contains("system/Practitioner.rs"));
+        }
+
+        internal static AriaReportUploadRequest BindClinicalMetadata(AriaReportUploadRequest request,
+            string activePlanName = "Synthetic plan", string authorReference = "Practitioner/synthetic-author", string interactiveUserId = "DOMAIN\\physicist")
+        {
+            var method = typeof(AriaReportUploadRequest).GetMethod("WithClinicalMetadata");
+            TestAssert.NotNull(method, "Prepared PDF requests must bind exact active plan name and resolved interactive author.");
+            try { return (AriaReportUploadRequest)method.Invoke(request, new object[] { activePlanName, authorReference, interactiveUserId }); }
+            catch (System.Reflection.TargetInvocationException error) { throw error.InnerException; }
+        }
+
         public static void ExposesDetachedBuilderContract()
         {
             var builder = typeof(ReviewSnapshot).Assembly.GetType(

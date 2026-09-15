@@ -62,6 +62,15 @@ namespace ClearPlan.Core.Integration
             // ARIA assigns id; its profile forbids identifier. The plan binding and SHA256
             // remain local request metadata, not invented FHIR identities or extensions.
             if (request.Description != null) payload["description"] = request.Description;
+            if (request.TemplateName != null)
+            {
+                ((JArray)payload["extension"]).Add(new JObject
+                {
+                    ["url"] = "http://varian.com/fhir/v1/StructureDefinition/documentreference-templateName",
+                    ["valueString"] = request.TemplateName
+                });
+                payload["author"] = new JArray(new JObject { ["reference"] = request.AuthorReference });
+            }
             return payload;
         }
     }

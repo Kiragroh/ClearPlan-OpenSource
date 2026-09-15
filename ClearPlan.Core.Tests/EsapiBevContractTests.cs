@@ -12,6 +12,7 @@ namespace ClearPlan.Core.Tests
             CtSamplingIsUniformBoundedAndReadOnly();
             ReportBeamStartsShareOneDetachedCtCapture();
             TreatmentBeamScopeMatchesPamAnalysis();
+            StaticNativeIndicesRemainDistinctInTheSnapshot();
         }
 
         public static void OwnerThreadCaptureAndDetachedWorkerAreSeparated()
@@ -44,12 +45,12 @@ namespace ClearPlan.Core.Tests
             Require(code,"GetSourceLocation(0)");
             Require(code,"GetSourceLocation(90)");
             Require(code,"PatientOrientation.HeadFirstSupine");
-            Require(code,"SameAngle(cp.PatientSupportAngle,0)");
+            Require(code,"SameAngle(cp.PatientSupportAngle,cps[0].PatientSupportAngle)");
             Require(code,"TableTopLateralPosition");
             Require(code,"TableTopLongitudinalPosition");
             Require(code,"TableTopVerticalPosition");
             Require(code,"beams.Count!=analysis.Beams.Count");
-            Require(code,"cp.Index!=saved.Index");
+            Require(code,"cp.Index!=(saved.NativeIndex ?? saved.Index)");
             Require(code,"meterset.Unit!=DosimeterUnit.MU");
             Require(code,"saved.IsocenterMm");
             Require(code,"saved.CumulativeMetersetWeight");
@@ -95,6 +96,32 @@ namespace ClearPlan.Core.Tests
             Require(capture,"!b.IsSetupField && !b.IsImagingTreatmentField");
             string snapshot=Between(code,"private static bool MatchesPlanSnapshot", "private static bool MatchesBeamSnapshot");
             Require(snapshot,"!b.IsSetupField && !b.IsImagingTreatmentField");
+        }
+
+        private static void StaticNativeIndicesRemainDistinctInTheSnapshot()
+        {
+            var source=new ClearPlan.Core.PlanAnalysis.ReviewPlanAnalysis();
+            var beam=new ClearPlan.Core.PlanAnalysis.ReviewBeamAnalysis { BeamNumber=1 };
+            beam.ControlPoints.Add(new ClearPlan.Core.PlanAnalysis.ReviewControlPointSample { Index=0,NativeIndex=-1 });
+            beam.ControlPoints.Add(new ClearPlan.Core.PlanAnalysis.ReviewControlPointSample { Index=1,NativeIndex=-1 });
+            source.Beams.Add(beam);
+            var copy=ClearPlan.Core.PlanAnalysis.PlanAnalysisSnapshot.Copy(source);
+            TestAssert.Equal(0,copy.Beams[0].ControlPoints[0].Index,"Static field start has an unambiguous internal ordinal.");
+            TestAssert.Equal(1,copy.Beams[0].ControlPoints[1].Index,"Static field end is a distinct endpoint.");
+            TestAssert.Equal(-1,copy.Beams[0].ControlPoints[0].NativeIndex.Value,"Preserve the vendor sentinel for freshness validation.");
+            TestAssert.Equal(-1,copy.Beams[0].ControlPoints[1].NativeIndex.Value,"Do not falsify the second vendor index.");
+            var root=new DirectoryInfo(Directory.GetCurrentDirectory());
+            while(root!=null && !File.Exists(Path.Combine(root.FullName,"ClearPlan.sln"))) root=root.Parent;
+            TestAssert.NotNull(root,"Repository root required.");
+            string builder=File.ReadAllText(Path.Combine(root.FullName,"ClearPlan.Script","Review","EsapiPlanAnalysisBuilder.cs"));
+            Require(builder,"Index = row.ControlPoints.Count");
+            Require(builder,"NativeIndex = cp.Index");
+            string collision=File.ReadAllText(Path.Combine(root.FullName,"ClearPlan.Script","Review","EsapiCollisionBuilder.cs"));
+            Require(collision,"for (int pointIndex = 0; pointIndex < points.Count; pointIndex++)");
+            Require(collision,"var cp = points[pointIndex]");
+            Require(collision,"ControlPointIndex = pointIndex");
+            TestAssert.False(collision.Contains("ControlPointIndex = cp.Index"),
+                "Static ESAPI sentinel indices must not invalidate or merge collision poses.");
         }
 
         private static string Source()

@@ -4,6 +4,26 @@ ClearPlan is an open-source .NET Framework 4.8/ESAPI framework for read-only rad
 
 The public package is an institution-neutral baseline. Clinical constraint sets, paths, identifiers, and acceptance criteria remain local and require independent commissioning.
 
+## Current development source
+
+The current tree contains the `3.2.0-dev.20260915.7` review-workspace update after
+the archived v3.2.0 release. It adds configurable isodose levels with one shared
+GUI legend, compact field/report layouts, optional cached geometry playback and
+separate gantry/couch orientation views. It is **development source, not a new
+clinically commissioned release**. Cite the exact Git commit when reproducing
+this state; the v3.2.0 release remains an earlier frozen artifact.
+
+No clinical manuscript images, patient reports, local device measurements,
+private clinical rules or deployment settings are supplied. Public collision
+catalogs are intentionally empty. See the [development notes](docs/releases/2026-09-16-development-source.md)
+and [receiving-clinic guide](docs/CLINIC_ONBOARDING.md).
+
+For a vendor-free source verification on Windows with MSBuild/.NET Framework 4.8:
+
+```powershell
+.\tools\test-portable-review.ps1
+```
+
 ## What is included
 
 This tree contains the **v3.2.0 software and Technical Note materials**. It adds

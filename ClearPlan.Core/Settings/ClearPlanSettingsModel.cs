@@ -39,10 +39,13 @@ namespace ClearPlan.Core.Settings
     {
         public string MlcGeometryProfilesJsonPath { get; set; }
         public string DoseRateProfilesJsonPath { get; set; }
+        public string CollisionProfilesJsonPath { get; set; }
+        public string SourceCollisionModelsJsonPath { get; set; }
         public string AriaUploadConfigJsonPath { get; set; }
         public string DefaultReviewRulesJsonPath { get; set; }
         public string PlanCheckSelectionJsonPath { get; set; }
         public string FieldNamingRulesJsonPath { get; set; }
+        public string IsodoseDisplayJsonPath { get; set; }
         public string ConstraintTemplatesDirectory { get; set; }
         public string DefaultConventionalTemplate { get; set; }
         public string DefaultHypofractionatedTemplate { get; set; }

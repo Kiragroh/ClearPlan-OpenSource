@@ -14,6 +14,35 @@ namespace ClearPlan.Core.Tests
 {
     internal static class ReviewDvhInteractionTests
     {
+        public static void ReviewComparisonAndParameterAxesStayFixed()
+        {
+            var workspace = CreateWorkspace();
+            workspace.Comparison.PinReferenceCommand.Execute(null);
+            var models = new[] { workspace.OverviewPlotModel, workspace.DetailPlotModel,
+                workspace.Comparison.DvhPlotModel, workspace.Analysis.DoseRatePlotModel,
+                workspace.Analysis.AperturePlotModel };
+            foreach (var model in models)
+            {
+                TestAssert.Equal(2, model.Axes.Count);
+                foreach (var axis in model.Axes)
+                {
+                    TestAssert.False(axis.IsZoomEnabled, "DVH and parameter axes must ignore wheel/rectangle zoom: " + axis.Title);
+                    TestAssert.False(axis.IsPanEnabled, "DVH and parameter axes must ignore drag pan: " + axis.Title);
+                }
+            }
+        }
+
+        public static void LegacyNativeDvhAxesStayFixed()
+        {
+            string source = File.ReadAllText(Path.Combine("ClearPlan.Script", "ViewModels", "MainViewModel.cs"));
+            string body = Regex.Match(source, @"private static void AddAxes\([^)]*\)\s*\{(?<body>.*?)\n        \}",
+                RegexOptions.Singleline).Groups["body"].Value;
+            TestAssert.Equal(2, Regex.Matches(body, @"IsZoomEnabled\s*=\s*false").Count,
+                "Both legacy/native DVH axes must disable zoom.");
+            TestAssert.Equal(2, Regex.Matches(body, @"IsPanEnabled\s*=\s*false").Count,
+                "Both legacy/native DVH axes must disable pan.");
+        }
+
         public static void ClinicalResetUsesDetachedWorkspaceOnly()
         {
             string source = File.ReadAllText(Path.Combine("ClearPlan.Script", "MainView.xaml.cs"));

@@ -20,6 +20,7 @@ namespace ClearPlan.Core.Tests
             PhysicalJawsAndFixedLimitsStayDistinct();
             PublicReferenceProfilesHaveExpectedGeometry();
             Sx2ReferenceKeepsDistinctNativeLayers();
+            ConfiguredMaximumFieldIsDetachedValidatedAndClipsTheOpening();
             Sx2StaggeredOpeningsIntersectBothLayers();
             EsapiNativeAdapterHasReadOnlyAtomicContract();
         }
@@ -162,6 +163,11 @@ namespace ClearPlan.Core.Tests
             var result = NativeMlcGeometryMapper.Map(catalog, "SX2", positions, new ApertureRectangle(-140, -140, 140, 140));
             TestAssert.Equal("available", result.Code);
             TestAssert.True(result.Geometry.Jaws == null, "SX2 has no movable physical jaws.");
+            TestAssert.NotNull(result.Geometry.FixedBoundingBox, "The SX2 reference profile must carry its explicit nominal maximum field, independently of native jaw values.");
+            TestAssert.Equal(-140d, result.Geometry.FixedBoundingBox.X1);
+            TestAssert.Equal(140d, result.Geometry.FixedBoundingBox.X2);
+            TestAssert.Equal(-140d, result.Geometry.FixedBoundingBox.Y1);
+            TestAssert.Equal(140d, result.Geometry.FixedBoundingBox.Y2);
             TestAssert.Equal("available", NativeMlcGeometryMapper.Map(catalog, "SX2", positions, null).Code,
                 "Jawless SX2 must not require or infer a native jaw rectangle.");
             for (int layerIndex = 0; layerIndex < 2; layerIndex++)
@@ -207,6 +213,28 @@ namespace ClearPlan.Core.Tests
                 new ApertureRectangle(-140, -140, 140, 140));
             TestAssert.Equal(0, PlanAnalysisCalculator.BuildOpenings(mapped.Geometry).Count,
                 "Closing the proximal layer must block the distal openings completely.");
+        }
+        private static void ConfiguredMaximumFieldIsDetachedValidatedAndClipsTheOpening()
+        {
+            var catalog = ReferenceCatalog();
+            var positions = new float[2, 57];
+            for (int i = 0; i < 57; i++) { positions[0, i] = -200; positions[1, i] = 200; }
+            var mapped = NativeMlcGeometryMapper.Map(catalog, "SX2", positions, null);
+            TestAssert.NotNull(mapped.Geometry);
+            var opening = PlanAnalysisCalculator.BuildOpenings(mapped.Geometry);
+            TestAssert.Equal(78400d, opening.Sum(r => (r.X2-r.X1)*(r.Y2-r.Y1)), "Nominal 28 x 28 cm field limits the geometric opening.");
+            catalog.Profiles.Single(p => p.Model == "SX2").MaximumFieldOpeningMm.X1 = -100;
+            TestAssert.Equal(-140d, mapped.Geometry.FixedBoundingBox.X1, "Detached geometry must not alias the configuration object.");
+            foreach (Action<NativeMlcGeometryProfile> invalid in new Action<NativeMlcGeometryProfile>[] {
+                p => p.MaximumFieldOpeningMm.X2 = p.MaximumFieldOpeningMm.X1,
+                p => p.MaximumFieldOpeningMm.Y1 = double.NaN,
+                p => p.MaximumFieldOpeningMm.Y2 = 3000,
+                p => p.JawMode = "Physical",
+                p => p.Evidence = ""
+            }) {
+                var bad = ReferenceCatalog(); invalid(bad.Profiles.Single(p => p.Model == "SX2"));
+                TestAssert.Throws<NativeMlcProfileException>(() => NativeMlcProfileCatalog.Parse(JsonConvert.SerializeObject(bad)));
+            }
         }
         private static NativeMlcProfileCatalog ReferenceCatalog()
         {

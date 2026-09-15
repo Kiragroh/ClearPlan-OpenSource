@@ -11,7 +11,7 @@ using ClearPlan.Core.PlanAnalysis;
 
 namespace ClearPlan.Reporting.MigraDoc
 {
-    public class ReportPdf : IReport
+    public partial class ReportPdf : IReport
     {
         public void Export(string path, ReportData data)
         {
@@ -48,15 +48,7 @@ namespace ClearPlan.Reporting.MigraDoc
             var pdfRenderer = new PdfDocumentRenderer();
             pdfRenderer.Document = report;
             pdfRenderer.RenderDocument();
-            if (!string.IsNullOrWhiteSpace(pageMark))
-            {
-                // Stamp after pagination: the simulation mark must remain visibly present on every page.
-                foreach (PdfSharp.Pdf.PdfPage page in pdfRenderer.PdfDocument.Pages)
-                    using (var graphics = PdfSharp.Drawing.XGraphics.FromPdfPage(page, PdfSharp.Drawing.XGraphicsPdfPageOptions.Append))
-                        graphics.DrawString(pageMark, new PdfSharp.Drawing.XFont("Segoe UI", 8, PdfSharp.Drawing.XFontStyle.Bold),
-                            PdfSharp.Drawing.XBrushes.DarkRed, new PdfSharp.Drawing.XRect(0, 15, page.Width.Point, 15),
-                            PdfSharp.Drawing.XStringFormats.Center);
-            }
+            // Source/simulation status repeats in the neutral footer, not as a red page stamp.
             return pdfRenderer.PdfDocument;
         }
 
@@ -83,9 +75,7 @@ namespace ClearPlan.Reporting.MigraDoc
                 ? ReviewSnapshotReportMapper.SyntheticWatermark
                 : data.Watermark;
 
-            document.Info.Title = Safe(
-                data.Title,
-                "ClearPlan review report");
+            document.Info.Title = ReviewReportDocument.ReportTitle;
             document.Info.Subject = Safe(watermark, data.ModeLabel);
 
             var section = new Section();
@@ -125,7 +115,9 @@ namespace ClearPlan.Reporting.MigraDoc
             section.PageSetup.LeftMargin = Unit.FromCentimeter(1.2);
             section.PageSetup.TopMargin = Unit.FromCentimeter(1.8);
             section.PageSetup.RightMargin = Unit.FromCentimeter(1.2);
-            section.PageSetup.BottomMargin = Unit.FromCentimeter(1.5);
+            // Reserve the complete identity/version/status footer plus separation
+            // from a table that fills the last available body line.
+            section.PageSetup.BottomMargin = Unit.FromCentimeter(2.1);
             section.PageSetup.HeaderDistance = Unit.FromCentimeter(0.6);
             section.PageSetup.FooterDistance = Unit.FromCentimeter(0.6);
         }
@@ -150,12 +142,15 @@ namespace ClearPlan.Reporting.MigraDoc
                 TabAlignment.Right);
             footer.AddText(
                 "ClearPlan · " +
-                Safe(data.ScenarioId, "detached review"));
+                Safe(data.SoftwareVersion, "version unavailable"));
             footer.AddTab();
             footer.AddText("Page ");
             footer.AddPageField();
             footer.AddText(" of ");
             footer.AddNumPagesField();
+            var status = section.Footers.Primary.AddParagraph(Safe(watermark, data.ModeLabel));
+            status.Format.Font.Size = 7;
+            status.Format.Font.Color = Color.FromRgb(86, 103, 121);
         }
 
         private void AddReviewContents(
@@ -165,15 +160,12 @@ namespace ClearPlan.Reporting.MigraDoc
         {
             Paragraph banner = section.AddParagraph(
                 Safe(watermark, data.ModeLabel));
-            banner.Format.Alignment = ParagraphAlignment.Center;
-            banner.Format.Font.Size = data.Synthetic ? 15 : 10;
-            banner.Format.Font.Bold = true;
-            banner.Format.Font.Color = Colors.White;
-            banner.Format.Shading.Color = data.Synthetic ? Colors.DarkRed : Color.FromRgb(18, 48, 70);
+            banner.Format.Font.Size = 8;
+            banner.Format.Font.Color = Color.FromRgb(86, 103, 121);
             banner.Format.SpaceAfter = Unit.FromCentimeter(0.3);
 
             Paragraph title = section.AddParagraph(
-                Safe(data.Title, "ClearPlan | Active plan report"));
+                ReviewReportDocument.ReportTitle);
             title.Style = StyleNames.Heading1;
             title.Format.Font.Size = 22;
             title.Format.SpaceBefore = Unit.FromPoint(4);
@@ -207,13 +199,34 @@ namespace ClearPlan.Reporting.MigraDoc
 
             section.AddPageBreak();
             AddHeading(section, "Dose-volume overview | Active plan");
-            var dvhImage = section.AddImage(ReviewImageRenderer.Dvh(data));
-            dvhImage.Width = Unit.FromCentimeter(25.5);
-            dvhImage.LockAspectRatio = true;
+            var dvhCurves = data.VisibleDvhSeries().Where(row => (row.Selected || row.RequiredForTargetReview) &&
+                row.Points != null && row.Points.Count > 1).OrderByDescending(row => row.RequiredForTargetReview).ToList();
+            {
+                string dvhPng = ReviewImageRenderer.Dvh(new ReviewReportDocument {
+                    DvhSeries = dvhCurves });
+                var dvhImage = section.AddImage(dvhPng);
+                using (var stream = new System.IO.MemoryStream(Convert.FromBase64String(dvhPng.Substring(7))))
+                using (var image = System.Drawing.Image.FromStream(stream))
+                    dvhImage.Width = Unit.FromCentimeter(Math.Min(25.5, 15.2 * image.Width / image.Height));
+                dvhImage.LockAspectRatio = true;
+            }
             AddDvhRows(section, data.VisibleDvhSeries());
 
-            AddControlPointTraces(section, data.PlanAnalysis);
-            if (data.IncludeBeamEyeViews) AddBeamViews(section, data.PlanAnalysis, data.Synthetic);
+            AddFieldReviews(section, data.PlanAnalysis, data.Synthetic, data.IncludeBeamEyeViews);
+            if (data.CollisionBeams != null && data.CollisionBeams.Count > 0) AddCollisionSweeps(section, data.CollisionBeams);
+            else if (data.CollisionPreviewPng != null && data.CollisionPreviewPng.Length > 0)
+            {
+                section.AddPageBreak();
+                AddHeading(section, "Collision / 3D | Sampled geometry review");
+                var collisionImage = section.AddImage("base64:" + Convert.ToBase64String(data.CollisionPreviewPng));
+                collisionImage.LockAspectRatio = true;
+                using (var stream = new System.IO.MemoryStream(data.CollisionPreviewPng))
+                using (var image = System.Drawing.Image.FromStream(stream))
+                    collisionImage.Width = Unit.FromCentimeter(Math.Min(22, 12.0 * image.Width / image.Height));
+                var caption = section.AddParagraph(data.CollisionPreviewCaption ?? "Read-only geometry illustration; not clinical clearance.");
+                caption.Format.Font.Size = 9;
+                caption.Format.SpaceBefore = Unit.FromMillimeter(3);
+            }
             section.AddPageBreak();
             AddHeading(section, "Review details | Active plan");
             AddPlanCheckRows(section, data.PlanCheckRows);
@@ -259,6 +272,8 @@ namespace ClearPlan.Reporting.MigraDoc
             Paragraph doseRate = section.AddParagraph("Nominal MU/min: plan setting, not measured delivery.");
             doseRate.Format.Font.Size = 8;
             doseRate.Format.SpaceAfter = Unit.FromPoint(0);
+            if (!(analysis.Beams ?? new List<ReviewBeamAnalysis>()).Any(HasRateTrajectory))
+                section.AddParagraph("No valid rate trajectory supplied or estimated; empty trajectory plots omitted.").Format.Font.Size = 8;
         }
 
         private void AddTargetQuality(Section section, ReviewPlanAnalysis analysis)
@@ -316,9 +331,9 @@ namespace ClearPlan.Reporting.MigraDoc
                 try
                 {
                     var image = panel.Cells[0].AddImage(ReviewImageRenderer.Ct(source));
-                    // The synthetic image adds its own 32-DIP banner below the
-                    // 720-DIP orientation frame. Keep the total panel height fixed.
-                    image.Width = Unit.FromCentimeter(source.Synthetic ? 16.1 * 720.0 / 752.0 : 16.1);
+                    // The shared scale sits below the CT, never over anatomy. Bound total print
+                    // height including scale and synthetic marker above the patient footer.
+                    image.Width = Unit.FromCentimeter(15.5 * 720.0 / ClearPlan.Rendering.PlanImageRenderer.CanvasHeight(source, true));
                     image.LockAspectRatio = true;
                     legend.AddParagraph(ReviewImageRenderer.CtSummary(source));
                 }
@@ -343,15 +358,8 @@ namespace ClearPlan.Reporting.MigraDoc
                         line.AddText(overlay.Label);
                         line.Format.Font.Size = 8.5;
                     }
-                    var doseLegend = legend.AddParagraph();
-                    doseLegend.Format.SpaceBefore = Unit.FromPoint(3);
-                    doseLegend.Format.Font.Size = 8.5;
-                    foreach (var overlay in visible.Where(item => item.Kind == "isodose"))
-                    {
-                        var key = doseLegend.AddFormattedText("\u2014 ", TextFormat.Bold);
-                        try { key.Color = Color.Parse(overlay.ColorHex); } catch (Exception) { key.Color = Colors.Black; }
-                        doseLegend.AddText(overlay.Label + "   ");
-                    }
+                    if (visible.Any(item => item.Kind == "isodose"))
+                        legend.AddParagraph("Isodose scale below the image: % of plan Rx and Gy. Only lines present in this plane are shown.").Format.SpaceBefore = Unit.FromPoint(5);
                 }
                 legend.AddParagraph(sharedAnalyticalPhantom ?
                 "Shared analytical phantom for CT, DVH and BEV; not dose calculated from apertures." : synthetic ?
@@ -360,13 +368,12 @@ namespace ClearPlan.Reporting.MigraDoc
             }
         }
 
-        private void AddBeamViews(Section section, ReviewPlanAnalysis analysis, bool synthetic)
+        private void AddFieldReviews(Section section, ReviewPlanAnalysis analysis, bool synthetic, bool includeBeamEyeViews)
         {
             var beams = analysis == null ? new List<ReviewBeamAnalysis>() : analysis.Beams ?? new List<ReviewBeamAnalysis>();
             if (beams.Count == 0)
             {
-                AddHeading(section, "Beam's-eye views");
-                section.AddParagraph("BEV unavailable - no detached beam geometry.");
+                if (includeBeamEyeViews) section.AddParagraph("BEV unavailable - no detached beam geometry.").Format.Font.Size = 8;
                 return;
             }
             var unavailable = new List<string>();
@@ -374,70 +381,77 @@ namespace ClearPlan.Reporting.MigraDoc
             {
                 var cp = ReviewImageRenderer.StartControlPoint(beam);
                 var drr = cp == null ? null : cp.BevImage;
-                if (synthetic && cp != null && drr == null)
+                if (includeBeamEyeViews && synthetic && cp != null && drr == null)
                     drr = ClearPlan.Core.Simulation.SyntheticDrrFactory.Create(beam, cp);
                 var state = ClearPlan.Rendering.BeamEyeViewRenderer.InspectState(beam, cp, drr, synthetic);
-                if (!state.ImageAvailable)
+                bool hasTraces = HasRateTrajectory(beam) || (beam.ControlPoints ?? new List<ReviewControlPointSample>())
+                    .Any(sample => sample != null && IsFiniteNonnegative(sample.ApertureAreaCm2));
+                if (!hasTraces && (!includeBeamEyeViews || !state.ImageAvailable))
                 {
-                    unavailable.Add(Safe(beam.BeamId, "Beam") + " · " + ReviewImageRenderer.StartAngles(cp) + " DRR unavailable.");
+                    if (includeBeamEyeViews) unavailable.Add(Safe(beam.BeamId, "Beam") + " · " + ReviewImageRenderer.StartAngles(cp) + " DRR and trajectories unavailable.");
                     continue;
                 }
-                section.AddPageBreak(); AddHeading(section, "Beam's-eye view | " + Safe(beam.BeamId, "Beam"));
-                var introduction = section.AddParagraph("Field start · Exact CP 0 · Not arc-integrated fluence.");
+                section.AddPageBreak(); AddHeading(section, "Field review | " + Safe(beam.BeamId, "Beam"));
+                var introduction = section.AddParagraph(includeBeamEyeViews
+                    ? "Beam's-eye view: field start · Exact CP 0 · Not arc-integrated fluence. Control-point trajectories: whole field."
+                    : "Control-point trajectories | Whole field");
                 introduction.Format.Font.Size = 8;
                 introduction.Format.KeepWithNext = true;
                 introduction.Format.SpaceAfter = Unit.FromMillimeter(2);
-                byte[] png = ClearPlan.Rendering.BeamEyeViewRenderer.Render(beam, cp, drr, synthetic);
-                var panel = section.AddParagraph();
-                panel.Format.Alignment = ParagraphAlignment.Center;
-                panel.Format.KeepWithNext = true;
-                panel.Format.SpaceAfter = Unit.FromMillimeter(1);
-                var image = panel.AddImage("base64:" + Convert.ToBase64String(png));
-                // A4 landscape leaves 17.7 cm height: reserve 3.7 cm for heading and provenance.
-                image.Width = Unit.FromCentimeter(21); image.LockAspectRatio = true;
-                var caption = section.AddParagraph(ReviewImageRenderer.StartAngles(cp));
-                caption.Format.Font.Size = 8;
+                Table panel = CreateTable(section, 17.0, 10.3);
+                panel.Borders.Visible = false;
+                panel.TopPadding = panel.BottomPadding = Unit.FromPoint(0);
+                Row row = panel.AddRow();
+                row.VerticalAlignment = VerticalAlignment.Top;
+                var left = row.Cells[0]; var right = row.Cells[1];
+                left.Format.SpaceAfter = right.Format.SpaceAfter = Unit.FromPoint(2);
+                if (includeBeamEyeViews && state.ImageAvailable)
+                {
+                    byte[] png = ClearPlan.Rendering.BeamEyeViewRenderer.Render(beam, cp, drr, synthetic);
+                    var image = left.AddImage("base64:" + Convert.ToBase64String(png));
+                    image.Width = Unit.FromCentimeter(panel.Columns[0].Width.Centimeter - 0.3);
+                    image.LockAspectRatio = true;
+                }
+                else left.AddParagraph(includeBeamEyeViews ? "DRR unavailable - no valid field-start image supplied." : "Beam imagery omitted by report option.");
+                if (includeBeamEyeViews) left.AddParagraph(ReviewImageRenderer.StartAngles(cp)).Format.Font.Size = 8;
+                var traces = right.AddImage(ReviewImageRenderer.ControlPointTraces(beam));
+                traces.Width = Unit.FromCentimeter(panel.Columns[1].Width.Centimeter - 0.3);
+                traces.LockAspectRatio = true;
+                right.AddParagraph(RateEstimateNote(beam)).Format.Font.Size = 7.5;
+                var note = section.AddParagraph("Nominal MU/min is a field setting, not a trajectory. Estimated plan trajectory: dashed; supplied plan values: solid. Not measured delivery. " +
+                    "Estimate uses PlanCheck-style segment averages; excludes acceleration, leaf/jaw motion, ramping and holds. CP index is not time.");
+                note.Format.Font.Size = 7.5;
+                note.Format.SpaceBefore = Unit.FromMillimeter(1);
+                note.Format.SpaceAfter = Unit.FromPoint(0);
             }
             if (unavailable.Count > 0)
             {
-                AddHeading(section, "Beam's-eye views | Unavailable field starts");
+                AddHeading(section, "Field reviews | Unavailable inputs");
                 foreach (string message in unavailable) section.AddParagraph(message).Format.Font.Size = 8;
             }
         }
 
-        private void AddControlPointTraces(Section section, ReviewPlanAnalysis analysis)
+        private string RateEstimateNote(ReviewBeamAnalysis beam)
         {
-            var beams = analysis == null ? new List<ReviewBeamAnalysis>() : analysis.Beams ?? new List<ReviewBeamAnalysis>();
-            for (int start = 0; start < Math.Max(1, beams.Count); start += 2)
-            {
-                section.AddPageBreak();
-                AddHeading(section, "Control-point trajectories | Active plan");
-                section.AddParagraph("Nominal MU/min is a field setting, not a trajectory. Estimated plan trajectory: dashed, PlanCheck-style segment averages; " +
-                    "supplied plan values: solid. Not measured delivery. Model excludes acceleration, leaf/jaw motion, ramping and holds; index is not time.");
-                if (beams.Count == 0) { section.AddParagraph("Control-point data unavailable."); break; }
-                for (int index = start; index < Math.Min(start + 2, beams.Count); index++)
-                {
-                    var beam = beams[index];
-                    Paragraph label = section.AddParagraph(Safe(beam.BeamId, "Beam"));
-                    label.Format.Font.Bold = true; label.Format.KeepWithNext = true;
-                    label.Format.SpaceBefore = Unit.FromMillimeter(2);
-                    var image = section.AddImage(ReviewImageRenderer.ControlPointTraces(beam));
-                    image.Width = Unit.FromCentimeter(ContentWidthCentimeter(section)); image.LockAspectRatio = true;
-                    var samples = beam.ControlPoints ?? new List<ReviewControlPointSample>();
-                    int planned = samples.Count(cp => cp != null && IsFiniteNonnegative(cp.PlannedDoseRateMuPerMin));
-                    bool estimated = beam.DoseRateEstimateStatus == "Estimated" && samples.Any(cp => cp != null && IsFiniteNonnegative(cp.EstimatedDoseRateMuPerMin));
-                    Paragraph note = section.AddParagraph(estimated
-                        ? string.Format(CultureInfo.InvariantCulture, "Estimate profile: {0}; gantry assumption: {1:0.##} deg/s; estimated duration: {2:0.0} s. Configured assumptions require local verification.",
-                            Safe(beam.DoseRateEstimateProfile, "unspecified"), beam.DoseRateEstimateMaxGantrySpeedDegreesPerSecond, beam.EstimatedBeamDurationSeconds)
-                        : planned > 0 ? "Supplied plan values; no measured delivery timing." : "Rate estimate unavailable; check machine profile and native input completeness.");
-                    note.Format.Font.Size = 7.5;
-                }
-            }
+            var samples = beam.ControlPoints ?? new List<ReviewControlPointSample>();
+            bool estimated = beam.DoseRateEstimateStatus == "Estimated" && samples.Any(cp => cp != null && IsFiniteNonnegative(cp.EstimatedDoseRateMuPerMin));
+            return estimated
+                ? string.Format(CultureInfo.InvariantCulture, "Estimate profile: {0}; gantry assumption: {1:0.##} deg/s; estimated duration: {2:0.0} s. Configured assumptions require local verification.",
+                    Safe(beam.DoseRateEstimateProfile, "unspecified"), beam.DoseRateEstimateMaxGantrySpeedDegreesPerSecond, beam.EstimatedBeamDurationSeconds)
+                : samples.Any(cp => cp != null && IsFiniteNonnegative(cp.PlannedDoseRateMuPerMin))
+                    ? "Supplied plan values; no measured delivery timing." : "Rate estimate unavailable; check machine profile and native input completeness.";
         }
 
         private static bool IsFiniteNonnegative(double? value)
         {
             return value.HasValue && value.Value >= 0 && !double.IsNaN(value.Value) && !double.IsInfinity(value.Value);
+        }
+
+        private static bool HasRateTrajectory(ReviewBeamAnalysis beam)
+        {
+            return beam != null && (beam.ControlPoints ?? new List<ReviewControlPointSample>()).Any(cp => cp != null &&
+                (IsFiniteNonnegative(cp.PlannedDoseRateMuPerMin) ||
+                 beam.DoseRateEstimateStatus == "Estimated" && IsFiniteNonnegative(cp.EstimatedDoseRateMuPerMin)));
         }
 
         private void AddPlanRows(

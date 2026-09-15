@@ -10,6 +10,22 @@ namespace ClearPlan.Reporting
         public const string SyntheticWatermark =
             "SYNTHETIC DEMONSTRATION — NOT FOR CLINICAL USE";
 
+        private static List<CollisionReportBeam> CopyCollisionBeams(ReviewSnapshot snapshot)
+        {
+            if (!snapshot.IncludeCollisionPreview || snapshot.CollisionScene == null ||
+                snapshot.CollisionScene.PlanKey != snapshot.ActivePlanKey || snapshot.CollisionScene.Synthetic != snapshot.Synthetic)
+                return new List<CollisionReportBeam>();
+            return (snapshot.CollisionBeams ?? new List<CollisionReportBeam>()).Where(beam => beam != null).Select(beam => new CollisionReportBeam {
+                BeamId = beam.BeamId, Status = beam.Status, Summary = beam.Summary, RadialOnly = beam.RadialOnly, BodyOnly = beam.BodyOnly,
+                OverviewPng = beam.OverviewPng == null ? null : (byte[])beam.OverviewPng.Clone(),
+                OrientationPng = beam.OrientationPng == null ? null : (byte[])beam.OrientationPng.Clone(),
+                Rows = (beam.Rows ?? new List<CollisionReportRow>()).Where(row => row != null).Select(row => new CollisionReportRow { GantryDegrees = row.GantryDegrees,
+                    CouchDegrees = row.CouchDegrees, MinimumDistanceMm = row.MinimumDistanceMm, CapturedControlPointIndex = row.CapturedControlPointIndex,
+                    Interpolated = row.Interpolated, Status = row.Status, BodyDistance = row.BodyDistance,
+                    TableDistance = row.TableDistance, BodyStatus = row.BodyStatus, TableStatus = row.TableStatus, Reason = row.Reason }).ToList()
+            }).ToList();
+        }
+
         public ReviewReportDocument Map(ReviewSnapshot snapshot)
         {
             if (snapshot == null)
@@ -33,7 +49,12 @@ namespace ClearPlan.Reporting
                 PlanDisplayLabel = snapshot.PlanDisplayLabel,
                 ProvenanceText = snapshot.ProvenanceText,
                 ActivePlanKey = snapshot.ActivePlanKey,
-                Title = metadata.Title,
+                CollisionPreviewPng = snapshot.IncludeCollisionPreview && snapshot.CollisionScene != null &&
+                    snapshot.CollisionScene.PlanKey == snapshot.ActivePlanKey && snapshot.CollisionScene.Synthetic == snapshot.Synthetic &&
+                    snapshot.CollisionPreviewPng != null ? (byte[])snapshot.CollisionPreviewPng.Clone() : null,
+                CollisionPreviewCaption = snapshot.CollisionPreviewCaption,
+                CollisionBeams = CopyCollisionBeams(snapshot),
+                Title = ReviewReportDocument.ReportTitle,
                 Subtitle = metadata.Subtitle,
                 ModeLabel = snapshot.Synthetic
                     ? SyntheticWatermark
@@ -72,7 +93,7 @@ namespace ClearPlan.Reporting
                     .ToList(),
                 PlanImages = (snapshot.PlanImages ?? new List<ReviewPlanImage>())
                     .Where(image => image != null && string.Equals(image.PlanKey, snapshot.ActivePlanKey, StringComparison.Ordinal))
-                    .Select(MapImage).ToList(),
+                    .Select(image => (snapshot.IsodoseDisplay ?? IsodoseDisplayConfiguration.CreateDefault()).Apply(MapImage(image))).ToList(),
                 PlanAnalysis = snapshot.PlanAnalysis == null ? null : ClearPlan.Core.PlanAnalysis.PlanAnalysisSnapshot.Copy(snapshot.PlanAnalysis)
             };
 
@@ -94,6 +115,9 @@ namespace ClearPlan.Reporting
                 TopOrientation = source.TopOrientation, BottomOrientation = source.BottomOrientation,
                 IsocenterPixelX = source.IsocenterPixelX, IsocenterPixelY = source.IsocenterPixelY,
                 OverlaySummary = source.OverlaySummary,
+                DosePlane = source.DosePlane == null ? null : new ReviewImageDosePlane {
+                    Columns = source.DosePlane.Columns, Rows = source.DosePlane.Rows, PrescriptionGy = source.DosePlane.PrescriptionGy,
+                    Source = source.DosePlane.Source, SamplesGy = source.DosePlane.SamplesGy == null ? null : (double[])source.DosePlane.SamplesGy.Clone() },
                 DoseFocusRegion = source.DoseFocusRegion == null ? null : new ReviewImageDoseRegion {
                     PrescriptionPercent = source.DoseFocusRegion.PrescriptionPercent, ThresholdGy = source.DoseFocusRegion.ThresholdGy,
                     MinPixelX = source.DoseFocusRegion.MinPixelX, MaxPixelX = source.DoseFocusRegion.MaxPixelX,
@@ -102,7 +126,7 @@ namespace ClearPlan.Reporting
                 Overlays = (source.Overlays ?? new List<ReviewImageOverlay>()).Where(item => item != null).Select(item => new ReviewImageOverlay
                 {
                     Kind = item.Kind, Label = item.Label, ColorHex = item.ColorHex, Source = item.Source,
-                    SourceStatus = item.SourceStatus, UnavailableReason = item.UnavailableReason, DoseGy = item.DoseGy,
+                    SourceStatus = item.SourceStatus, UnavailableReason = item.UnavailableReason, DoseGy = item.DoseGy, PrescriptionPercent = item.PrescriptionPercent,
                     Paths = (item.Paths ?? new List<ReviewImagePath>()).Where(path => path != null).Select(path => new ReviewImagePath
                     {
                         Closed = path.Closed,

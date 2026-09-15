@@ -135,7 +135,7 @@ namespace ClearPlan.Core.Tests
                 if (beam.ControlPoints != null)
                     foreach (var cp in beam.ControlPoints.Where(p => p != null)) Near(123, cp.PlannedDoseRateMuPerMin);
             }
-            foreach (string technique in new[] { "ARC", "VMAT", "RapidArc", "vmat" })
+            foreach (string technique in new[] { "ARC", "VMAT", "RapidArc", "vmat", "SRS ARC", "srs arc" })
             {
                 var beam = Beam(); beam.Technique = technique;
                 DoseRateEstimator.Apply(beam, Profile());

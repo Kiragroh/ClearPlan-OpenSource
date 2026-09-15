@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.2.0-dev.20260915.7] Development source snapshot
+- Added editable isodose percentages/colors and visibility, one shared GUI legend, synchronized PDF/HTML presentation, and versioned defaults.
+- Added optional read-only sampled geometry playback with body/support distances, a CP-linked MLC inset and separate gantry/couch orientation views. Public catalogs contain no local device dimensions; the display is not clinical collision clearance.
+- Compacted field report pages, preserved one main DVH, improved dual-layer MLC colors and fixed-field-opening display, and refined document metadata.
+- Kept private PlanCheck implementations, clinical captures, local headless/deployment tooling and site-specific device catalogs outside the public tree. This is not a new commissioned release.
+
 ## [3.2.0.0] Integrated plan analysis and publication fixtures (unreleased candidate)
 - Expanded the read-only review with target-specific PAM, physical single-/jawless dual-layer MLC geometry, Paddick CI and reciprocal, GI/HI, total MU and distinctly labeled estimated dose-rate trajectories. Automatic PAM compares eligible PTVs without changing TPS assignments.
 - Added three-plane CT dose/structure overlays, optional field-start BEV/DRR report panels, compact single-plan PDF and offline HTML quicklook, separate comparison-plan selection and shared structure visibility.

@@ -90,6 +90,18 @@ namespace ClearPlan.Core.Review
         [JsonProperty("planImages", Order = 20)]
         public List<ReviewPlanImage> PlanImages { get; set; }
 
+        [JsonProperty("isodoseDisplay", Order = 21)]
+        public IsodoseDisplayConfiguration IsodoseDisplay { get; set; }
+        [JsonProperty("isodoseDisplayMessage", Order = 22)]
+        public string IsodoseDisplayMessage { get; set; }
+
+        // Private, detached patient surfaces and optional rendered illustration. Never in review JSON.
+        [JsonIgnore] public Collision.CollisionScene CollisionScene { get; set; }
+        [JsonIgnore] public byte[] CollisionPreviewPng { get; set; }
+        [JsonIgnore] public string CollisionPreviewCaption { get; set; }
+        [JsonIgnore] public bool IncludeCollisionPreview { get; set; }
+        [JsonIgnore] public List<CollisionReportBeam> CollisionBeams { get; set; }
+
         [OnDeserialized]
         internal void RestoreOptionalCollections(StreamingContext context)
         {

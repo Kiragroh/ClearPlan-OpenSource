@@ -29,6 +29,21 @@ namespace ClearPlan.Core.Review
         [JsonProperty] public List<ReviewImageOverlay> Overlays { get; set; }
         [JsonProperty] public string OverlaySummary { get; set; }
         [JsonProperty] public ReviewImageDoseRegion DoseFocusRegion { get; set; }
+        [JsonProperty] public ReviewImageDosePlane DosePlane { get; set; }
+    }
+
+    /// <summary>Native interpolated Gy on the CT plane; NaN marks unavailable coverage. No vendor objects.</summary>
+    [JsonObject(MemberSerialization.OptIn)]
+    public sealed class ReviewImageDosePlane
+    {
+        [JsonProperty] public int Columns { get; set; }
+        [JsonProperty] public int Rows { get; set; }
+        [JsonProperty] public double PrescriptionGy { get; set; }
+        [JsonProperty] public double[] SamplesGy { get; set; }
+        [JsonProperty] public string Source { get; set; }
+        [JsonIgnore] public bool IsValid { get { return Columns >= 2 && Rows >= 2 && Columns <= 512 && Rows <= 512 &&
+            SamplesGy != null && SamplesGy.Length == Columns * Rows && IsodoseDisplayConfiguration.Finite(PrescriptionGy) && PrescriptionGy > 0 &&
+            System.Linq.Enumerable.All(SamplesGy, v => double.IsNaN(v) || (IsodoseDisplayConfiguration.Finite(v) && v >= 0)); } }
     }
 
     [JsonObject(MemberSerialization.OptIn)]
@@ -55,6 +70,7 @@ namespace ClearPlan.Core.Review
         [JsonProperty] public string SourceStatus { get; set; }
         [JsonProperty] public string UnavailableReason { get; set; }
         [JsonProperty] public double? DoseGy { get; set; }
+        [JsonProperty] public double? PrescriptionPercent { get; set; }
         [JsonProperty] public List<ReviewImagePath> Paths { get; set; }
     }
 

@@ -36,6 +36,10 @@ namespace ClearPlan.Core.PlanAnalysis
         [JsonProperty] public int ControlPointIndex { get; set; }
         [JsonProperty] public double GantryAngleDegrees { get; set; }
         [JsonProperty] public double CollimatorAngleDegrees { get; set; }
+        // Calibrated BLD raster/aperture -> zero-collimator gantry display rotation, clockwise
+        // in screen coordinates (Y down). Native capture derives this from paired outlines;
+        // it is NOT inferred from CollimatorAngleDegrees. Null retains the labelled BLD frame.
+        [JsonProperty] public double? BldToDisplayRotationDegrees { get; set; }
         [JsonProperty] public double PatientSupportAngleDegrees { get; set; }
     }
 }

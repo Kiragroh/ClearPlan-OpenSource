@@ -391,6 +391,8 @@ namespace ClearPlan
             plotModel.Axes.Add(new LinearAxis
             {
                 Title = "Dose [Gy]",
+                IsZoomEnabled = false,
+                IsPanEnabled = false,
                 TitleFontSize = 14,
                 TitleFontWeight = FontWeights.Bold,
                 AxisTitleDistance = 15,
@@ -414,7 +416,8 @@ namespace ClearPlan
                 Minimum = 0,
                 Maximum = 100.5,
                 AbsoluteMinimum = 0,
-                IsZoomEnabled = false
+                IsZoomEnabled = false,
+                IsPanEnabled = false
         });
         }
 

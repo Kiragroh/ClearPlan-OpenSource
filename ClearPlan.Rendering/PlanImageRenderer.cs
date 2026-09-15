@@ -15,6 +15,19 @@ namespace ClearPlan.Rendering
         private static readonly Color Background = Color.FromArgb(13, 24, 40);
         private static readonly Color Orientation = Color.FromArgb(75, 220, 195);
 
+        public static IList<ReviewImageOverlay> IsodoseScale(ReviewPlanImage image)
+        {
+            return (image.Overlays ?? new List<ReviewImageOverlay>()).Where(o => o != null && o.Kind == "isodose" &&
+                o.SourceStatus == ReviewStatusCodes.Available && o.DoseGy.HasValue && o.Paths != null &&
+                o.Paths.Any(p => p != null && p.Points != null && p.Points.Count >= 2))
+                .OrderBy(o => o.DoseGy.Value).ToList().AsReadOnly();
+        }
+        public static int CanvasHeight(ReviewPlanImage image, bool showDose)
+        {
+            int count = showDose ? IsodoseScale(image).Count : 0;
+            return 720 + (count == 0 ? 0 : 26 + ((count + 4) / 5) * 48) + (image.Synthetic ? 32 : 0);
+        }
+
         public static bool IsRenderable(ReviewPlanImage image)
         {
             return image != null && image.SourceStatus == ReviewStatusCodes.Available &&
@@ -41,10 +54,13 @@ namespace ClearPlan.Rendering
         { return RenderFiltered(image, showStructures, showDose, focusIsocenter, null); }
 
         public static byte[] RenderFiltered(ReviewPlanImage image, bool showStructures, bool showDose, bool focusIsocenter, IEnumerable<string> hiddenStructureIds)
+        { return RenderFiltered(image, showStructures, showDose, focusIsocenter, hiddenStructureIds, true); }
+
+        public static byte[] RenderFiltered(ReviewPlanImage image, bool showStructures, bool showDose, bool focusIsocenter, IEnumerable<string> hiddenStructureIds, bool includeRasterScale)
         {
             var hidden = new HashSet<string>(hiddenStructureIds ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
             if (!IsRenderable(image)) throw new ArgumentException("Invalid or unavailable detached overview image.");
-            int canvasHeight = image.Synthetic ? 752 : 720;
+            int canvasHeight = CanvasHeight(image, showDose && includeRasterScale);
             using (var output = new Bitmap(1440, canvasHeight * 2))
             using (var graphics = Graphics.FromImage(output))
             using (var pixels = new Bitmap(image.WidthPixels, image.HeightPixels, PixelFormat.Format24bppRgb))
@@ -95,6 +111,7 @@ namespace ClearPlan.Rendering
                     Text(graphics, image.TopOrientation, font, brush, 360, 15);
                     Text(graphics, image.BottomOrientation, font, brush, 360, 703);
                 }
+                if (showDose && includeRasterScale) DrawIsodoseScale(graphics, image);
                 if (image.Synthetic)
                 {
                     using (var fill = new SolidBrush(Color.FromArgb(190, 123, 20, 31)))
@@ -104,6 +121,28 @@ namespace ClearPlan.Rendering
                 }
                 using (var stream = new MemoryStream())
                 { output.Save(stream, ImageFormat.Png); return stream.ToArray(); }
+            }
+        }
+
+        private static void DrawIsodoseScale(Graphics graphics, ReviewPlanImage image)
+        {
+            var scale = IsodoseScale(image);
+            if (scale.Count == 0) return;
+            using (var heading = new Font("Segoe UI", 12, FontStyle.Bold))
+            using (var value = new Font("Segoe UI", 13, FontStyle.Regular))
+            using (var doseFont = new Font("Segoe UI", 11, FontStyle.Regular))
+            using (var muted = new SolidBrush(Color.FromArgb(198, 213, 226)))
+            {
+                graphics.DrawString("Isodoses  |  % Rx / Gy", heading, muted, 30, 719);
+                for (int i = 0; i < scale.Count; i++)
+                {
+                    var level = scale[i]; float x = 30 + (i % 5) * 132, y = 744 + (i / 5) * 48;
+                    Color color; try { color = ColorTranslator.FromHtml(level.ColorHex); } catch (Exception) { color = Color.White; }
+                    using (var brush = new SolidBrush(color)) graphics.FillRectangle(brush, x, y, 120, 5);
+                    double? percent = IsodoseDisplayConfiguration.PercentFor(level);
+                    graphics.DrawString(percent.HasValue ? percent.Value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + "% Rx" : "Dose", value, Brushes.White, x, y + 7);
+                    graphics.DrawString(level.DoseGy.Value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " Gy", doseFont, muted, x, y + 25);
+                }
             }
         }
 

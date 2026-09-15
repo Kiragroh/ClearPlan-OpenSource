@@ -164,7 +164,7 @@ namespace ClearPlan.Review
                         var outlines = CopyOutline(beam.GetStructureOutlines(target, false));
                         bool fixedProjection = points.All(p => SameProjection(points[0], p));
                         foreach (var cp in row.ControlPoints)
-                            if (fixedProjection || cp.Index == points[0].Index)
+                            if (fixedProjection || cp.Index == 0)
                             {
                                 cp.TargetOutlines = outlines;
                                 cp.TargetProjectionReason = outlines.Count > 0 ? null : "Native target BEV projection is empty.";
@@ -249,12 +249,12 @@ namespace ClearPlan.Review
                     if(!MatchesSnapshot(beam,cps,job.Row))
                     { job.Error="Active beam geometry, MU or PAM beam weight changed since the analysis snapshot. Refresh before computing PAM.";job.DiscardNative=true;continue; }
                     if(plan.TreatmentOrientation!=PatientOrientation.HeadFirstSupine ||
-                        cps.Any(cp=>!SameAngle(cp.PatientSupportAngle,0)) ||
+                        cps.Any(cp=>!SameAngle(cp.PatientSupportAngle,cps[0].PatientSupportAngle)) ||
                         cps.Any(cp=>!SameAngle(cp.CollimatorAngle,cps[0].CollimatorAngle) ||
                             !SameOptional(cp.TableTopLateralPosition,cps[0].TableTopLateralPosition) ||
                             !SameOptional(cp.TableTopLongitudinalPosition,cps[0].TableTopLongitudinalPosition) ||
                             !SameOptional(cp.TableTopVerticalPosition,cps[0].TableTopVerticalPosition)))
-                    { job.Error="Moving target projection currently requires HFS orientation, zero fixed couch angle, fixed collimator and fixed table translation. Other geometries are not inferred.";continue; }
+                    { job.Error="Moving target projection requires HFS orientation, a fixed couch angle within each field, fixed collimator and fixed table translation. Other geometries are not inferred.";continue; }
                     var nativeBeam=beam.GetStructureOutlines(target,false);
                     var nativeBev=beam.GetStructureOutlines(target,true);
                     job.NativeOutline=CopyOutline(nativeBeam);
@@ -426,7 +426,8 @@ namespace ClearPlan.Review
             {
                 var sample = new ReviewControlPointSample
                 {
-                    Index = cp.Index,
+                    Index = row.ControlPoints.Count,
+                    NativeIndex = cp.Index,
                     GantryAngleDegrees = cp.GantryAngle,
                     CollimatorAngleDegrees = cp.CollimatorAngle,
                     PatientSupportAngleDegrees = cp.PatientSupportAngle,

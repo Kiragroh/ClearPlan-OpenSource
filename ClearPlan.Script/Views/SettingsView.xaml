@@ -163,6 +163,10 @@
                     <TextBox Text="{Binding MlcGeometryProfilesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der MLC-Geometrieprofile"/>
                     <TextBlock Text="Dosisraten-Schätzmodell · JSON (leer = deaktiviert)" Style="{StaticResource SettingsLabel}"/>
                     <TextBox Text="{Binding DoseRateProfilesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der Dosisraten-Schätzprofile"/>
+                    <TextBlock Text="Kollision · Gerätehüllen (JSON, lokal kommissioniert)" Style="{StaticResource SettingsLabel}"/>
+                    <TextBox Text="{Binding CollisionProfilesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der Kollisionsprofile"/>
+                    <TextBlock Text="Kollision · Quellmodelle für Punkt-Screening (JSON, nicht kommissioniert)" Style="{StaticResource SettingsLabel}"/>
+                    <TextBox Text="{Binding SourceCollisionModelsJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der analytischen Kollisions-Quellmodelle"/>
                     <TextBlock Text="Exakte ESAPI-Modellnamen, Blattgrenzen und bestätigte Lagenzuordnung. Unbekannte Modelle bleiben ausdrücklich unverfügbar; es werden keine Halcyon-Lagen geraten." TextWrapping="Wrap" Foreground="#475569" Margin="0,0,0,16"/>
                 </StackPanel>
             </Border>
@@ -176,6 +180,9 @@
             </Border>
             <Border Style="{StaticResource SettingsCard}">
                 <StackPanel>
+                    <TextBlock Text="Default – Isodosenanzeige" FontSize="17" FontWeight="SemiBold" Foreground="#115E59" Margin="0,0,0,8"/>
+                    <TextBox Text="{Binding IsodoseDisplayJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der Isodosen-Defaults"/>
+                    <TextBlock Text="Stufen, Farben und Aktivierung unter Konfiguration → Default · Isodosen versioniert bearbeiten. Nach Speichern die Planansicht neu laden und im Schnittbilder-Reiter → Isodosen → Geladene Defaults wählen. Eigene Anzeigeänderungen bleiben beim Neuladen erhalten, bis die neuen Defaults ausdrücklich übernommen werden. Plandosis und Goals bleiben unverändert." TextWrapping="Wrap" Foreground="#475569" Margin="0,0,0,18"/>
                     <TextBlock Text="Default – editierbare Zielvolumenregeln" FontSize="17" FontWeight="SemiBold" Foreground="#115E59" Margin="0,0,0,8"/>
                     <TextBox Text="{Binding DefaultReviewRulesJsonPath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource SettingsPathBox}" Margin="0,0,0,6" AutomationProperties.Name="Pfad der editierbaren Default-Regeln"/>
                     <WrapPanel Margin="0,0,0,8">

@@ -55,10 +55,15 @@ namespace ClearPlan.Presentation.ViewModels
             if (snapshot.Synthetic && SyntheticPublicationScenarioFactory.ScenarioIds.Contains(snapshot.ScenarioId, StringComparer.Ordinal))
                 syntheticDrrProvider = SyntheticPublicationScenarioFactory.CreateDrr;
             Analysis = new PlanAnalysisViewModel(snapshot.PlanAnalysis, snapshot.Synthetic, syntheticDrrProvider);
+            Collision = new CollisionViewModel(snapshot);
+            Collision.ReloadRequested += (sender, args) => Raise(CollisionRequested, "collision", null);
             PlanImages = new PlanImagesViewModel(snapshot.Synthetic && (snapshot.PlanImages == null || snapshot.PlanImages.Count == 0)
                 ? ClearPlan.Core.Simulation.SyntheticPlanImageFactory.Create(snapshot.ActivePlanKey) : snapshot.PlanImages, snapshot.ActivePlanKey);
             PlanImages.ReloadRequested += (sender, args) => Raise(PlanImagesRequested, "plan-images", null);
             PlanImages.StructureVisibilityChanged += (sender, args) => SetStructureVisibility(args.StructureId, args.IsVisible);
+            PlanImages.SetIsodoseConfiguration(snapshot.IsodoseDisplay ?? IsodoseDisplayConfiguration.CreateDefault(), snapshot.IsodoseDisplayMessage, true);
+            PlanImages.IsodosesChanged += (sender, args) => snapshot.IsodoseDisplay = PlanImages.IsodoseConfiguration;
+            PlanImages.IsodoseDefaultsRequested += (sender, args) => OpenSettingsCommand.Execute(null);
             Comparison = new PlanComparisonViewModel(snapshot);
 
             Sources = new ObservableCollection<ReviewSourceStatusViewModel>(
@@ -236,6 +241,7 @@ namespace ClearPlan.Presentation.ViewModels
         public event EventHandler<ReviewWorkspaceActionEventArgs> CalculateTargetRequested;
         public event EventHandler<ReviewWorkspaceActionEventArgs> GenerateDrrRequested;
         public event EventHandler<ReviewWorkspaceActionEventArgs> PlanImagesRequested;
+        public event EventHandler<ReviewWorkspaceActionEventArgs> CollisionRequested;
         public event EventHandler<ReviewWorkspaceActionEventArgs> ComparisonPlanRequested;
 
         public ObservableCollection<ReviewCheckRowViewModel> WarningRows { get; private set; }
@@ -260,6 +266,7 @@ namespace ClearPlan.Presentation.ViewModels
 
         public PlanAnalysisViewModel Analysis { get; private set; }
         public PlanImagesViewModel PlanImages { get; private set; }
+        public CollisionViewModel Collision { get; private set; }
 
         public PlanComparisonViewModel Comparison { get; private set; }
 
@@ -411,6 +418,7 @@ namespace ClearPlan.Presentation.ViewModels
             PlanImages.ShowStructures = previous.PlanImages.ShowStructures;
             PlanImages.ShowDose = previous.PlanImages.ShowDose;
             PlanImages.FocusIsocenter = previous.PlanImages.FocusIsocenter;
+            PlanImages.SetIsodoseConfiguration(previous.PlanImages.IsodoseConfiguration, previous.PlanImages.IsodoseEditorMessage, false);
         }
 
         public ICommand ResetDvhCommand { get; private set; }

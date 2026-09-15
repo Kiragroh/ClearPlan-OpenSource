@@ -13,6 +13,7 @@
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <DockPanel Margin="0,0,0,8">
    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+    <CheckBox x:Name="BevDetailZoom" Content="Details vergrößern" VerticalAlignment="Center" Margin="0,0,18,0" ToolTip="Standard: gesamte Feldöffnung sichtbar. Detailansicht: vergrößert und scrollbar."/>
     <TextBlock Text="Feld" VerticalAlignment="Center" Margin="0,0,10,0"/>
     <ComboBox ItemsSource="{Binding Beams}" SelectedItem="{Binding SelectedBeam}" DisplayMemberPath="BeamId" MinWidth="150" MaxWidth="260" Padding="8,5" AutomationProperties.Name="Feld für Beam’s-eye View"/>
    </StackPanel>
@@ -21,8 +22,11 @@
   <TextBlock Grid.Row="1" Text="Feldöffnung und Anatomie · Maßstab in der Isozentrumsebene · Keine Kollisionsprüfung" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,0,0,14" TextWrapping="Wrap"/>
   <Border Grid.Row="2" Background="#101923" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="1" ClipToBounds="True">
    <ScrollViewer x:Name="BevViewport" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
-                 AutomationProperties.Name="BEV-Bildbereich; bei kleinen Fenstern vertikal scrollbar" ToolTip="Bei kleinen Fenstern im Bildbereich scrollen. Die Darstellung wird nicht zu einer Miniatur verkleinert.">
-    <Grid Height="{Binding ActualHeight, ElementName=BevViewport}" MinHeight="640">
+                 AutomationProperties.Name="BEV-Bildbereich; gesamte Feldöffnung oder vergrößerte Detailansicht">
+    <Grid Height="{Binding ActualHeight, ElementName=BevViewport}">
+     <Grid.Style><Style TargetType="Grid"><Setter Property="MinHeight" Value="320"/><Style.Triggers>
+      <DataTrigger Binding="{Binding IsChecked, ElementName=BevDetailZoom}" Value="True"><Setter Property="MinHeight" Value="640"/></DataTrigger>
+     </Style.Triggers></Style></Grid.Style>
      <Image x:Name="BevImage" Source="{Binding BevImageSource}" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" AutomationProperties.Name="BEV mit verfügbarer CT-Projektion und Feldgeometrie, Feldparametern und Orientierungsschema"/>
     </Grid>
    </ScrollViewer>

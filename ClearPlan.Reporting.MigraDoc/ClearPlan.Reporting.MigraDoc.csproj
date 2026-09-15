@@ -98,6 +98,7 @@
     <Compile Include="Internal\SexSymbol.cs" />
     <Compile Include="Internal\Size.cs" />
     <Compile Include="ReportPdf.cs" />
+    <Compile Include="ReportPdf.Collision.cs" />
     <Compile Include="HtmlReviewReportRenderer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Internal\CustomStyles.cs" />

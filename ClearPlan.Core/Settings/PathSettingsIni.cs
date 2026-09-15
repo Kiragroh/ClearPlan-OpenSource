@@ -21,6 +21,10 @@ namespace ClearPlan.Core.Settings
                 value => settings.Paths.MlcGeometryProfilesJsonPath = value);
             Apply(values, "DoseRateProfilesJsonPath",
                 value => settings.Paths.DoseRateProfilesJsonPath = value);
+            Apply(values, "CollisionProfilesJsonPath",
+                value => settings.Paths.CollisionProfilesJsonPath = value);
+            Apply(values, "SourceCollisionModelsJsonPath",
+                value => settings.Paths.SourceCollisionModelsJsonPath = value);
             Apply(values, "AriaUploadConfigJsonPath",
                 value => settings.Paths.AriaUploadConfigJsonPath = value);
             Apply(values, "DefaultReviewRulesJsonPath",
@@ -29,6 +33,8 @@ namespace ClearPlan.Core.Settings
                 value => settings.Paths.PlanCheckSelectionJsonPath = value);
             Apply(values, "FieldNamingRulesJsonPath",
                 value => settings.Paths.FieldNamingRulesJsonPath = value);
+            Apply(values, "IsodoseDisplayJsonPath",
+                value => settings.Paths.IsodoseDisplayJsonPath = value);
             Apply(values, "RefDbJsonPath",
                 value => settings.ConstraintSource.RefDbJsonPath = value);
             Apply(values, "ExcelWorkbookPath",
@@ -86,10 +92,13 @@ namespace ClearPlan.Core.Settings
             builder.AppendLine("[Paths]");
             Append(builder, "MlcGeometryProfilesJsonPath", settings.Paths.MlcGeometryProfilesJsonPath);
             Append(builder, "DoseRateProfilesJsonPath", settings.Paths.DoseRateProfilesJsonPath);
+            Append(builder, "CollisionProfilesJsonPath", settings.Paths.CollisionProfilesJsonPath);
+            Append(builder, "SourceCollisionModelsJsonPath", settings.Paths.SourceCollisionModelsJsonPath);
             Append(builder, "AriaUploadConfigJsonPath", settings.Paths.AriaUploadConfigJsonPath);
             Append(builder, "DefaultReviewRulesJsonPath", settings.Paths.DefaultReviewRulesJsonPath);
             Append(builder, "PlanCheckSelectionJsonPath", settings.Paths.PlanCheckSelectionJsonPath);
             Append(builder, "FieldNamingRulesJsonPath", settings.Paths.FieldNamingRulesJsonPath);
+            Append(builder, "IsodoseDisplayJsonPath", settings.Paths.IsodoseDisplayJsonPath);
             Append(builder, "RefDbJsonPath",
                 settings.ConstraintSource.RefDbJsonPath);
             Append(builder, "ExcelWorkbookPath",

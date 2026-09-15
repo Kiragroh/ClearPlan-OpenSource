@@ -15,6 +15,100 @@ namespace ClearPlan.Core.Tests
 {
     internal static class ReportPresentationTests
     {
+        public static void DvhLegendWrapsBelowAndRetainsEverySeries()
+        {
+            var data = DvhLegendFixture(24);
+            string encoded = (string)RendererMethod("Dvh").Invoke(null, new object[] { data });
+            using (var stream = new MemoryStream(Convert.FromBase64String(encoded.Substring("base64:".Length))))
+            using (var bitmap = new System.Drawing.Bitmap(stream))
+            {
+                TestAssert.True(bitmap.Height > 500, "The DVH needs a separate wrapped legend below the full-width plot.");
+                foreach (var row in data.DvhSeries)
+                {
+                    var color = System.Drawing.ColorTranslator.FromHtml(row.ColorHex);
+                    bool swatch = false;
+                    for (int y = 490; y < bitmap.Height - 10 && !swatch; y++)
+                        for (int x = 20; x < bitmap.Width - 20; x++)
+                            if (bitmap.GetPixel(x, y).ToArgb() == color.ToArgb()) { swatch = true; break; }
+                    TestAssert.True(swatch, "Every selected curve needs its legend swatch below the plot, including " + row.StructureId);
+                }
+                for (int y = 490; y < bitmap.Height; y++)
+                    TestAssert.Equal(System.Drawing.Color.White.ToArgb(), bitmap.GetPixel(bitmap.Width - 1, y).ToArgb(),
+                        "Long structure labels must wrap inside the image, never clip at its right edge.");
+            }
+            TestAssert.Equal(24, data.DvhSeries.Count, "Rendering must not trim the source inventory.");
+            TestAssert.True(data.DvhSeries[0].DisplayName.EndsWith("TAIL_0"), "Long labels must not be shortened in the source.");
+        }
+
+        public static void PdfPaginatesEveryDvhCurveWithReadableLegends()
+        {
+            var data = DvhLegendFixture(27);
+            var document = (Document)typeof(ReportPdf).GetMethod("CreateReviewReport", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(new ReportPdf(), new object[] { data });
+            string ddl = DdlWriter.WriteToString(document);
+            TestAssert.False(ddl.Contains("DVH panel"), "Report must contain one combined DVH, not a second panel after thirteen curves.");
+            string html = new HtmlReviewReportRenderer().Render(data);
+            TestAssert.False(html.Contains("DVH panel"), "HTML must use the same combined DVH.");
+            TestAssert.Equal(27, data.DvhSeries.Count, "All selected curves must remain available.");
+            // Exercise the actual landscape pagination with long IDs, independently
+            // of unrelated tables and BEV pages. A chart must not leave its label behind.
+            var section = document.Sections[0];
+            var elements = section.Elements.Cast<DocumentObject>().ToList();
+            int start = elements.FindIndex(item => item is Paragraph && DdlWriter.WriteToString(item).Contains("Dose-volume overview"));
+            int end = elements.FindIndex(start + 1, item => item is Paragraph && DdlWriter.WriteToString(item).Contains("DVH statistics"));
+            TestAssert.True(start >= 0 && end > start);
+            section.Elements.Clear();
+            foreach (var item in elements.Skip(start).Take(end - start)) section.Elements.Add((DocumentObject)item.Clone());
+            var renderer = new MigraDoc.Rendering.PdfDocumentRenderer(true) { Document = document };
+            renderer.RenderDocument();
+            TestAssert.Equal(1, section.Elements.Cast<DocumentObject>().OfType<MigraDoc.DocumentObjectModel.Shapes.Image>().Count());
+            TestAssert.Equal(1, renderer.PdfDocument.PageCount, "One DVH with a complete wrapped legend must fit one page.");
+        }
+
+        private static ReviewReportDocument DvhLegendFixture(int count)
+        {
+            var data = new ReviewSnapshotReportMapper().Map(SyntheticScenarioFactory.Create("baseline-pass"));
+            data.DvhSeries = Enumerable.Range(0, count).Select(index => new ReviewReportDvhSeries {
+                StructureId = "DEMO_" + index,
+                DisplayName = "DEMO_" + new string('L', index % 3 == 0 ? 95 : 12) + "_TAIL_" + index,
+                ColorHex = "#" + (32 + index * 7).ToString("X2") + "40B0",
+                LineStyle = index % 2 == 0 ? "solid" : "dash", Selected = true,
+                Points = new List<ReviewReportDvhPoint> { new ReviewReportDvhPoint { DoseGy=0, VolumePercent=100 },
+                    new ReviewReportDvhPoint { DoseGy=50 + index, VolumePercent=0 } }
+            }).ToList();
+            return data;
+        }
+
+        public static void StableTitleAndVersionReplaceDecorativeWarningBanners()
+        {
+            var empty = new Document(); var emptySection=empty.AddSection();
+            var staticAnalysis=new ReviewPlanAnalysis();
+            var staticBeam=new ReviewBeamAnalysis { BeamId="STATIC", NominalDoseRateMuPerMin=600 };
+            staticBeam.ControlPoints.Add(new ReviewControlPointSample { Index=0,NominalDoseRateMuPerMin=600 });
+            staticBeam.ControlPoints.Add(new ReviewControlPointSample { Index=1,NominalDoseRateMuPerMin=600 });
+            staticAnalysis.Beams.Add(staticBeam);
+            typeof(ReportPdf).GetMethod("AddFieldReviews",BindingFlags.Instance|BindingFlags.NonPublic)
+                .Invoke(new ReportPdf(),new object[] { emptySection,staticAnalysis,false,false });
+            TestAssert.Equal(0,emptySection.Elements.Count,"Do not reserve full pages for unavailable rate trajectories.");
+            var data = new ReviewSnapshotReportMapper().Map(SyntheticScenarioFactory.Create("baseline-pass"));
+            data.Synthetic = false;
+            data.Title = "Do not use this changing title";
+            data.ModeLabel = "Local review; incomplete geometry is not clearance.";
+            data.Watermark = data.ModeLabel;
+            var document = (Document)typeof(ReportPdf).GetMethod("CreateReviewReport", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(new ReportPdf(), new object[] { data });
+            TestAssert.Equal("Plan Quality Report", document.Info.Title);
+            string ddl = DdlWriter.WriteToString(document);
+            TestAssert.False(ddl.Contains(data.Title));
+            TestAssert.True(ddl.Contains("ClearPlan") && ddl.Contains("3.2.0"), "Repeating footer must identify the software version.");
+            var first = document.Sections[0].Elements[0] as Paragraph;
+            TestAssert.True(first != null && !first.Format.Font.Color.Equals(Colors.White), "No decorative white-on-warning banner.");
+            var html = new HtmlReviewReportRenderer().Render(data);
+            TestAssert.True(html.Contains("<h1>Plan Quality Report</h1>"));
+            TestAssert.True(html.Contains("<footer>ClearPlan") && html.Contains("3.2.0"));
+            TestAssert.True(html.Contains("incomplete geometry"), "Quiet styling must not hide unavailable clinical data.");
+        }
+
         public static void PatientIdentityIsInTheRepeatingFooter()
         {
             var data = new ReviewSnapshotReportMapper().Map(SyntheticScenarioFactory.Create("baseline-pass"));
@@ -27,6 +121,52 @@ namespace ClearPlan.Core.Tests
             TestAssert.True(ddl.Contains(data.PatientDisplayLabel), "Patient name and ID must appear in the repeating primary footer, not only the report body.");
             TestAssert.True(ddl.Contains("Page") && ddl.Contains("NumPages"), "Keep page numbering alongside patient identification.");
             TestAssert.True(section.Elements.Count == 0, "Identity belongs to the footer, not a one-off body paragraph.");
+        }
+
+        public static void PaginatedTablesStayAboveTheThreeLineFooter()
+        {
+            var document = CreateDocument();
+            var section = document.Sections[0];
+            section.Elements.Clear();
+            // A small preceding block offsets row boundaries, as a DVH image does.
+            // Do not accidentally pass only because a row leaves spare bottom space.
+            var preceding = section.AddParagraph(" ");
+            preceding.Format.LineSpacingRule = LineSpacingRule.Exactly;
+            preceding.Format.LineSpacing = Unit.FromPoint(4);
+            preceding.Format.SpaceAfter = Unit.FromPoint(0);
+            var table = section.AddTable();
+            table.AddColumn(Unit.FromCentimeter(18));
+            table.AddColumn(Unit.FromCentimeter(9));
+            for (int index = 0; index < 90; index++)
+            {
+                var row = table.AddRow();
+                row.Cells[0].AddParagraph("Synthetic statistics row " + index);
+                row.Cells[1].AddParagraph("12.34 / 56.78");
+            }
+            var renderer = new MigraDoc.Rendering.PdfDocumentRenderer(true) { Document = document };
+            renderer.RenderDocument();
+            TestAssert.True(renderer.PdfDocument.PageCount > 1, "The regression must exercise a full body and table continuation.");
+            AssertPageBodyClearsFooter(renderer, section);
+        }
+
+        private static void AssertPageBodyClearsFooter(MigraDoc.Rendering.PdfDocumentRenderer renderer, Section section)
+        {
+            var formatted = renderer.DocumentRenderer.FormattedDocument;
+            var footerMethod = formatted.GetType().GetMethod("GetFormattedFooter", BindingFlags.Instance | BindingFlags.NonPublic);
+            TestAssert.NotNull(footerMethod);
+            for (int page = 1; page <= renderer.PdfDocument.PageCount; page++)
+            {
+                var footer = footerMethod.Invoke(formatted, new object[] { page });
+                var footerHeight = (PdfSharp.Drawing.XUnit)footer.GetType().GetProperty("ContentHeight",
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).GetValue(footer, null);
+                double footerTop = renderer.PdfDocument.Pages[page - 1].Height.Point -
+                    section.PageSetup.FooterDistance.Point - footerHeight.Point;
+                double bodyBottom = renderer.DocumentRenderer.GetRenderInfoFromPage(page)
+                    .Max(info => info.LayoutInfo.ContentArea.Y.Point + info.LayoutInfo.ContentArea.Height.Point);
+                TestAssert.True(bodyBottom + 4 <= footerTop,
+                    "Page " + page + " body must leave at least 4 pt before the complete identity/version/status footer; gap=" +
+                    (footerTop - bodyBottom).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + " pt.");
+            }
         }
 
         public static void PatientFooterKeepsSyntheticAndPseudonymContextsSeparate()
@@ -211,6 +351,7 @@ namespace ClearPlan.Core.Tests
             var renderer = new MigraDoc.Rendering.PdfDocumentRenderer(true) { Document = paginated };
             renderer.RenderDocument();
             TestAssert.Equal(3, renderer.PdfDocument.PageCount);
+            AssertPageBodyClearsFooter(renderer, paginated.Sections[0]);
         }
 
         public static void SyntheticCtBannerDoesNotCoverOrientation()
@@ -259,6 +400,7 @@ namespace ClearPlan.Core.Tests
             var renderer = new MigraDoc.Rendering.PdfDocumentRenderer(true) { Document = document };
             renderer.RenderDocument();
             TestAssert.Equal(3, renderer.PdfDocument.PageCount);
+            AssertPageBodyClearsFooter(renderer, document.Sections[0]);
         }
 
         public static void MissingPqmIsVisibleInsteadOfAnEmptyHeader()
@@ -419,8 +561,16 @@ namespace ClearPlan.Core.Tests
             // Isolate BEV pagination from the length of PQM, source and check tables.
             var document = CreateDocument();
             document.Sections[0].Elements.Clear();
-            typeof(ReportPdf).GetMethod("AddBeamViews", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(new ReportPdf(), new object[] { document.Sections[0], SyntheticPlanAnalysisFactory.Create(true, true), true });
+            typeof(ReportPdf).GetMethod("AddFieldReviews", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(new ReportPdf(), new object[] { document.Sections[0], SyntheticPlanAnalysisFactory.Create(true, true), true, true });
+            var panels = document.Sections[0].Elements.Cast<DocumentObject>().OfType<Table>().ToList();
+            TestAssert.Equal(2, panels.Count, "Each field needs one shared BEV/trajectory panel, not separate trace and BEV pages.");
+            foreach (var panel in panels)
+            {
+                TestAssert.Equal(2, panel.Columns.Count, "BEV belongs on the left, stacked trajectories on the right.");
+                TestAssert.Equal(1, panel.Rows[0].Cells[0].Elements.Cast<DocumentObject>().OfType<MigraDoc.DocumentObjectModel.Shapes.Image>().Count());
+                TestAssert.Equal(1, panel.Rows[0].Cells[1].Elements.Cast<DocumentObject>().OfType<MigraDoc.DocumentObjectModel.Shapes.Image>().Count());
+            }
             var renderer = new MigraDoc.Rendering.PdfDocumentRenderer(true) { Document = document };
             renderer.RenderDocument();
             // MigraDoc ignores the leading page break: exactly one page per beam.
@@ -430,6 +580,44 @@ namespace ClearPlan.Core.Tests
                 renderer.PdfDocument.Save(output);
             }
             TestAssert.Equal(2, renderer.PdfDocument.PageCount);
+            AssertPageBodyClearsFooter(renderer, document.Sections[0]);
+            // Exercise the field counts of the current report workload for both
+            // single- and dual-layer fixtures, using actual MigraDoc pagination.
+            foreach (int count in new[] { 13, 3, 2 })
+            {
+                var analysis = new ReviewPlanAnalysis();
+                for (int index = 0; index < count; index++)
+                {
+                    var beam = SyntheticPlanAnalysisFactory.Create(count == 2, true).Beams[index % 2];
+                    beam.BeamId = "SYNTHETIC_FIELD_" + (index + 1);
+                    analysis.Beams.Add(beam);
+                }
+                document = CreateDocument();
+                document.Sections[0].Elements.Clear();
+                typeof(ReportPdf).GetMethod("AddFieldReviews", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(new ReportPdf(), new object[] { document.Sections[0], analysis, true, true });
+                renderer = new MigraDoc.Rendering.PdfDocumentRenderer(true) { Document = document };
+                renderer.RenderDocument();
+                TestAssert.Equal(count, renderer.PdfDocument.PageCount,
+                    "Every BEV/trajectory field panel must fit exactly one page, including the full footer.");
+                AssertPageBodyClearsFooter(renderer, document.Sections[0]);
+            }
+            string encoded = (string)RendererMethod("ControlPointTraces").Invoke(null,
+                new object[] { SyntheticPlanAnalysisFactory.Create().Beams[0] });
+            using (var stream = new MemoryStream(Convert.FromBase64String(encoded.Substring(7))))
+            using (var image = new System.Drawing.Bitmap(stream))
+            {
+                TestAssert.True(image.Height > image.Width, "The two trajectory plots must be stacked vertically beside the BEV.");
+                int aperturePixels = 0;
+                for (int y = 0; y < image.Height; y++)
+                for (int x = 0; x < image.Width; x++)
+                    if (image.GetPixel(x, y).ToArgb() == System.Drawing.Color.FromArgb(198, 130, 34).ToArgb())
+                    {
+                        TestAssert.True(y > image.Height / 2, "The effective-aperture curve belongs below the dose-rate plot.");
+                        aperturePixels++;
+                    }
+                TestAssert.True(aperturePixels > 50, "The vertical stack must retain the actual aperture curve.");
+            }
         }
         public static void ReportOptionsFilterOnlyTheRenderedEvidence()
         {
@@ -462,9 +650,14 @@ namespace ClearPlan.Core.Tests
             TestAssert.True(data.PlanImages[0].Overlays.Any(item => item.Label == "HIDDEN_STRUCTURE"));
             TestAssert.True(data.DvhSeries.Any(item => item.StructureId == "HIDDEN_STRUCTURE"));
             var empty = new Document(); var section = empty.AddSection();
-            typeof(ReportPdf).GetMethod("AddBeamViews", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(new ReportPdf(), new object[] { section, data.PlanAnalysis, false });
-            TestAssert.Equal(0, section.Elements.Cast<DocumentObject>().OfType<PageBreak>().Count(), "Missing native DRRs need compact status, not empty image pages.");
+            typeof(ReportPdf).GetMethod("AddFieldReviews", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(new ReportPdf(), new object[] { section, data.PlanAnalysis, false, true });
+            TestAssert.Equal(data.PlanAnalysis.Beams.Count, section.Elements.Cast<DocumentObject>().OfType<Table>().Count(),
+                "Missing native DRRs share the trajectory page; they must not add a separate empty image page.");
+            TestAssert.True(DdlWriter.WriteToString(empty).Contains("DRR unavailable"));
+            foreach (var panel in section.Elements.Cast<DocumentObject>().OfType<Table>())
+                TestAssert.Equal(0, panel.Rows[0].Cells[0].Elements.Cast<DocumentObject>().OfType<MigraDoc.DocumentObjectModel.Shapes.Image>().Count(),
+                    "Missing native DRRs must remain missing; no synthetic fallback is allowed.");
         }
         public static void TablesUseAvailablePageWidth()
         {

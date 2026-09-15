@@ -73,6 +73,10 @@ namespace ClearPlan.Review
             };
 
             snapshot.Sources = BuildSources(source, settings);
+            string isodoseMessage;
+            snapshot.IsodoseDisplay = IsodoseDisplayConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.IsodoseDisplayJsonPath)
+                ? null : settings.ResolvePath(settings.Paths.IsodoseDisplayJsonPath), out isodoseMessage);
+            snapshot.IsodoseDisplayMessage = isodoseMessage;
             var targetBuilder = new EsapiTargetReviewBuilder();
             TargetReviewCapture targetReview = targetBuilder.BuildSelection(source.ActivePlanningItem.PlanningItemObject);
 
@@ -623,18 +627,8 @@ namespace ClearPlan.Review
 
         private static double? GetDvhDoseOrNull(Func<DoseValue> readDose)
         {
-            try
-            {
-                double doseGy = ConvertDoseToGray(readDose());
-                return double.IsNaN(doseGy) || double.IsInfinity(doseGy) || doseGy < 0.0
-                    ? (double?)null : doseGy;
-            }
-            catch (Exception)
-            {
-                // A missing native statistic must not erase an otherwise valid
-                // curve, nor be replaced by a misleading zero or a sampled extreme.
-                return null;
-            }
+            // Shared nullable boundary for native DVH statistics and plan metadata.
+            return ClinicalReviewValueMapper.ReadOptionalDoseInGray(() => ConvertDoseToGray(readDose()));
         }
 
         private static List<ReviewDvhPoint> BuildDvhPoints(DVHData data)
@@ -846,9 +840,10 @@ namespace ClearPlan.Review
                 PlanSetup planSetup = item.PlanningItemObject as PlanSetup;
                 if (planSetup != null)
                 {
-                    dosePerFraction =
-                        ConvertDoseToGray(planSetup.DosePerFraction);
-                    totalDose = ConvertDoseToGray(planSetup.TotalDose);
+                    // A sibling plan without dose must not prevent the active plan
+                    // opening. Preserve each independently readable native value.
+                    dosePerFraction = GetDvhDoseOrNull(() => planSetup.DosePerFraction);
+                    totalDose = GetDvhDoseOrNull(() => planSetup.TotalDose);
                     fractions = planSetup.NumberOfFractions;
                 }
             }

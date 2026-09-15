@@ -242,6 +242,8 @@
     <Compile Include="ViewModels\OverviewViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Review\ClinicalReviewWorkspaceHost.cs" />
+    <Compile Include="Review\ClinicalReviewWorkspaceHost.Collision.cs" />
+    <Compile Include="Review\EsapiCollisionBuilder.cs" />
     <Compile Include="Review\EsapiReviewSnapshotBuilder.cs" />
     <Compile Include="Review\EsapiPlanAnalysisBuilder.cs" />
     <Compile Include="Review\EsapiTargetQualityBuilder.cs" />
@@ -256,6 +258,10 @@
     <Compile Include="MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
     </Compile>
+    <Content Include="Distribution\MachineGeometry\SourceCollisionModels.example.json">
+      <Link>MachineGeometry\SourceCollisionModels.example.json</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Compile Include="$(ErrorCalculatorSource)" />
     <Compile Include="Script.cs" />
     <Compile Include="Calculators\PQMSummaryCalculator.cs" />
@@ -311,7 +317,9 @@
     </Content>
     <Content Include="Distribution\MachineGeometry\MlcGeometryProfiles.example.json"><TargetPath>MachineGeometry\MlcGeometryProfiles.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\MachineGeometry\DoseRateProfiles.example.json"><TargetPath>MachineGeometry\DoseRateProfiles.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Distribution\MachineGeometry\CollisionProfiles.example.json"><TargetPath>MachineGeometry\CollisionProfiles.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\DefaultReviewRules.json"><TargetPath>DefaultReviewRules.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Distribution\IsodoseDisplay.json"><TargetPath>IsodoseDisplay.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\AriaUpload.example.json"><TargetPath>AriaUpload.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\FieldNamingRules.json"><TargetPath>FieldNamingRules.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\CHANGELOG.md">

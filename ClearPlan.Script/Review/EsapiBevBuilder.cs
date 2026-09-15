@@ -21,7 +21,7 @@ namespace ClearPlan.Review
         private const string ContextReason="ESAPI_BEV_CONTEXT: A single external plan with planning CT is required.";
         private const string SnapshotReason="ESAPI_BEV_SNAPSHOT_CHANGED: Native beam, plan normalization or captured image metadata differs from the review snapshot, or its freshness cannot be verified. Refresh before requesting a DRR or report.";
         private const string FrameReason="ESAPI_BEV_NATIVE_FRAME: Native source coordinates and paired structure outlines could not establish a matching beam-coordinate frame. No replacement frame was assumed.";
-        private const string MotionReason="ESAPI_BEV_UNSUPPORTED_MOTION: Native frame calibration currently requires HFS, zero couch angle, fixed collimator and fixed table translation.";
+        private const string MotionReason="ESAPI_BEV_UNSUPPORTED_MOTION: Native frame calibration requires HFS, fixed couch angle within each field, fixed collimator and fixed table translation.";
         private const string CtReason="ESAPI_BEV_CT_GRID: Planning CT HU conversion, directions, dimensions or sampling exceeded the supported bounds.";
         private const string ReadReason="ESAPI_BEV_READ_FAILED: Read-only planning CT or beam capture failed. No substitute anatomy was generated.";
         private const string ComputeReason="ESAPI_BEV_PROJECTION: Detached CT projection failed validation or exceeded its numerical sampling budget.";
@@ -37,6 +37,7 @@ namespace ClearPlan.Review
             using(var bounded=CancellationTokenSource.CreateLinkedTokenSource(token))
             {
                 bounded.CancelAfter(TimeSpan.FromSeconds(45));
+                string phase="snapshot";
                 try
                 {
                     owner.VerifyAccess();
@@ -49,11 +50,13 @@ namespace ClearPlan.Review
                     if(points.Count!=1) throw new CaptureFailure(SnapshotReason);
                     selected=points[0];
                     var job=CaptureJob(plan,copy,rows[0],selected,bounded.Token);
+                    phase="ct-capture";
                     job.Volume=await CaptureVolumeAsync(plan.StructureSet.Image,owner,bounded.Token);
                     bounded.Token.ThrowIfCancellationRequested();
                     owner.VerifyAccess();
                     if(!MatchesPlanSnapshot(plan,copy)) throw new CaptureFailure(SnapshotReason);
                     bounded.Token.ThrowIfCancellationRequested();
+                    phase="projection";
                     var completed=await RunDetached(job,bounded.Token);
                     bounded.Token.ThrowIfCancellationRequested();
                     owner.VerifyAccess();
@@ -68,7 +71,7 @@ namespace ClearPlan.Review
                 }
                 catch(CaptureFailure failure) { return Unavailable(failure.Code,selected,cpIndex); }
                 catch(ArgumentException) { return Unavailable(ComputeReason,selected,cpIndex); }
-                catch(Exception) { return Unavailable(ReadReason,selected,cpIndex); }
+                catch(Exception error) { return Unavailable(ReadFailure(phase,error),selected,cpIndex); }
             }
         }
 
@@ -83,6 +86,7 @@ namespace ClearPlan.Review
             using(var bounded=CancellationTokenSource.CreateLinkedTokenSource(token))
             {
                 bounded.CancelAfter(TimeSpan.FromSeconds(45));
+                string phase="snapshot";
                 try
                 {
                     owner.VerifyAccess();
@@ -104,12 +108,14 @@ namespace ClearPlan.Review
                         if(!MatchesPlanSnapshot(plan,copy)) throw new CaptureFailure(SnapshotReason);
                         return copy;
                     }
+                    phase="ct-capture";
                     var volume=await CaptureVolumeAsync(plan.StructureSet.Image,owner,bounded.Token);
                     bounded.Token.ThrowIfCancellationRequested();
                     owner.VerifyAccess();
                     if(!MatchesPlanSnapshot(plan,copy)) throw new CaptureFailure(SnapshotReason);
                     foreach(var job in jobs) job.Volume=volume;
                     bounded.Token.ThrowIfCancellationRequested();
+                    phase="projection";
                     var completed=await RunStartsDetached(copy,jobs,bounded.Token);
                     bounded.Token.ThrowIfCancellationRequested();
                     owner.VerifyAccess();
@@ -127,7 +133,7 @@ namespace ClearPlan.Review
                     if(failure.Code==SnapshotReason) throw new InvalidOperationException(SnapshotReason);
                     return MarkStartsUnavailable(copy,failure.Code);
                 }
-                catch(Exception) { return MarkStartsUnavailable(copy,ReadReason); }
+                catch(Exception error) { return MarkStartsUnavailable(copy,ReadFailure(phase,error)); }
             }
         }
 
@@ -155,7 +161,7 @@ namespace ClearPlan.Review
             var beam=plan.Beams.Single(b=>!b.IsSetupField && !b.IsImagingTreatmentField && b.BeamNumber==row.BeamNumber.Value);
             var cps=beam.ControlPoints.ToList();
             if(plan.TreatmentOrientation!=PatientOrientation.HeadFirstSupine ||
-                cps.Any(cp=>!SameAngle(cp.PatientSupportAngle,0)) ||
+                cps.Any(cp=>!SameAngle(cp.PatientSupportAngle,cps[0].PatientSupportAngle)) ||
                 cps.Any(cp=>!SameAngle(cp.CollimatorAngle,cps[0].CollimatorAngle) ||
                     !SameOptional(cp.TableTopLateralPosition,cps[0].TableTopLateralPosition) ||
                     !SameOptional(cp.TableTopLongitudinalPosition,cps[0].TableTopLongitudinalPosition) ||
@@ -175,6 +181,7 @@ namespace ClearPlan.Review
                     Point(beam.GetSourceLocation(selected.GantryAngleDegrees)),sourceZero,sourceNinety,rotation);
                 return new DetachedJob { Frame=frame,BeamNumber=row.BeamNumber.Value,ControlPointIndex=selected.Index,
                     Gantry=selected.GantryAngleDegrees,Collimator=selected.CollimatorAngleDegrees,
+                    BldToDisplayRotation=rotation*180/Math.PI,
                     Couch=selected.PatientSupportAngleDegrees,Extent=BeamExtent(row,cps) };
             }
             catch(OperationCanceledException) { throw; }
@@ -190,6 +197,7 @@ namespace ClearPlan.Review
             var image=CtDrrProjector.Project(job.Volume,job.Frame,224,job.Extent,token);
             image.ControlPointIndex=job.ControlPointIndex; image.GantryAngleDegrees=job.Gantry;
             image.CollimatorAngleDegrees=job.Collimator; image.PatientSupportAngleDegrees=job.Couch;
+            image.BldToDisplayRotationDegrees=job.BldToDisplayRotation;
             image.Synthetic=false;
             image.ProjectionDescription="Read-only ESAPI planning CT, not a stored beam reference image. " +
                 "Native source locations and paired beam/BEV structure outlines define the beam-coordinate frame. " +
@@ -265,6 +273,10 @@ namespace ClearPlan.Review
         }
 
         private static int Stride(int size) { return Math.Max(1,(int)Math.Ceiling((size-1)/255.0)); }
+        // Static phase and exception type only: vendor messages can contain patient context.
+        private static string ReadFailure(string phase,Exception error)
+        { return ReadReason+" Stage: "+phase+"; type: "+error.GetType().Name+
+            "; member: "+(error.TargetSite==null ? "unknown" : error.TargetSite.Name)+"."; }
         private static bool ValidSpacing(double spacing) { return Finite(spacing) && spacing>=0.05 && spacing<=100; }
 
         private static bool MatchesPlanSnapshot(PlanSetup plan,ReviewPlanAnalysis analysis)
@@ -311,7 +323,7 @@ namespace ClearPlan.Review
                 var cp=cps[i]; var saved=row.ControlPoints[i];
                 if(saved==null) return false;
                 var position=saved.IsocenterMm;
-                if(cp.Index!=saved.Index || !SameAngle(cp.GantryAngle,saved.GantryAngleDegrees) ||
+                if(cp.Index!=(saved.NativeIndex ?? saved.Index) || !SameAngle(cp.GantryAngle,saved.GantryAngleDegrees) ||
                     !SameAngle(cp.CollimatorAngle,saved.CollimatorAngleDegrees) || !SameAngle(cp.PatientSupportAngle,saved.PatientSupportAngleDegrees) ||
                     !Finite(cp.MetersetWeight) || !Finite(saved.CumulativeMetersetWeight) ||
                     Math.Abs(cp.MetersetWeight-saved.CumulativeMetersetWeight)>1e-8 ||
@@ -401,7 +413,7 @@ namespace ClearPlan.Review
             internal CtVolume Volume;
             internal BeamProjectionFrame Frame;
             internal int BeamNumber,ControlPointIndex;
-            internal double Gantry,Collimator,Couch,Extent;
+            internal double Gantry,Collimator,Couch,Extent,BldToDisplayRotation;
         }
 
         private sealed class CaptureFailure : Exception

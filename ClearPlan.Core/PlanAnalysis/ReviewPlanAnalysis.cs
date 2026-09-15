@@ -106,6 +106,8 @@ namespace ClearPlan.Core.PlanAnalysis
         }
 
         public int Index { get; set; }
+        // Internal ordinal remains unique even when ESAPI static endpoints both report -1.
+        public int? NativeIndex { get; set; }
         public double GantryAngleDegrees { get; set; }
         public double CollimatorAngleDegrees { get; set; }
         public double PatientSupportAngleDegrees { get; set; }

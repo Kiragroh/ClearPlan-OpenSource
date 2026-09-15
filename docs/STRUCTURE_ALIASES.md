@@ -8,7 +8,7 @@ The **Strukturnamen und Aliase** table displays the active source mappings. Use 
 
 Edit the canonical name, explicit aliases separated by `|`, laterality and side aliases. The optional source ID is retained read-only when imported. **Aliase prüfen** checks duplicate identities, normalized name collisions, unknown laterality and cross-side aliases, including conflicts with the selected source. It does not certify TG-263 nomenclature or anatomical equivalence; a qualified local review remains necessary.
 
-**Aliasdatei speichern** writes a separate JSON file; **Einstellungen speichern** then activates its path and reloads the catalog. **JSON exportieren** exports a copy without changing active settings. No import writes back to its source. Existing valid alias documents get a `.bak` when overwritten; other JSON schemas (including RefDB exports) cannot be overwritten by the alias writer.
+**Als versionierten Entwurf übernehmen** stages the aliases under **Konfigurationen & Versionen**. Enter a change reason and choose **Prüfen & als Version speichern**; **Einstellungen speichern** then activates the committed path and reloads the catalog. **JSON exportieren …** exports a copy without changing active settings. No import writes back to its source. Exporting over an existing valid alias document creates a `.bak`; other JSON schemas (including RefDB exports) cannot be overwritten by the alias writer.
 
 ## Application and safety
 

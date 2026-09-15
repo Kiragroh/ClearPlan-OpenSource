@@ -17,7 +17,7 @@ namespace ClearPlan.Review
     /// view model. Vendor access stays on MainView's WPF/ESAPI thread; file
     /// parsing and detached target projection may be awaited off that thread.
     /// </summary>
-    internal sealed class ClinicalReviewWorkspaceHost : IDisposable
+    internal sealed partial class ClinicalReviewWorkspaceHost : IDisposable
     {
         private readonly MainView owner;
         private readonly MainViewModel source;
@@ -74,7 +74,8 @@ namespace ClearPlan.Review
                 ImportPlanData = OnNativePlanDataRequested,
                 CalculateTarget = OnCalculateTargetRequested,
                 GenerateDrr = OnGenerateDrrRequested,
-                PlanImages = OnPlanImagesRequested
+                PlanImages = OnPlanImagesRequested,
+                Collision = OnCollisionRequested
             };
             controller = new ReviewWorkspaceHostController(
                 BuildSnapshot,
@@ -125,6 +126,7 @@ namespace ClearPlan.Review
         public bool TrySetSyntheticDemo(bool enabled)
         {
             ThrowIfDisposed();
+            if (collisionCancellation != null) collisionCancellation.Cancel();
             if (imageCancellation != null) imageCancellation.Cancel();
             Exception failure;
             bool succeeded = enabled
@@ -158,6 +160,7 @@ namespace ClearPlan.Review
             }
 
             disposed = true;
+            if (collisionCancellation != null) collisionCancellation.Cancel();
             owner.CancelAriaPreparation();
             view.DataContextChanged -= OnWorkspaceDataContextChanged;
             if (imageCancellation != null) imageCancellation.Cancel();
@@ -170,6 +173,7 @@ namespace ClearPlan.Review
 
         private ClearPlan.Core.Review.ReviewSnapshot BuildSnapshot()
         {
+            if (collisionCancellation != null) collisionCancellation.Cancel();
             if (imageCancellation != null) imageCancellation.Cancel();
             ClearPlanSettings settings = settingsProvider();
             if (settings == null)
@@ -524,6 +528,7 @@ namespace ClearPlan.Review
 
         private void OnWorkspaceDataContextChanged(object sender,System.Windows.DependencyPropertyChangedEventArgs args)
         {
+            if (collisionCancellation != null) collisionCancellation.Cancel();
             owner.CancelAriaPreparation();
             owner.RefreshAriaAvailability(controller.CurrentViewModel);
         }
@@ -660,6 +665,8 @@ namespace ClearPlan.Review
         {
             if (string.Equals(eventArgs.Parameter as string, "PlanImagesTab", StringComparison.Ordinal))
                 QueuePlanImages(false);
+            if (string.Equals(eventArgs.Parameter as string, "CollisionTab", StringComparison.Ordinal))
+                QueueCollision(false);
             owner.HandleSharedNavigation(
                 eventArgs.Parameter as string);
         }

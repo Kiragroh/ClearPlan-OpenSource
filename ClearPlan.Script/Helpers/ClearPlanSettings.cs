@@ -449,6 +449,7 @@ namespace ClearPlan.Helpers
             // Null means an older configuration. An explicitly blank path disables Default rules.
             Paths.DefaultReviewRulesJsonPath = Paths.DefaultReviewRulesJsonPath ?? "DefaultReviewRules.json";
             Paths.FieldNamingRulesJsonPath = Paths.FieldNamingRulesJsonPath ?? "FieldNamingRules.json";
+            Paths.IsodoseDisplayJsonPath = Paths.IsodoseDisplayJsonPath ?? "IsodoseDisplay.json";
 
             Paths.ConstraintTemplatesDirectory = DefaultIfBlank(
                 Paths.ConstraintTemplatesDirectory,

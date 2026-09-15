@@ -971,6 +971,9 @@
             <TabItem x:Name="ComparisonTab" Header="Vergleich" Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <views:PlanComparisonView/>
             </TabItem>
+            <TabItem x:Name="CollisionTab" Header="Kollision / 3D" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+                <views:CollisionView DataContext="{Binding Collision}"/>
+            </TabItem>
             <TabItem x:Name="BevTab" Header="BEV / MLC" Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <views:BeamEyeView DataContext="{Binding Analysis}"/>
             </TabItem>

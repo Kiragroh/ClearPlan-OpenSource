@@ -13,7 +13,7 @@ using ClearPlan.Rendering;
 namespace ClearPlan.Presentation.ViewModels
 {
     /// <summary>Read-only orthogonal overview. No volume navigation or native planning objects are retained.</summary>
-    public sealed class PlanImagesViewModel : INotifyPropertyChanged
+    public sealed partial class PlanImagesViewModel : INotifyPropertyChanged
     {
         private readonly string planKey;
         private List<ReviewPlanImage> sourceImages = new List<ReviewPlanImage>();
@@ -41,6 +41,7 @@ namespace ClearPlan.Presentation.ViewModels
         public PlanImagesViewModel(IEnumerable<ReviewPlanImage> images, string planKey)
         {
             this.planKey = planKey;
+            InitializeIsodoses();
             EnlargePlaneCommand = new RelayCommand(p =>
             {
                 string kind = p as string;
@@ -84,6 +85,7 @@ namespace ClearPlan.Presentation.ViewModels
             sourceImages = (images ?? Enumerable.Empty<ReviewPlanImage>()).Where(image => image != null &&
                 !string.IsNullOrWhiteSpace(planKey) && string.Equals(image.PlanKey, planKey, StringComparison.Ordinal)).ToList();
             IsLoading = false;
+            doseDisplayDirty = true;
             RebuildPlanes();
             StatusText = HasImages ? "Orthogonale Übersichten der erfassten Ebene · nur Anzeige, keine Schichtnavigation" :
                 "Für diesen Plan sind keine gültigen Schnittbilder geladen. Mit „CT laden“ erneut anfordern.";
@@ -92,25 +94,26 @@ namespace ClearPlan.Presentation.ViewModels
 
         public void SetLoading(string message)
         {
-            sourceImages.Clear(); IsLoading = true; RebuildPlanes();
+            sourceImages.Clear(); doseDisplayDirty = true; IsLoading = true; RebuildPlanes();
             StatusText = string.IsNullOrWhiteSpace(message) ? "Schnittbilder werden geladen …" : message;
             Changed("StatusText"); Changed("IsLoading"); CommandManager.InvalidateRequerySuggested();
         }
 
         public void SetFailure(string message)
         {
-            sourceImages.Clear(); IsLoading = false; RebuildPlanes();
+            sourceImages.Clear(); doseDisplayDirty = true; IsLoading = false; RebuildPlanes();
             StatusText = string.IsNullOrWhiteSpace(message) ? "Schnittbilder konnten nicht geladen werden. Mit „CT laden“ erneut versuchen." : message;
             Changed("StatusText"); Changed("IsLoading"); CommandManager.InvalidateRequerySuggested();
         }
 
         private void RebuildPlanes()
         {
+            RefreshDoseDisplay();
             string[] kinds = { "transversal", "coronal", "sagittal" };
             string[] titles = { "Transversal", "Koronal", "Sagittal" };
             Planes = kinds.Select((kind, index) =>
             {
-                var candidates = sourceImages.Where(image => image.Kind == kind).ToList();
+                var candidates = doseDisplayImages.Where(image => image.Kind == kind).ToList();
                 return new PlanImagePlaneViewModel(kind, titles[index], candidates.Count == 1 ? candidates[0] : null,
                     candidates.Count > 1 ? "Mehrere Bildstände dieser Ebene; keine eindeutige Zuordnung." :
                     IsLoading ? "Bild wird geladen …" : "Kein Bild für diese Ebene geladen.", ShowStructures, ShowDose, FocusIsocenter,
@@ -133,6 +136,8 @@ namespace ClearPlan.Presentation.ViewModels
             }
             Changed("Planes"); Changed("VisiblePlanes"); Changed("HasImages"); Changed("AvailabilityText");
             Changed("LegendItems"); Changed("LegendSummary"); CommandManager.InvalidateRequerySuggested();
+            Changed("IsodoseScaleItems"); Changed("IsodoseAvailabilityText");
+            Changed("HasIsodoseScale"); Changed("StructureLegendItems");
         }
 
         private void SelectionChanged()
@@ -157,7 +162,7 @@ namespace ClearPlan.Presentation.ViewModels
             try
             {
                 var hidden = new HashSet<string>(hiddenIds, StringComparer.OrdinalIgnoreCase);
-                using (var stream = new MemoryStream(PlanImageRenderer.RenderFiltered(image, showStructures, showDose, focusIsocenter, hidden), false))
+                using (var stream = new MemoryStream(PlanImageRenderer.RenderFiltered(image, showStructures, showDose, focusIsocenter, hidden, false), false))
                 {
                     var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze(); ImageSource = bitmap;
@@ -222,6 +227,7 @@ namespace ClearPlan.Presentation.ViewModels
         {
             Kind = overlay.Kind; Label = overlay.Label ?? (Kind == "isodose" ? "Isodose" : "Struktur");
             ColorHex = overlay.ColorHex;
+            DoseGy = overlay.DoseGy;
             try { var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(ColorHex); brush.Freeze(); Color = brush; }
             catch (Exception) { ColorHex = "#FFFFFF"; Color = Brushes.White; }
             Description = (Kind == "isodose" ? "Isodose" : "Struktur") + " · " + (overlay.Source ?? "Abgelöster Bild-Snapshot");
@@ -229,6 +235,7 @@ namespace ClearPlan.Presentation.ViewModels
         public string Kind { get; private set; }
         public string Label { get; private set; }
         public string ColorHex { get; private set; }
+        public double? DoseGy { get; private set; }
         public Brush Color { get; private set; }
         public string Description { get; private set; }
     }
