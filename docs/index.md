@@ -12,6 +12,7 @@ Start with your task, then consult the detailed method when you need its exact b
 - [Developer handoff](developer-handoff.md): builds, tests, extension points, and open limits.
 - [Architecture](architecture.md): native acquisition, detached data, calculations, and reporting.
 - [Display language](LANGUAGE.md): German/English behavior and identity preservation.
+- [Native testing and the Runner](native-testing.md): portable tests versus authorized ESAPI/Citrix integration tests.
 - [Actual Settings gallery](settings-gallery.md): patient-free screenshots of editable configuration.
 
 ## Methods and review behavior

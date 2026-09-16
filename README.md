@@ -21,6 +21,7 @@ Software tests are not evidence of clinical safety or effectiveness.
 | Introduce ClearPlan at another clinic | [Clinic onboarding](docs/CLINIC_ONBOARDING.md) |
 | Understand calculations and limitations | [Methods and review behavior](docs/index.md#methods-and-review-behavior) |
 | Extend checks or connect another scripting API | [Architecture](docs/architecture.md) and [developer handoff](docs/developer-handoff.md) |
+| Reproduce native ESAPI or Citrix tests | [Runner and native-test workflow](docs/native-testing.md) |
 
 ## What it adds
 
@@ -56,6 +57,13 @@ No licensed TPS assemblies or patient data are needed:
 The simulator uses explicitly synthetic records. A licensed Eclipse build needs
 additional dependencies and local checks; follow the
 [build guide](docs/developer-handoff.md). Use your approved execution policy.
+
+Portable tests and the simulator need no Runner. Native integration tests need
+an authorized ESAPI host; our Citrix workflow uses the separately maintained
+[ESAPI Runner Hub](https://github.com/Kiragroh/ESAPI-Runner-Hub) to reopen explicit
+planning contexts and record launch outcomes. Application assertions and rendered
+reports are verified separately. ClearPlan can also run in Eclipse or another
+suitable authorized host; see [why this distinction matters](docs/native-testing.md).
 
 ## Safety, privacy, and research scope
 
