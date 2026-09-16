@@ -80,7 +80,8 @@ namespace ClearPlan.Core.Tests
             document.PlanCheckRows[0].ExpectedValue = "EXPECTED_DETAIL_ONLY";
             string html = Render(document);
             TestAssert.False(html.Contains("UNMATCHED_GOAL") || html.Contains("UNMATCHED_MAPPING"));
-            TestAssert.True(html.Contains("MATCHED_MISSING_DVH") && html.Contains("DVH unavailable") && html.Contains("not-evaluated"));
+            TestAssert.True(html.Contains("MATCHED_MISSING_DVH") && html.Contains("DVH unavailable") && html.Contains("class=\"status info\">Not evaluated</span>"));
+            TestAssert.Equal("not-evaluated", document.PqmRows[1].Status, "Only the displayed status label is localized.");
             TestAssert.True(html.Contains("1 unmatched goal hidden") && html.Contains("3 checks disabled"));
             TestAssert.False(html.Contains("Beam's-eye views") || html.Contains("OBSERVED_DETAIL_ONLY") || html.Contains("EXPECTED_DETAIL_ONLY"));
             int checks = html.IndexOf("id=\"checks\"", StringComparison.Ordinal);
@@ -328,6 +329,7 @@ namespace ClearPlan.Core.Tests
             var snapshot = SyntheticScenarioFactory.Create("mixed-review");
             snapshot.PlanAnalysis = SyntheticPlanAnalysisFactory.Create(true, true);
             var document = new ReviewSnapshotReportMapper().Map(snapshot);
+            document.LanguageCode = "en";
             document.GeneratedUtc = new DateTimeOffset(2026, 9, 8, 10, 0, 0, TimeSpan.Zero);
             document.PqmRows[0].AchievedValue = 59.75;
             document.DvhSeries[0].VolumeCc = 12.345;

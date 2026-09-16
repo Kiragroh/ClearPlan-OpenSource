@@ -98,9 +98,9 @@ namespace ClearPlan.Core.Tests
             foreach (var grid in document.Descendants(ns + "DataGrid").Where(g => (string)g.Attribute("ItemsSource") == "{Binding PlanCheckRows}"))
             {
                 var columns = grid.Element(ns + "DataGrid.Columns").Elements().ToList();
-                TestAssert.Equal("Meldung", (string)columns[0].Attribute("Header"));
-                TestAssert.Equal("Status", (string)columns[1].Attribute("Header"));
-                TestAssert.False(columns.Any(c => new[] { "Einheit", "Beobachtet", "Erwartet" }.Contains((string)c.Attribute("Header"))));
+                TestAssert.Equal("{lang:Translate Value='Meldung'}", (string)columns[0].Attribute("Header"));
+                TestAssert.Equal("{lang:Translate Value='Status'}", (string)columns[1].Attribute("Header"));
+                TestAssert.False(columns.Any(c => new[] { "Einheit", "Beobachtet", "Erwartet" }.Any(label => ((string)c.Attribute("Header") ?? "").Contains(label))));
             }
             var goal = typeof(ReviewPqmRowViewModel).GetProperty("GoalText");
             TestAssert.NotNull(goal, "Compact PQM must retain the strict comparator and unit.");

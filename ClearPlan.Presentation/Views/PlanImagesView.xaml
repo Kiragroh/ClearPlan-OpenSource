@@ -1,6 +1,7 @@
 <UserControl x:Class="ClearPlan.Presentation.Views.PlanImagesView"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:lang="clr-namespace:ClearPlan.Presentation.Localization"
  FontFamily="Segoe UI" Foreground="{DynamicResource ClinicalBlueprintText}">
  <!-- THESIS: Three orthogonal CT planes make spatial review simultaneous, with deliberate enlargement of one plane.
  OWN-WORLD: Existing Clinical Blueprint controls surround dark, physically scaled image canvases.
@@ -20,38 +21,38 @@
    <RowDefinition Height="*"/><RowDefinition Height="Auto"/>
   </Grid.RowDefinitions>
   <DockPanel Margin="0,0,0,8">
-   <Button DockPanel.Dock="Right" Content="CT laden" Command="{Binding ReloadCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}"
-           Margin="12,0,0,0" AutomationProperties.Name="Schnittbilder für den aktuellen Plan laden"
-           ToolTip="Die drei orthogonalen Übersichten für den aktuellen Plan laden. Keine klinischen Daten werden geändert."/>
-   <TextBlock Text="{Binding HeadingText}" Style="{StaticResource ClinicalBlueprintSectionTitle}" VerticalAlignment="Center"/>
+   <Button DockPanel.Dock="Right" Content="{lang:Translate Value='CT laden'}" Command="{Binding ReloadCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}"
+           Margin="12,0,0,0" AutomationProperties.Name="{lang:Translate Value='Schnittbilder für den aktuellen Plan laden'}"
+           ToolTip="{lang:Translate Value='Die drei orthogonalen Übersichten für den aktuellen Plan laden. Keine klinischen Daten werden geändert.'}"/>
+   <TextBlock Text="{lang:Translate Path=HeadingText}" Style="{StaticResource ClinicalBlueprintSectionTitle}" VerticalAlignment="Center"/>
   </DockPanel>
   <WrapPanel Grid.Row="1" Margin="0,0,0,8" VerticalAlignment="Center">
-   <CheckBox Content="Strukturen" IsChecked="{Binding ShowStructures}" IsEnabled="{Binding HasImages}" Margin="0,8,16,8" VerticalContentAlignment="Center"
-             AutomationProperties.Name="Verfügbare Strukturkonturen einblenden"/>
-   <CheckBox Content="Isodosen" IsChecked="{Binding ShowDose}" IsEnabled="{Binding HasImages}" Margin="0,8,20,8" VerticalContentAlignment="Center"
-             AutomationProperties.Name="Verfügbare Isodosislinien einblenden"/>
-   <Button Content="Gesamte CT" Command="{Binding FitCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,6" Margin="0,0,6,0"
-           ToolTip="Die gesamte CT-Ausdehnung einpassen. Physische Pixelabstände bleiben erhalten; keine Anatomie wird ergänzt."/>
-   <Button Content="Iso-Fokus" Command="{Binding FocusIsocenterCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,6" Margin="0,0,14,0"
-           ToolTip="Auf das erfasste Isozentrum zentrieren. Falls verfügbar: mindestens 2 % Rx plus 10 mm Rand. Ohne diesen Dosisbereich bleibt die gesamte CT sichtbar."/>
-   <Button Content="Drei Ebenen" Command="{Binding ShowAllPlanesCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,6" Margin="0,0,14,0"
-           Visibility="{Binding IsEnlarged, Converter={StaticResource VisibleWhenTrue}}" AutomationProperties.Name="Zur gleichzeitigen Ansicht aller drei Ebenen zurückkehren"/>
-   <TextBlock Text="W 400 / L 40 HU" VerticalAlignment="Center" Margin="0,8,0,8" Foreground="{StaticResource ClinicalBlueprintTextMuted}"
-              ToolTip="{Binding WindowLevelDescription}" Focusable="True" AutomationProperties.HelpText="{Binding WindowLevelDescription}"/>
+   <CheckBox Content="{lang:Translate Value='Strukturen'}" IsChecked="{Binding ShowStructures}" IsEnabled="{Binding HasImages}" Margin="0,8,16,8" VerticalContentAlignment="Center"
+             AutomationProperties.Name="{lang:Translate Value='Verfügbare Strukturkonturen einblenden'}"/>
+   <CheckBox Content="{lang:Translate Value='Isodosen'}" IsChecked="{Binding ShowDose}" IsEnabled="{Binding HasImages}" Margin="0,8,20,8" VerticalContentAlignment="Center"
+             AutomationProperties.Name="{lang:Translate Value='Verfügbare Isodosislinien einblenden'}"/>
+   <Button Content="{lang:Translate Value='Gesamte CT'}" Command="{Binding FitCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,6" Margin="0,0,6,0"
+           ToolTip="{lang:Translate Value='Die gesamte CT-Ausdehnung einpassen. Physische Pixelabstände bleiben erhalten; keine Anatomie wird ergänzt.'}"/>
+   <Button Content="{lang:Translate Value='Iso-Fokus'}" Command="{Binding FocusIsocenterCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,6" Margin="0,0,14,0"
+           ToolTip="{lang:Translate Value='Auf das erfasste Isozentrum zentrieren. Falls verfügbar: mindestens 2 % Rx plus 10 mm Rand. Ohne diesen Dosisbereich bleibt die gesamte CT sichtbar.'}"/>
+   <Button Content="{lang:Translate Value='Drei Ebenen'}" Command="{Binding ShowAllPlanesCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,6" Margin="0,0,14,0"
+           Visibility="{Binding IsEnlarged, Converter={StaticResource VisibleWhenTrue}}" AutomationProperties.Name="{lang:Translate Value='Zur gleichzeitigen Ansicht aller drei Ebenen zurückkehren'}"/>
+   <TextBlock Text="{lang:Translate Value='W 400 / L 40 HU'}" VerticalAlignment="Center" Margin="0,8,0,8" Foreground="{StaticResource ClinicalBlueprintTextMuted}"
+              ToolTip="{lang:Translate Path=WindowLevelDescription}" Focusable="True" AutomationProperties.HelpText="{lang:Translate Path=WindowLevelDescription}"/>
   </WrapPanel>
   <Grid Grid.Row="2" Margin="0,0,0,10">
    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
    <WrapPanel>
-    <TextBlock Text="{Binding AvailabilityText}" FontWeight="SemiBold" Margin="0,0,14,4"/>
-    <TextBlock Text="{Binding ViewportModeText}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,0,0,4"/>
+    <TextBlock Text="{lang:Translate Path=AvailabilityText}" FontWeight="SemiBold" Margin="0,0,14,4"/>
+    <TextBlock Text="{lang:Translate Path=ViewportModeText}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,0,0,4"/>
    </WrapPanel>
-   <TextBlock Grid.Row="1" Text="{Binding StatusText}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" FontSize="12"/>
+   <TextBlock Grid.Row="1" Text="{lang:Translate Path=StatusText}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" FontSize="12"/>
    <ProgressBar Grid.Row="2" Height="3" Margin="0,6,0,0" IsIndeterminate="{Binding IsLoading}" Foreground="{StaticResource ClinicalBlueprintTeal}"
-                Visibility="{Binding IsLoading, Converter={StaticResource VisibleWhenTrue}}" AutomationProperties.Name="Schnittbilder werden geladen"/>
+                Visibility="{Binding IsLoading, Converter={StaticResource VisibleWhenTrue}}" AutomationProperties.Name="{lang:Translate Value='Schnittbilder werden geladen'}"/>
   </Grid>
   <ScrollViewer Grid.Row="3" x:Name="CtScrollViewport" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" CanContentScroll="False"
-                AutomationProperties.Name="CT-Bildbereich; vergrößerte Einzelansicht bei Bedarf vertikal scrollbar"
-                ToolTip="Die Einzelansicht wird tatsächlich vergrößert. Bei kleinen Fenstern im Bildbereich vertikal scrollen; mit „Drei Ebenen“ zurück zur Übersicht.">
+                AutomationProperties.Name="{lang:Translate Value='CT-Bildbereich; vergrößerte Einzelansicht bei Bedarf vertikal scrollbar'}"
+                ToolTip="{lang:Translate Value='Die Einzelansicht wird tatsächlich vergrößert. Bei kleinen Fenstern im Bildbereich vertikal scrollen; mit „Drei Ebenen“ zurück zur Übersicht.'}">
   <ItemsControl x:Name="CtPlanes" ItemsSource="{Binding VisiblePlanes}" Height="{Binding ActualHeight, ElementName=CtScrollViewport}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
    <ItemsControl.Style><Style TargetType="ItemsControl"><Setter Property="MinHeight" Value="180"/><Style.Triggers><DataTrigger Binding="{Binding IsEnlarged}" Value="True"><Setter Property="MinHeight" Value="520"/></DataTrigger></Style.Triggers></Style></ItemsControl.Style>
    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="{Binding PlaneColumns}" Rows="1"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
@@ -60,26 +61,26 @@
      <Grid Margin="0,0,8,0">
       <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
       <DockPanel Margin="0,0,0,7">
-       <Button DockPanel.Dock="Right" Content="Vergrößern" Padding="8,5" FontSize="11" Margin="6,0,0,0"
+       <Button DockPanel.Dock="Right" Content="{lang:Translate Value='Vergrößern'}" Padding="8,5" FontSize="11" Margin="6,0,0,0"
                Command="{Binding DataContext.EnlargePlaneCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding Kind}"
-               Style="{StaticResource ClinicalBlueprintSecondaryButton}" AutomationProperties.Name="{Binding Title, StringFormat={}{0} vergrößern}"/>
-       <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
+               Style="{StaticResource ClinicalBlueprintSecondaryButton}" AutomationProperties.Name="{lang:Translate Path=Title}"/>
+       <TextBlock Text="{lang:Translate Path=Title}" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"/>
       </DockPanel>
       <Border Grid.Row="1" Background="#0D1828" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="1" ClipToBounds="True">
        <Grid>
         <Image Source="{Binding ImageSource}" Stretch="Uniform" RenderOptions.BitmapScalingMode="NearestNeighbor"
-               AutomationProperties.Name="{Binding Title, StringFormat={}{0}: CT mit Orientierung und verfügbaren Konturen}"
-               AutomationProperties.HelpText="{Binding DetailsText}"/>
-        <TextBlock Text="{Binding AvailabilityText}" Foreground="#E8EFF5" TextWrapping="Wrap" TextAlignment="Center" Margin="20"
+               AutomationProperties.Name="{lang:Translate Path=Title}"
+               AutomationProperties.HelpText="{lang:Translate Path=DetailsText}"/>
+        <TextBlock Text="{lang:Translate Path=AvailabilityText}" Foreground="#E8EFF5" TextWrapping="Wrap" TextAlignment="Center" Margin="20"
                    HorizontalAlignment="Center" VerticalAlignment="Center">
          <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsAvailable}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
         </TextBlock>
        </Grid>
       </Border>
       <StackPanel Grid.Row="2" Margin="0,7,0,0">
-       <TextBlock Text="{Binding AvailabilityText}" TextWrapping="Wrap" FontSize="12"/>
-       <TextBlock Text="{Binding ViewportText}" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,2,0,0"
-                  ToolTip="{Binding DetailsText}" Focusable="True" AutomationProperties.HelpText="{Binding DetailsText}"/>
+       <TextBlock Text="{lang:Translate Path=AvailabilityText}" TextWrapping="Wrap" FontSize="12"/>
+       <TextBlock Text="{lang:Translate Path=ViewportText}" TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,2,0,0"
+                  ToolTip="{lang:Translate Path=DetailsText}" Focusable="True" AutomationProperties.HelpText="{lang:Translate Path=DetailsText}"/>
       </StackPanel>
      </Grid>
     </DataTemplate>
@@ -89,9 +90,9 @@
   <StackPanel Grid.Row="4" Margin="0,12,0,0">
    <Border Background="#0D1828" Padding="12,8" Margin="0,0,0,10" Visibility="{Binding HasIsodoseScale, Converter={StaticResource VisibleWhenTrue}}">
     <StackPanel>
-     <TextBlock Text="Isodosen · gemeinsame Legende aller drei Ebenen" FontSize="12" Foreground="#C6D5E2" Margin="0,0,0,5"/>
+     <TextBlock Text="{lang:Translate Value='Isodosen · gemeinsame Legende aller drei Ebenen'}" FontSize="12" Foreground="#C6D5E2" Margin="0,0,0,5"/>
      <ScrollViewer MaxHeight="68" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-      <ItemsControl x:Name="SharedIsodoseLegend" ItemsSource="{Binding IsodoseScaleItems}" AutomationProperties.Name="Gemeinsame Isodosenlegende in Prozent der Planverordnung und Gy">
+      <ItemsControl x:Name="SharedIsodoseLegend" ItemsSource="{Binding IsodoseScaleItems}" AutomationProperties.Name="{lang:Translate Value='Gemeinsame Isodosenlegende in Prozent der Planverordnung und Gy'}">
        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
        <ItemsControl.ItemTemplate><DataTemplate>
         <StackPanel Orientation="Horizontal" Margin="0,0,20,4">
@@ -103,46 +104,46 @@
      </ScrollViewer>
     </StackPanel>
    </Border>
-   <Expander x:Name="IsodoseEditor" Header="Isodosen · Stufen und Farben bearbeiten" FontSize="12" Margin="0,0,0,8" AutomationProperties.Name="Isodosenanzeige für GUI und Report bearbeiten">
+   <Expander x:Name="IsodoseEditor" Header="{lang:Translate Value='Isodosen · Stufen und Farben bearbeiten'}" FontSize="12" Margin="0,0,0,8" AutomationProperties.Name="{lang:Translate Value='Isodosenanzeige für GUI und Report bearbeiten'}">
     <Grid Margin="0,8,0,0">
      <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
      <DataGrid ItemsSource="{Binding IsodoseEditorRows}" SelectedItem="{Binding SelectedIsodose, Mode=TwoWay}" AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="True"
                MaxHeight="148" MinHeight="90" HeadersVisibility="Column" RowHeaderWidth="0" SelectionMode="Single" Margin="0,0,16,0"
-               EnableRowVirtualization="True" HorizontalAlignment="Left" Width="410" AutomationProperties.Name="Isodosenstufen in Prozent und RGB-Farben">
+               EnableRowVirtualization="True" HorizontalAlignment="Left" Width="410" AutomationProperties.Name="{lang:Translate Value='Isodosenstufen in Prozent und RGB-Farben'}">
       <DataGrid.Columns>
-       <DataGridCheckBoxColumn Header="Anzeigen" Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" Width="76"/>
-       <DataGridTextColumn Header="% Rx" Binding="{Binding PercentText, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
-       <DataGridTemplateColumn Header="Farbe" Width="46"><DataGridTemplateColumn.CellTemplate><DataTemplate><Border Background="{Binding Color}" BorderBrush="#64748B" BorderThickness="1" Width="24" Height="14" Margin="5"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-       <DataGridTextColumn Header="#RRGGBB" Binding="{Binding ColorHex, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+       <DataGridCheckBoxColumn Header="{lang:Translate Value='Anzeigen'}" Binding="{Binding Enabled, UpdateSourceTrigger=PropertyChanged}" Width="76"/>
+       <DataGridTextColumn Header="{lang:Translate Value='% Rx'}" Binding="{Binding PercentText, UpdateSourceTrigger=PropertyChanged}" Width="85"/>
+       <DataGridTemplateColumn Header="{lang:Translate Value='Farbe'}" Width="46"><DataGridTemplateColumn.CellTemplate><DataTemplate><Border Background="{Binding Color}" BorderBrush="#64748B" BorderThickness="1" Width="24" Height="14" Margin="5"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+       <DataGridTextColumn Header="{lang:Translate Value='#RRGGBB'}" Binding="{Binding ColorHex, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
       </DataGrid.Columns>
      </DataGrid>
      <StackPanel Grid.Column="1">
-     <TextBlock Text="Anzeigen: einzelne Stufen ein-/ausblenden. Änderungen erst mit Anwenden übernehmen." FontSize="12" Margin="0,0,0,4" TextWrapping="Wrap"/>
-     <TextBlock Text="{Binding IsodoseAvailabilityText}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+     <TextBlock Text="{lang:Translate Value='Anzeigen: einzelne Stufen ein-/ausblenden. Änderungen erst mit Anwenden übernehmen.'}" FontSize="12" Margin="0,0,0,4" TextWrapping="Wrap"/>
+     <TextBlock Text="{lang:Translate Path=IsodoseAvailabilityText}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
      <WrapPanel Margin="0,6,0,0">
-      <Button Content="Stufe hinzufügen" Command="{Binding AddIsodoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0" Padding="10,5"/>
-      <Button Content="Markierte entfernen" Command="{Binding RemoveIsodoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,5"/>
+      <Button Content="{lang:Translate Value='Stufe hinzufügen'}" Command="{Binding AddIsodoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0" Padding="10,5"/>
+      <Button Content="{lang:Translate Value='Markierte entfernen'}" Command="{Binding RemoveIsodoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,5"/>
      </WrapPanel>
      <WrapPanel Margin="0,8,0,6">
-      <Button Content="Anwenden" Command="{Binding ApplyIsodosesCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0"/>
-      <Button Content="Geladene Defaults" Command="{Binding ResetIsodosesCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0"/>
-      <Button Content="Defaults in Settings …" Command="{Binding EditIsodoseDefaultsCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" ToolTip="Unter Konfiguration: Default · Isodosen. Mit Bearbeiter, Version und Wiederherstellung."/>
+      <Button Content="{lang:Translate Value='Anwenden'}" Command="{Binding ApplyIsodosesCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0"/>
+      <Button Content="{lang:Translate Value='Geladene Defaults'}" Command="{Binding ResetIsodosesCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,0"/>
+      <Button Content="{lang:Translate Value='Defaults in Settings …'}" Command="{Binding EditIsodoseDefaultsCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" ToolTip="{lang:Translate Value='Unter Konfiguration: Default · Isodosen. Mit Bearbeiter, Version und Wiederherstellung.'}"/>
      </WrapPanel>
-     <TextBlock Text="{Binding IsodoseEditorMessage}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+     <TextBlock Text="{lang:Translate Path=IsodoseEditorMessage}" FontSize="11" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
      </StackPanel>
     </Grid>
    </Expander>
-   <TextBlock Text="R / L: rechts / links · A / P: anterior / posterior · S / I: superior / inferior · Kreuz: Isozentrum"
+   <TextBlock Text="{lang:Translate Value='R / L: rechts / links · A / P: anterior / posterior · S / I: superior / inferior · Kreuz: Isozentrum'}"
               Foreground="{StaticResource ClinicalBlueprintTextMuted}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,7"/>
-   <Expander Header="Strukturlegende und Quellen" FontSize="12" AutomationProperties.Name="Legende der eingeblendeten Strukturen öffnen">
+   <Expander Header="{lang:Translate Value='Strukturlegende und Quellen'}" FontSize="12" AutomationProperties.Name="{lang:Translate Value='Legende der eingeblendeten Strukturen öffnen'}">
     <ScrollViewer MaxHeight="112" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
      <ItemsControl ItemsSource="{Binding StructureLegendItems}" Margin="0,7,0,0">
       <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
       <ItemsControl.ItemTemplate><DataTemplate>
-       <StackPanel Orientation="Horizontal" Margin="0,0,18,8" ToolTip="{Binding Description}">
+       <StackPanel Orientation="Horizontal" Margin="0,0,18,8" ToolTip="{lang:Translate Path=Description}">
         <Border Width="18" Height="7" Background="{Binding Color}" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="1" VerticalAlignment="Center" Margin="0,0,6,0"/>
         <CheckBox Content="{Binding Label}" IsChecked="{Binding IsVisible, Mode=TwoWay}" IsEnabled="{Binding CanToggle}"
-                  Foreground="{DynamicResource ClinicalBlueprintText}" MaxWidth="240" ToolTip="Struktur in Schnittbildern und DVH ein- oder ausblenden"/>
+                  Foreground="{DynamicResource ClinicalBlueprintText}" MaxWidth="240" ToolTip="{lang:Translate Value='Struktur in Schnittbildern und DVH ein- oder ausblenden'}"/>
        </StackPanel>
       </DataTemplate></ItemsControl.ItemTemplate>
      </ItemsControl>

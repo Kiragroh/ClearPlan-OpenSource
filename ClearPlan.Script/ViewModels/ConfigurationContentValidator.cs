@@ -53,6 +53,11 @@ namespace ClearPlan
                 if (parsed.Status == ReviewStatusCodes.Unavailable) throw new FormatException(parsed.Message);
             }
             else if (key == "isodose-display") IsodoseDisplayConfiguration.Parse(json);
+            else if (key == "ct-compatibility")
+            {
+                var parsed = CtCompatibilityConfiguration.Parse(json);
+                if (parsed.Status != ReviewStatusCodes.Available) throw new FormatException(parsed.Message);
+            }
             else if (key == "aliases") StructureAliasConfiguration.Deserialize(json);
             else if (key == "aria-upload") ClearPlan.Core.Integration.AriaUploadConfiguration.Parse(json);
             else if (key == "mlc-profiles") NativeMlcProfileCatalog.Parse(json);

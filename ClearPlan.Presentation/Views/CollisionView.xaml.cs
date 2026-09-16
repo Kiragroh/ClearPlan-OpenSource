@@ -126,7 +126,10 @@ namespace ClearPlan.Presentation.Views
             Unloaded += (s, e) => { playback.Stop(); if (model != null) { model.StopPlayback(); model.SceneChanged -= Changed; model.PropertyChanged -= ModelPropertyChanged; } model = null; };
             IsVisibleChanged += (s, e) => { if (!IsVisible) { playback.Stop(); if (model != null) model.StopPlayback(); } };
             SizeChanged += (s, e) => ScheduleRender();
+            Loaded += (s, e) => ClearPlan.Core.Localization.ReviewLanguage.Changed += LanguageChanged;
+            Unloaded += (s, e) => ClearPlan.Core.Localization.ReviewLanguage.Changed -= LanguageChanged;
         }
+        private void LanguageChanged(object sender, EventArgs args) { ScheduleRender(); }
         private void ContextChanged(object sender, DependencyPropertyChangedEventArgs args) { Connect(); ScheduleRender(); }
         private void Connect()
         {
@@ -183,12 +186,12 @@ namespace ClearPlan.Presentation.Views
             DrawMlcInset();
             // Live bindings can advance before the queued 3D draw. Keep every
             // label inside the scene on the pose rendered in this same pass.
-            ScenePoseHeading.Text = model == null ? "" : model.PoseText;
-            SceneSummary.Text = model == null ? "" : model.IllustrationSummary;
+            ScenePoseHeading.Text = model == null ? "" : ClearPlan.Core.Localization.ReviewLanguage.Display(model.PoseText);
+            SceneSummary.Text = model == null ? "" : ClearPlan.Core.Localization.ReviewLanguage.Display(model.IllustrationSummary);
             SceneSummary.Foreground = model == null ? Brushes.White : (Brush)new BrushConverter().ConvertFromString(model.IllustrationSummaryColor);
-            SceneActiveStatus.Text = model == null || model.SelectedFrame == null ? "—" : model.SelectedFrame.StatusText;
+            SceneActiveStatus.Text = model == null || model.SelectedFrame == null ? "—" : ClearPlan.Core.Localization.ReviewLanguage.Display(model.SelectedFrame.StatusText);
             SceneActiveStatus.Foreground = model == null || model.SelectedFrame == null ? Brushes.White : (Brush)new BrushConverter().ConvertFromString(model.SelectedFrame.StatusColor);
-            SceneSampling.Text = model == null ? "" : model.SamplingText;
+            SceneSampling.Text = model == null ? "" : ClearPlan.Core.Localization.ReviewLanguage.Display(model.SamplingText);
             if (model == null || !model.HasScene) return;
             if (!ReferenceEquals(cachedScene, model.Scene)) { cachedScene = model.Scene; surfaceMeshes.Clear(); envelopeMeshes.Clear(); framingPoints = null; }
             var pose = model.SelectedPose;
@@ -337,8 +340,8 @@ namespace ClearPlan.Presentation.Views
             Grid.SetRow(GantryCompass,1); Grid.SetColumn(GantryCompass,1);
             Grid.SetRow(RoomCompass,1); Grid.SetColumn(RoomCompass,2);
             Grid.SetRow(OrientationFooter,2);
-            OrientationTitle.Text="Raumorientierung · Schema";
-            OrientationFooter.Text="Nominal · 0° gestrichelt · kein Kollisionsmodell";
+            OrientationTitle.Text=ClearPlan.Core.Localization.ReviewLanguage.Text("Raumorientierung · Schema");
+            OrientationFooter.Text=ClearPlan.Core.Localization.ReviewLanguage.Text("Nominal · 0° gestrichelt · kein Kollisionsmodell");
         }
         private static byte[] CapturePng(FrameworkElement element)
         {
@@ -496,7 +499,7 @@ namespace ClearPlan.Presentation.Views
                     dc.Pop();
                 }
                 dc.DrawEllipse(Brushes.White,null,center,2.3,2.3);
-                var caption=new FormattedText(couch ? "Draufsicht" : "Frontansicht",System.Globalization.CultureInfo.InvariantCulture,
+                var caption=new FormattedText(ClearPlan.Core.Localization.ReviewLanguage.Text(couch ? "Draufsicht" : "Frontansicht"),System.Globalization.CultureInfo.InvariantCulture,
                     FlowDirection.LeftToRight,new Typeface("Segoe UI"),10,muted,1);
                 dc.DrawText(caption,new Point((104-caption.Width)/2,85));
             }

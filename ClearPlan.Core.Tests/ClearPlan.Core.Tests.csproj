@@ -66,6 +66,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Xaml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http" />
@@ -84,6 +85,7 @@
     <Compile Include="ConfigurationHistoryTests.cs" />
     <Compile Include="ReviewControlTests.cs" />
     <Compile Include="PlanCheckSelectionTests.cs" />
+    <Compile Include="CtCompatibilityTests.cs" />
     <Compile Include="PamBestTargetTests.cs" />
     <Compile Include="PlanImagesWorkspaceTests.cs" />
     <Compile Include="TargetClassificationTests.cs" />
@@ -100,6 +102,7 @@
     <Compile Include="PathFailureClassifierTests.cs" />
     <Compile Include="PqmDefaultReviewPolicyTests.cs" />
     <Compile Include="Program.cs" />
+    <Compile Include="ReviewLanguageTests.cs" />
     <Compile Include="PqmNumericEvaluatorTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RefDbContractTests.cs" />

@@ -34,6 +34,7 @@ namespace ClearPlan
         public string AriaUploadConfigJsonPath { get; set; }
         public string DefaultReviewRulesJsonPath { get; set; }
         public string PlanCheckSelectionJsonPath { get; set; }
+        public string CtCompatibilityJsonPath { get; set; }
         public string FieldNamingRulesJsonPath { get; set; }
         public string IsodoseDisplayJsonPath { get; set; }
         public string ConfigurationDirectory { get; set; }
@@ -129,6 +130,7 @@ namespace ClearPlan
                 AriaUploadConfigJsonPath = settings.Paths.AriaUploadConfigJsonPath,
                 DefaultReviewRulesJsonPath = settings.Paths.DefaultReviewRulesJsonPath,
                 PlanCheckSelectionJsonPath = settings.Paths.PlanCheckSelectionJsonPath,
+                CtCompatibilityJsonPath = settings.Paths.CtCompatibilityJsonPath,
                 FieldNamingRulesJsonPath = settings.Paths.FieldNamingRulesJsonPath,
                 IsodoseDisplayJsonPath = settings.Paths.IsodoseDisplayJsonPath,
                 ConfigurationDirectory = settings.Paths.ConfigurationDirectory,
@@ -177,6 +179,7 @@ namespace ClearPlan
             settings.Paths.AriaUploadConfigJsonPath = AriaUploadConfigJsonPath ?? string.Empty;
             settings.Paths.DefaultReviewRulesJsonPath = DefaultReviewRulesJsonPath ?? string.Empty;
             settings.Paths.PlanCheckSelectionJsonPath = PlanCheckSelectionJsonPath ?? string.Empty;
+            settings.Paths.CtCompatibilityJsonPath = CtCompatibilityJsonPath ?? string.Empty;
             settings.Paths.FieldNamingRulesJsonPath = FieldNamingRulesJsonPath ?? string.Empty;
             settings.Paths.IsodoseDisplayJsonPath = IsodoseDisplayJsonPath ?? string.Empty;
             settings.Paths.ConfigurationDirectory = ConfigurationDirectory ?? "Configuration";
@@ -225,6 +228,7 @@ namespace ClearPlan
                 Entry("default-rules", "Default-Zielregeln", "Zieltypen, DVH-Metriken und Verordnungsanteile. Deaktivierte oder entfernte Regeln werden nicht ersetzt.", ".json", () => DefaultReviewRulesJsonPath),
                 Entry("isodose-display", "Default · Isodosen", "Anzeige in Schnittbildern und Reports: Prozent der Plan-Gesamtverordnung, Farbe #RRGGBB und Aktivierung. Nur Darstellung, keine Änderung der Plandosis oder Goals. Änderungen und Rückkehr zu älteren Versionen werden protokolliert.", ".json", () => IsodoseDisplayJsonPath),
                 Entry("plancheck-selection", "PlanCheck · Review-Auswahl", "Einbeziehen bestehender PlanCheck-Befunde in Review und Bericht. Die externe Berechnung läuft weiterhin; native Eclipse-Warnungen bleiben sichtbar. Nur Check-Codes und Aktivierung werden gespeichert.", ".json", () => PlanCheckSelectionJsonPath),
+                Entry("ct-compatibility", "CT · freigegebene Kombinationen", "Exakte lokale Freigaben für Hersteller, Modell, Seriennummer und HU-Kalibrierung. Alle vier Werte und enabled sind Pflicht; keine Platzhalter. Nur Rand-Leerzeichen und Groß-/Kleinschreibung werden normalisiert. Leere, deaktivierte oder ungültige Freigaben ergeben kein Grün. Derzeit wird ausschließlich der vollständige Legacy-CT-Befund 19 neu bewertet; andere Checks bleiben unverändert. Änderungen und Wiederherstellungen werden versioniert; keine Änderung an CT, Kalibrierung oder Plan im TPS.", ".json", () => CtCompatibilityJsonPath),
                 Entry("constraints", "Constraints · Excel", "ClearPlan-Katalog mit Tables, Constraints und Structures. Excel-Entwürfe werden erst nach ausdrücklicher Prüfung übernommen.", ".xlsx", () => ExcelWorkbookPath),
                 Entry("aliases", "Strukturnamen & Aliase", "Explizite alternative Strukturnamen. Keine Umbenennung von Strukturen im Planungssystem.", ".json", () => StructureAliasesJsonPath),
                 Entry("field-naming", "Default · Feldnamen", "Nomenklatur, z. B. 120-30 T300 GUZ: Tisch vorletzter Bestandteil, Richtung letzter. Reihenfolge, Trennzeichen und Richtungstoken sind konfigurierbar. Nur Namensvorschau; keine Änderung an Bestrahlungsfeldern.", ".json", () => FieldNamingRulesJsonPath),
@@ -251,6 +255,7 @@ namespace ClearPlan
                 if (key == "default-rules") DefaultReviewRulesJsonPath = path;
                 else if (key == "isodose-display") IsodoseDisplayJsonPath = path;
                 else if (key == "plancheck-selection") PlanCheckSelectionJsonPath = path;
+                else if (key == "ct-compatibility") CtCompatibilityJsonPath = path;
                 else if (key == "constraints") ExcelWorkbookPath = path;
                 else if (key == "aliases") StructureAliasesJsonPath = path;
                 else if (key == "field-naming") FieldNamingRulesJsonPath = path;

@@ -67,6 +67,7 @@
     <Compile Include="Plot\ReviewPlotFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResourceAssemblyAnchor.cs" />
+    <Compile Include="Localization\DisplayLanguage.cs" />
     <Compile Include="Views\HtmlReportPreviewWindow.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
     <Compile Include="ViewModels\ReviewDvhSeriesViewModel.cs" />

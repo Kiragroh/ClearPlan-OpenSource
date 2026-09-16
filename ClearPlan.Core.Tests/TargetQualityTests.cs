@@ -29,7 +29,7 @@ namespace ClearPlan.Core.Tests
             TestAssert.True(Newtonsoft.Json.Linq.JObject.FromObject(complete)["AvailabilityScope"] == null,
                 "Display-only availability must not change the persisted snapshot schema.");
             string xaml = System.IO.File.ReadAllText("ClearPlan.Presentation/Views/PlanParametersView.xaml");
-            TestAssert.True(xaml.Contains("Header=\"Verfügbarkeit\" Binding=\"{Binding AvailabilityScope}\""), "Native and simulator GUI must use the shared display property.");
+            TestAssert.True(xaml.Contains("Header=\"{lang:Translate Value='Verfügbarkeit'}\" Binding=\"{Binding AvailabilityScope}\""), "Native and simulator GUI must use the shared display property.");
             foreach (var row in new[] { complete, partial, missing })
             {
                 row.StructureId = "PTV_Test"; row.BodyStructureId = "External";

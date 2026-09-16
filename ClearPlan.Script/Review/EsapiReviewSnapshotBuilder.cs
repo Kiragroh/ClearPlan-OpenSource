@@ -67,7 +67,7 @@ namespace ClearPlan.Review
                     {
                         "Dose is expressed in Gy.",
                         "Cumulative DVH volume is expressed as relative volume in percent.",
-                        "PlanCheck rows are projected from existing results and are not recalculated."
+                        "PlanCheck rows are projected from existing results. The legacy CT fallback tuple is evaluated against explicit local approvals; other legacy checks are not recalculated."
                     }
                 }
             };
@@ -93,9 +93,15 @@ namespace ClearPlan.Review
             snapshot.PqmRows.AddRange(userTargetRows);
             snapshot.Sources.Add(userTargetSource);
             snapshot.Report.Notes.Add(userTargetSource.Message);
+            var ctCompatibility = CtCompatibilityConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.CtCompatibilityJsonPath)
+                ? null : settings.ResolvePath(settings.Paths.CtCompatibilityJsonPath));
+            snapshot.Sources.Add(new ReviewSourceStatus { StableId = "source-ct-compatibility", SourceCode = "ct-compatibility",
+                SourceType = "exact-local-approval", Status = ctCompatibility.Status, Optional = false, UsedFallback = false,
+                PathDisplayLabel = "CT compatibility approvals", Message = ctCompatibility.Message });
             snapshot.PlanCheckRows = BuildPlanCheckRows(
                 source,
-                usedCheckIds);
+                usedCheckIds,
+                ctCompatibility);
             var checkSelection = PlanCheckSelectionConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.PlanCheckSelectionJsonPath)
                 ? null : settings.ResolvePath(settings.Paths.PlanCheckSelectionJsonPath));
             int disabledChecks;
@@ -353,7 +359,8 @@ namespace ClearPlan.Review
 
         private static List<ReviewCheckRow> BuildPlanCheckRows(
             MainViewModel source,
-            ISet<string> usedIds)
+            ISet<string> usedIds,
+            CtCompatibilityConfiguration ctCompatibility)
         {
             var rows = new List<ReviewCheckRow>();
             int index = 0;
@@ -368,6 +375,15 @@ namespace ClearPlan.Review
 
                 ReviewStatusAndSeverity mapped =
                     ClinicalReviewValueMapper.MapPlanCheckStatus(item.Status);
+                var ctFinding = ctCompatibility.EvaluateLegacy(item.Severity, item.Description);
+                if (ctFinding != null)
+                {
+                    ctFinding.CheckCode = ClinicalReviewValueMapper.CreateUniqueStableId(item.Severity, "ct-compatibility-" + index, usedIds);
+                    // Keep the existing inclusion-policy family while only replacing this detached result.
+                    ctFinding.Category = "Default";
+                    rows.Add(ctFinding);
+                    continue;
+                }
                 rows.Add(new ReviewCheckRow
                 {
                     CheckCode =

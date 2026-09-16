@@ -109,6 +109,7 @@ namespace ClearPlan.Core.Tests
             TestAssert.Equal(1, model.PosePosition, "Export must restore GUI selection.");
             var mapper = new ReviewSnapshotReportMapper();
             var report = mapper.Map(snapshot);
+            report.LanguageCode = "en";
             var property = typeof(ReviewReportDocument).GetProperty("CollisionBeams");
             TestAssert.NotNull(property);
             var beams = (IList)property.GetValue(report);

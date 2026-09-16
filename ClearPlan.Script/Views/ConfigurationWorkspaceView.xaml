@@ -1,6 +1,7 @@
 <UserControl x:Class="ClearPlan.Views.ConfigurationWorkspaceView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:lang="clr-namespace:ClearPlan.Presentation.Localization;assembly=ClearPlan.Presentation"
     Background="{DynamicResource ClinicalBlueprintCanvas}" FontFamily="Segoe UI">
     <UserControl.Resources>
         <ResourceDictionary>
@@ -26,14 +27,14 @@
         <Grid.ColumnDefinitions><ColumnDefinition Width="188"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
         <StackPanel Grid.ColumnSpan="3" Margin="0,0,0,16">
-            <TextBlock Text="Konfigurationen &amp; Versionen" FontSize="23" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
-            <TextBlock Text="Datei auswählen, Änderungen prüfen und mit nachvollziehbarem Grund übernehmen. Wiederherstellen legt einen neuen Dateistand an."
+            <TextBlock Text="{lang:Translate Value='Konfigurationen &amp; Versionen'}" FontSize="23" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
+            <TextBlock Text="{lang:Translate Value='Datei auswählen, Änderungen prüfen und mit nachvollziehbarem Grund übernehmen. Wiederherstellen legt einen neuen Dateistand an.'}"
                        Margin="0,5,0,0" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
         </StackPanel>
         <StackPanel Grid.Row="1">
             <ListBox x:Name="EntriesList" ItemsSource="{Binding Entries}" SelectedItem="{Binding SelectedEntry, Mode=OneWay}"
                      SelectionChanged="EntryChanged" BorderBrush="{StaticResource ClinicalBlueprintBorder}"
-                     AutomationProperties.Name="Konfigurationsbereiche" HorizontalContentAlignment="Stretch">
+                     AutomationProperties.Name="{lang:Translate Value='Konfigurationsbereiche'}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Padding" Value="8,12"/>
@@ -59,80 +60,80 @@
                         </Setter>
                     </Style>
                 </ListBox.ItemContainerStyle>
-                <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Title}" TextWrapping="Wrap" FontWeight="SemiBold"/></DataTemplate></ListBox.ItemTemplate>
+                <ListBox.ItemTemplate><DataTemplate><TextBlock Text="{lang:Translate Path=Title}" TextWrapping="Wrap" FontWeight="SemiBold"/></DataTemplate></ListBox.ItemTemplate>
             </ListBox>
-            <TextBlock Text="Versionsablage" Style="{StaticResource ConfigurationLabel}" Margin="0,18,0,4"/>
-            <TextBox Text="{Binding RootDirectory, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="Versionsablage"/>
-            <TextBlock Text="Ablagepfad unter „Pfade &amp; Quellen“ ändern und speichern. Es werden keine bestehenden Quellen automatisch importiert."
+            <TextBlock Text="{lang:Translate Value='Versionsablage'}" Style="{StaticResource ConfigurationLabel}" Margin="0,18,0,4"/>
+            <TextBox Text="{Binding RootDirectory, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="{lang:Translate Value='Versionsablage'}"/>
+            <TextBlock Text="{lang:Translate Value='Ablagepfad unter „Pfade &amp; Quellen“ ändern und speichern. Es werden keine bestehenden Quellen automatisch importiert.'}"
                        TextWrapping="Wrap" Margin="0,7,0,0" Foreground="{StaticResource ClinicalBlueprintTextMuted}" FontSize="12"/>
         </StackPanel>
         <ScrollViewer Grid.Row="1" Grid.Column="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="0,0,12,4">
-                <TextBlock Text="{Binding SelectedEntry.Title}" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
-                <TextBlock Text="{Binding SelectedEntry.Description}" TextWrapping="Wrap" Margin="0,4,0,10" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+                <TextBlock Text="{lang:Translate Path=SelectedEntry.Title}" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
+                <TextBlock Text="{lang:Translate Path=SelectedEntry.Description}" TextWrapping="Wrap" Margin="0,4,0,10" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
                 <TextBlock Text="{Binding StateLabel}" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintText}"/>
-                <TextBlock Text="Konfigurierter Quellpfad (Einstellungsentwurf)" Style="{StaticResource ConfigurationLabel}"/>
-                <TextBox Text="{Binding ConfiguredPath, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="Konfigurierter Quellpfad"/>
-                <TextBlock Text="Geprüfter Versionspfad · Aktivierung erst mit Einstellungen speichern" Style="{StaticResource ConfigurationLabel}"/>
-                <TextBox Text="{Binding ManagedPath, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="Geprüfter Versionspfad"/>
-                <TextBlock Text="Änderungsgrund · für Import, Speichern und Wiederherstellen erforderlich" Style="{StaticResource ConfigurationLabel}"/>
+                <TextBlock Text="{lang:Translate Value='Konfigurierter Quellpfad (Einstellungsentwurf)'}" Style="{StaticResource ConfigurationLabel}"/>
+                <TextBox Text="{Binding ConfiguredPath, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="{lang:Translate Value='Konfigurierter Quellpfad'}"/>
+                <TextBlock Text="{lang:Translate Value='Geprüfter Versionspfad · Aktivierung erst mit Einstellungen speichern'}" Style="{StaticResource ConfigurationLabel}"/>
+                <TextBox Text="{Binding ManagedPath, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="{lang:Translate Value='Geprüfter Versionspfad'}"/>
+                <TextBlock Text="{lang:Translate Value='Änderungsgrund · für Import, Speichern und Wiederherstellen erforderlich'}" Style="{StaticResource ConfigurationLabel}"/>
                 <TextBox Text="{Binding ChangeReason, UpdateSourceTrigger=PropertyChanged}" Padding="8,6" MinHeight="34"
-                         MaxLength="2048" AutomationProperties.Name="Änderungsgrund"/>
+                         MaxLength="2048" AutomationProperties.Name="{lang:Translate Value='Änderungsgrund'}"/>
                 <WrapPanel Margin="0,10,0,10">
-                    <Button Content="Quelle importieren" Click="ImportConfiguredClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,7,6"/>
-                    <Button Content="Andere Datei importieren …" Click="ImportOtherClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,7,6"/>
-                    <Button Content="Neu laden" Click="RefreshClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,0,6"/>
+                    <Button Content="{lang:Translate Value='Quelle importieren'}" Click="ImportConfiguredClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,7,6"/>
+                    <Button Content="{lang:Translate Value='Andere Datei importieren …'}" Click="ImportOtherClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,7,6"/>
+                    <Button Content="{lang:Translate Value='Neu laden'}" Click="RefreshClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,0,6"/>
                 </WrapPanel>
                 <StackPanel Visibility="{Binding IsJson, Converter={StaticResource VisibleWhenTrue}}">
-                    <TextBlock Text="JSON-Inhalt" FontWeight="SemiBold" Margin="0,4,0,7"/>
+                    <TextBlock Text="{lang:Translate Value='JSON-Inhalt'}" FontWeight="SemiBold" Margin="0,4,0,7"/>
                     <TextBox Text="{Binding EditorText, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanEditJson}"
                              AcceptsReturn="True" AcceptsTab="True" FontFamily="Consolas" FontSize="12" Height="230"
                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Padding="10"
-                             AutomationProperties.Name="JSON-Konfiguration bearbeiten"/>
+                             AutomationProperties.Name="{lang:Translate Value='JSON-Konfiguration bearbeiten'}"/>
                     <WrapPanel Margin="0,9,0,8">
-                        <Button Content="Prüfen &amp; als Version speichern" Click="SaveJsonClicked" IsEnabled="{Binding CanEditJson}"
+                        <Button Content="{lang:Translate Value='Prüfen &amp; als Version speichern'}" Click="SaveJsonClicked" IsEnabled="{Binding CanEditJson}"
                                 Style="{StaticResource ClinicalBlueprintPrimaryButton}" Margin="0,0,8,6"/>
-                        <Button Content="Entwurf verwerfen" Click="CancelClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,0,6"/>
+                        <Button Content="{lang:Translate Value='Entwurf verwerfen'}" Click="CancelClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,0,6"/>
                     </WrapPanel>
                 </StackPanel>
                 <StackPanel Visibility="{Binding IsExcel, Converter={StaticResource VisibleWhenTrue}}">
-                    <TextBlock Text="Separater Excel-Entwurf · nicht aktiv" Style="{StaticResource ConfigurationLabel}"/>
-                    <TextBox Text="{Binding EditingPath, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="Separater Excel-Entwurf" Margin="0,0,0,8"/>
-                    <TextBlock Text="Excel wird als separater Entwurf geöffnet. Dort speichern und schließen; erst „Änderung übernehmen“ prüft den Katalog und veröffentlicht einen neuen Dateistand."
+                    <TextBlock Text="{lang:Translate Value='Separater Excel-Entwurf · nicht aktiv'}" Style="{StaticResource ConfigurationLabel}"/>
+                    <TextBox Text="{Binding EditingPath, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="{lang:Translate Value='Separater Excel-Entwurf'}" Margin="0,0,0,8"/>
+                    <TextBlock Text="{lang:Translate Value='Excel wird als separater Entwurf geöffnet. Dort speichern und schließen; erst „Änderung übernehmen“ prüft den Katalog und veröffentlicht einen neuen Dateistand.'}"
                                TextWrapping="Wrap" Margin="0,4,0,9"/>
                     <WrapPanel>
-                        <Button Content="Excel-Entwurf öffnen" Click="OpenExcelClicked" IsEnabled="{Binding CanEditExcel}"
+                        <Button Content="{lang:Translate Value='Excel-Entwurf öffnen'}" Click="OpenExcelClicked" IsEnabled="{Binding CanEditExcel}"
                                 Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,8,6"/>
-                        <Button Content="Änderung übernehmen" Click="AcceptExcelClicked" IsEnabled="{Binding CanAcceptExcel}"
+                        <Button Content="{lang:Translate Value='Änderung übernehmen'}" Click="AcceptExcelClicked" IsEnabled="{Binding CanAcceptExcel}"
                                 Style="{StaticResource ClinicalBlueprintPrimaryButton}" Margin="0,0,8,6"/>
-                        <Button Content="Entwurf verwerfen" Click="CancelClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,0,6"/>
+                        <Button Content="{lang:Translate Value='Entwurf verwerfen'}" Click="CancelClicked" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,0,0,6"/>
                     </WrapPanel>
                 </StackPanel>
                 <Border Background="{StaticResource ClinicalBlueprintInfoSurface}" Padding="10" Margin="0,4,0,14">
-                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintText}"
-                               AutomationProperties.Name="Konfigurationsstatus" AutomationProperties.LiveSetting="Polite"/>
+                    <TextBlock Text="{lang:Translate Path=StatusMessage}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintText}"
+                               AutomationProperties.Name="{lang:Translate Value='Konfigurationsstatus'}" AutomationProperties.LiveSetting="Polite"/>
                 </Border>
-                <TextBlock Text="Versionsverlauf" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,8" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
+                <TextBlock Text="{lang:Translate Value='Versionsverlauf'}" FontSize="17" FontWeight="SemiBold" Margin="0,4,0,8" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
                 <DataGrid ItemsSource="{Binding Versions}" SelectedItem="{Binding SelectedVersion, Mode=TwoWay}" AutoGenerateColumns="False"
                           IsReadOnly="True" CanUserAddRows="False" HeadersVisibility="Column" Height="185" MinHeight="140"
-                          SelectionMode="Single" AutomationProperties.Name="Versionen der gewählten Konfiguration">
+                          SelectionMode="Single" AutomationProperties.Name="{lang:Translate Value='Versionen der gewählten Konfiguration'}">
                     <DataGrid.Columns>
-                        <DataGridTextColumn Header="Version" Binding="{Binding RevisionNumber}" Width="65"/>
-                        <DataGridTextColumn Header="Zeit (UTC)" Binding="{Binding CreatedUtc, StringFormat=yyyy-MM-dd HH:mm:ss}" Width="140"/>
-                        <DataGridTextColumn Header="Windows-Konto" Binding="{Binding Actor}" Width="160"/>
-                        <DataGridTextColumn Header="Grund" Binding="{Binding ChangeReason}" Width="220"/>
-                        <DataGridTextColumn Header="Aktion" Binding="{Binding Action}" Width="75"/>
-                        <DataGridTextColumn Header="Aus Version" Binding="{Binding SourceRevision}" Width="85"/>
+                        <DataGridTextColumn Header="{lang:Translate Value='Version'}" Binding="{Binding RevisionNumber}" Width="65"/>
+                        <DataGridTextColumn Header="{lang:Translate Value='Zeit (UTC)'}" Binding="{Binding CreatedUtc, StringFormat=yyyy-MM-dd HH:mm:ss}" Width="140"/>
+                        <DataGridTextColumn Header="{lang:Translate Value='Windows-Konto'}" Binding="{Binding Actor}" Width="160"/>
+                        <DataGridTextColumn Header="{lang:Translate Value='Grund'}" Binding="{Binding ChangeReason}" Width="220"/>
+                        <DataGridTextColumn Header="{lang:Translate Value='Aktion'}" Binding="{Binding Action}" Width="75"/>
+                        <DataGridTextColumn Header="{lang:Translate Value='Aus Version'}" Binding="{Binding SourceRevision}" Width="85"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <TextBlock Text="SHA-256 der ausgewählten Version" Style="{StaticResource ConfigurationLabel}"/>
+                <TextBlock Text="{lang:Translate Value='SHA-256 der ausgewählten Version'}" Style="{StaticResource ConfigurationLabel}"/>
                 <TextBox Text="{Binding SelectedVersion.Sha256, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" FontFamily="Consolas" FontSize="11"
-                         AutomationProperties.Name="SHA-256 der ausgewählten Version"/>
-                <Button Content="Ausgewählte Version wiederherstellen …" Click="RestoreClicked" IsEnabled="{Binding IsManaged}"
+                         AutomationProperties.Name="{lang:Translate Value='SHA-256 der ausgewählten Version'}"/>
+                <Button Content="{lang:Translate Value='Ausgewählte Version wiederherstellen …'}" Click="RestoreClicked" IsEnabled="{Binding IsManaged}"
                         HorizontalAlignment="Left" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,10,0,10"/>
                 <TextBlock TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" FontSize="12">
-                    <Run Text="Erfasstes Windows-Konto: "/><Run Text="{Binding Actor, Mode=OneWay}"/>
-                    <Run Text=". Kontoname und Hash dienen der Nachvollziehbarkeit, nicht einer kryptografisch authentifizierten Signatur oder klinischen Freigabe. Gemeinsame Ablagen benötigen passende Windows-Zugriffsrechte."/>
+                    <Run Text="{lang:Translate Value='Erfasstes Windows-Konto: '}"/><Run Text="{Binding Actor, Mode=OneWay}"/>
+                    <Run Text="{lang:Translate Value='. Kontoname und Hash dienen der Nachvollziehbarkeit, nicht einer kryptografisch authentifizierten Signatur oder klinischen Freigabe. Gemeinsame Ablagen benötigen passende Windows-Zugriffsrechte.'}"/>
                 </TextBlock>
             </StackPanel>
         </ScrollViewer>

@@ -134,6 +134,7 @@
     <Compile Include="Review\UserTargetCoverageRule.cs" />
     <Compile Include="Review\DefaultReviewRuleConfiguration.cs" />
     <Compile Include="Review\PlanCheckSelectionConfiguration.cs" />
+    <Compile Include="Review\CtCompatibilityConfiguration.cs" />
     <Compile Include="Review\ClinicalReviewValueMapper.cs" />
     <Compile Include="Review\PqmDefaultReviewPolicy.cs" />
     <Compile Include="Review\ReviewCheckRow.cs" />
@@ -170,6 +171,10 @@
     <Compile Include="Settings\SettingsValidationResult.cs" />
     <Compile Include="Settings\SettingsValidator.cs" />
     <Compile Include="Settings\WritablePathFallback.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Localization\ReviewLanguage.cs" />
+    <EmbeddedResource Include="Localization\ReviewLanguage.en.json"><LogicalName>ClearPlan.ReviewLanguage.en.json</LogicalName><WithCulture>false</WithCulture></EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

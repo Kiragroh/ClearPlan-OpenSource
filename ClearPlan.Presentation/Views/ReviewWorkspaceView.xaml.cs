@@ -9,6 +9,21 @@ namespace ClearPlan.Presentation.Views
         public ReviewWorkspaceView()
         {
             InitializeComponent();
+            Loaded += (s,e) => {
+                ClearPlan.Core.Localization.ReviewLanguage.Changed += LanguageChanged;
+                LanguageChanged(this,System.EventArgs.Empty);
+            };
+            Unloaded += (s,e) => ClearPlan.Core.Localization.ReviewLanguage.Changed -= LanguageChanged;
+        }
+
+        private void LanguageChanged(object sender, System.EventArgs args)
+        {
+            Dispatcher.Invoke(new System.Action(() => {
+                var review=DataContext as ReviewWorkspaceViewModel;
+                if (review == null) return;
+                ClearPlan.Presentation.Plot.ReviewPlotFactory.RefreshLanguage(review.OverviewPlotModel);
+                ClearPlan.Presentation.Plot.ReviewPlotFactory.RefreshLanguage(review.DetailPlotModel);
+            }));
         }
 
         private void OnNavigationSelectionChanged(

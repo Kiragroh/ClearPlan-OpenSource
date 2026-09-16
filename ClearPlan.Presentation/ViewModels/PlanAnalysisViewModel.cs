@@ -8,6 +8,7 @@ using ClearPlan.Core.Review;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
+using ClearPlan.Core.Localization;
 
 namespace ClearPlan.Presentation.ViewModels
 {
@@ -86,6 +87,8 @@ namespace ClearPlan.Presentation.ViewModels
         public event PropertyChangedEventHandler PropertyChanged;
         private void Changed(string name) { if (PropertyChanged != null) PropertyChanged(this, new PropertyChangedEventArgs(name)); }
 
+        public void RefreshLanguage() { RefreshPlots(); }
+
         private void RefreshPlots()
         {
             DoseRatePlotModel = CreatePlot("Kontrollpunkt", "Dosisrate [MU/min]");
@@ -107,8 +110,8 @@ namespace ClearPlan.Presentation.ViewModels
             if (planned.Points.Any(p => !double.IsNaN(p.Y))) DoseRatePlotModel.Series.Add(planned);
             if (estimated.Points.Any(p => !double.IsNaN(p.Y))) DoseRatePlotModel.Series.Add(estimated);
             if (area.Points.Any(p => !double.IsNaN(p.Y))) AperturePlotModel.Series.Add(area);
-            DoseRatePlotModel.Subtitle = HasDoseRateTrace ? "MU/min · keine gemessene Abgaberate" : "Kein Dosisratenverlauf verfügbar";
-            AperturePlotModel.Subtitle = AperturePlotModel.Series.Count == 0 ? "Vollständige Aperturgeometrie nicht verfügbar" : "Schnittmenge aller MLC-Lagen und vorhandener Blenden";
+            DoseRatePlotModel.Subtitle = ReviewLanguage.Text(HasDoseRateTrace ? "MU/min · keine gemessene Abgaberate" : "Kein Dosisratenverlauf verfügbar");
+            AperturePlotModel.Subtitle = ReviewLanguage.Text(AperturePlotModel.Series.Count == 0 ? "Vollständige Aperturgeometrie nicht verfügbar" : "Schnittmenge aller MLC-Lagen und vorhandener Blenden");
             Changed("DoseRatePlotModel"); Changed("AperturePlotModel");
             Changed("HasPlannedDoseRate");
             Changed("HasEstimatedDoseRate"); Changed("HasDoseRateTrace"); Changed("DoseRateSummary"); Changed("DoseRateProfileText");
@@ -119,7 +122,7 @@ namespace ClearPlan.Presentation.ViewModels
             line.Points.Add(new DataPoint(index, ReviewComparison.Finite(value) && value.Value >= 0 ? value.Value : double.NaN));
         }
         private static LineSeries Line(string title, string color, LineStyle style)
-        { return new LineSeries { Title = title, Color = OxyColor.Parse(color), LineStyle = style, StrokeThickness = 2.2,
+        { return new LineSeries { Title = ReviewLanguage.Text(title), Color = OxyColor.Parse(color), LineStyle = style, StrokeThickness = 2.2,
             MarkerType = MarkerType.Circle, MarkerSize = 2.5, MarkerFill = OxyColor.Parse(color), MarkerStroke = OxyColor.Parse(color) }; }
 
         internal static PlotModel CreatePlot(string xLabel, string yLabel)
@@ -132,10 +135,10 @@ namespace ClearPlan.Presentation.ViewModels
                 LegendPlacement = LegendPlacement.Outside, LegendOrientation = LegendOrientation.Horizontal,
                 LegendFontSize = 11, LegendBorderThickness = 0
             };
-            plot.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = xLabel, Minimum = 0,
+            plot.Axes.Add(new LinearAxis { Position = AxisPosition.Bottom, Title = ReviewLanguage.Text(xLabel), Minimum = 0,
                 IsZoomEnabled = false, IsPanEnabled = false,
                 MajorGridlineStyle = LineStyle.None, AxislineColor = OxyColor.Parse("#BAC5CE") });
-            plot.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = yLabel, Minimum = 0,
+            plot.Axes.Add(new LinearAxis { Position = AxisPosition.Left, Title = ReviewLanguage.Text(yLabel), Minimum = 0,
                 IsZoomEnabled = false, IsPanEnabled = false,
                 MajorGridlineStyle = LineStyle.Solid, MajorGridlineColor = OxyColor.Parse("#E8EDF0"),
                 AxislineColor = OxyColor.Parse("#BAC5CE") });

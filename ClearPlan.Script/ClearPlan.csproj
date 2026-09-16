@@ -320,6 +320,7 @@
     <Content Include="Distribution\MachineGeometry\CollisionProfiles.example.json"><TargetPath>MachineGeometry\CollisionProfiles.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\DefaultReviewRules.json"><TargetPath>DefaultReviewRules.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\IsodoseDisplay.json"><TargetPath>IsodoseDisplay.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+    <Content Include="Distribution\CtCompatibility.json"><TargetPath>CtCompatibility.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\AriaUpload.example.json"><TargetPath>AriaUpload.example.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\FieldNamingRules.json"><TargetPath>FieldNamingRules.json</TargetPath><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
     <Content Include="Distribution\CHANGELOG.md">

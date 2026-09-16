@@ -6,12 +6,18 @@ The public package is an institution-neutral baseline. Clinical constraint sets,
 
 ## Current development source
 
-The current tree contains the `3.2.0-dev.20260915.7` review-workspace update after
+The current tree contains the `3.2.0-dev.20260916.1` review-workspace update after
 the archived v3.2.0 release. It adds configurable isodose levels with one shared
 GUI legend, compact field/report layouts, optional cached geometry playback and
 separate gantry/couch orientation views. It is **development source, not a new
 clinically commissioned release**. Cite the exact Git commit when reproducing
 this state; the v3.2.0 release remains an earlier frozen artifact.
+
+The shared workspace now offers German/English display selection with matching
+captured report language. An editable exact CT-device/HU-calibration tuple policy
+has an intentionally empty public starter; its current native adapter is limited
+to the documented legacy fallback check, not the complete CT-check family.
+See [language behavior](docs/LANGUAGE.md) and [CT approvals](docs/CT_COMPATIBILITY.md).
 
 No clinical manuscript images, patient reports, local device measurements,
 private clinical rules or deployment settings are supplied. Public collision

@@ -1,49 +1,50 @@
 <UserControl x:Class="ClearPlan.Presentation.Views.CollisionView"
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
- xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:lang="clr-namespace:ClearPlan.Presentation.Localization">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries>
   <ResourceDictionary Source="/ClearPlan.Presentation;component/Styles/ClinicalBlueprint.xaml"/>
  </ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
  <Grid Margin="24,16" TextElement.Foreground="{StaticResource ClinicalBlueprintText}">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <DockPanel Margin="0,0,0,12">
-   <Button DockPanel.Dock="Right" Content="Geometrie laden" Command="{Binding ReloadCommand}" Style="{StaticResource ClinicalBlueprintPrimaryButton}" Margin="12,0,0,0"/>
-   <StackPanel><TextBlock Text="Kollision / 3D" FontSize="21" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
-    <TextBlock Text="{Binding ProfileText}" TextWrapping="Wrap" FontSize="12" Margin="0,5,0,0" Foreground="{StaticResource ClinicalBlueprintTextMuted}" ToolTip="{Binding ProfileEvidence}" Focusable="True" AutomationProperties.HelpText="{Binding ProfileEvidence}"/>
+   <Button DockPanel.Dock="Right" Content="{lang:Translate Value='Geometrie laden'}" Command="{Binding ReloadCommand}" Style="{StaticResource ClinicalBlueprintPrimaryButton}" Margin="12,0,0,0"/>
+   <StackPanel><TextBlock Text="{lang:Translate Value='Kollision / 3D'}" FontSize="21" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
+    <TextBlock Text="{lang:Translate Path=ProfileText}" TextWrapping="Wrap" FontSize="12" Margin="0,5,0,0" Foreground="{StaticResource ClinicalBlueprintTextMuted}" ToolTip="{Binding ProfileEvidence}" Focusable="True" AutomationProperties.HelpText="{Binding ProfileEvidence}"/>
    </StackPanel>
   </DockPanel>
   <WrapPanel Grid.Row="1" Margin="0,0,0,12">
-   <TextBlock Text="Feld" VerticalAlignment="Center" Margin="0,0,8,0"/>
-   <ComboBox ItemsSource="{Binding BeamIds}" SelectedItem="{Binding SelectedBeamId}" Width="155" Margin="0,0,18,0" AutomationProperties.Name="Feld für Kollisionsansicht"/>
-   <CheckBox Content="Körper" IsChecked="{Binding BodyVisible}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-   <CheckBox Content="Tisch / Support" IsChecked="{Binding TableVisible}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-   <CheckBox Content="Gerätehülle" IsChecked="{Binding EnvelopeVisible}" VerticalAlignment="Center" Margin="0,0,18,0"/>
-   <CheckBox Content="10°-Verlauf" IsChecked="{Binding GhostsVisible}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-   <CheckBox Content="Alle Hüllen" IsChecked="{Binding HullsVisible}" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip="Optional: überlagerte Modellkonturen sämtlicher Winkel. Statusmarkierungen sind im 10°-Verlauf sichtbar."/>
-   <Button Content="Kleinster Modellabstand" Command="{Binding WorstPoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="9,5" Margin="0,0,12,0"/>
+   <TextBlock Text="{lang:Translate Value='Feld'}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+   <ComboBox ItemsSource="{Binding BeamIds}" SelectedItem="{Binding SelectedBeamId}" Width="155" Margin="0,0,18,0" AutomationProperties.Name="{lang:Translate Value='Feld für Kollisionsansicht'}"/>
+   <CheckBox Content="{lang:Translate Value='Körper'}" IsChecked="{Binding BodyVisible}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+   <CheckBox Content="{lang:Translate Value='Tisch / Support'}" IsChecked="{Binding TableVisible}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+   <CheckBox Content="{lang:Translate Value='Gerätehülle'}" IsChecked="{Binding EnvelopeVisible}" VerticalAlignment="Center" Margin="0,0,18,0"/>
+   <CheckBox Content="{lang:Translate Value='10°-Verlauf'}" IsChecked="{Binding GhostsVisible}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+   <CheckBox Content="{lang:Translate Value='Alle Hüllen'}" IsChecked="{Binding HullsVisible}" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip="{lang:Translate Value='Optional: überlagerte Modellkonturen sämtlicher Winkel. Statusmarkierungen sind im 10°-Verlauf sichtbar.'}"/>
+   <Button Content="{lang:Translate Value='Kleinster Modellabstand'}" Command="{Binding WorstPoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="9,5" Margin="0,0,12,0"/>
    <StackPanel Orientation="Horizontal">
     <StackPanel.Style><Style TargetType="StackPanel"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding IsSynthetic}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
-    <TextBlock Text="Demo-Modell" VerticalAlignment="Center" Margin="0,0,6,0"/>
-    <ComboBox ItemsSource="{Binding DemoKinds}" SelectedItem="{Binding DemoKind}" Width="120" AutomationProperties.Name="Synthetisches Gerätemodell; anschließend Geometrie laden"/>
+    <TextBlock Text="{lang:Translate Value='Demo-Modell'}" VerticalAlignment="Center" Margin="0,0,6,0"/>
+    <ComboBox ItemsSource="{Binding DemoKinds}" SelectedItem="{Binding DemoKind}" Width="120" AutomationProperties.Name="{lang:Translate Value='Synthetisches Gerätemodell; anschließend Geometrie laden'}"/>
    </StackPanel>
   </WrapPanel>
   <Grid Grid.Row="2">
    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="430"/></Grid.ColumnDefinitions>
    <Border x:Name="IllustrationRoot" Background="#17212B" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="1" ClipToBounds="True"
-           MouseLeftButtonDown="OrbitStart" MouseLeftButtonUp="OrbitStop" MouseMove="OrbitMove" MouseWheel="ZoomScene" ToolTip="Ziehen: Ansicht drehen · Mausrad: Zoom. Anzeigeänderungen verändern keine Kollisionsberechnung.">
+           MouseLeftButtonDown="OrbitStart" MouseLeftButtonUp="OrbitStop" MouseMove="OrbitMove" MouseWheel="ZoomScene" ToolTip="{lang:Translate Value='Ziehen: Ansicht drehen · Mausrad: Zoom. Anzeigeänderungen verändern keine Kollisionsberechnung.'}">
     <Grid>
      <Grid.ColumnDefinitions><ColumnDefinition Width="1.25*"/><ColumnDefinition x:Name="RoomReferenceColumn" Width="0"/></Grid.ColumnDefinitions>
-     <Viewport3D x:Name="SceneViewport" ClipToBounds="True" Margin="0,50,0,42" AutomationProperties.Name="Dreidimensionale erfasste Körper- und Gerätegeometrie; Kamera über die beschrifteten Regler steuerbar"/>
+     <Viewport3D x:Name="SceneViewport" ClipToBounds="True" Margin="0,50,0,42" AutomationProperties.Name="{lang:Translate Value='Dreidimensionale erfasste Körper- und Gerätegeometrie; Kamera über die beschrifteten Regler steuerbar'}"/>
      <!-- ISO is projected with the fitted orthographic camera, not assumed to
           be the canvas center. The overlay deliberately ignores occlusion. -->
-     <Grid x:Name="IsoOverlay" Margin="0,50,0,42" IsHitTestVisible="False" AutomationProperties.Name="Projiziertes Isozentrum; Markierung liegt über der 3D-Geometrie">
+     <Grid x:Name="IsoOverlay" Margin="0,50,0,42" IsHitTestVisible="False" AutomationProperties.Name="{lang:Translate Value='Projiziertes Isozentrum; Markierung liegt über der 3D-Geometrie'}">
       <Grid.Style><Style TargetType="Grid"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding HasSelectedPose}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Grid.Style>
       <Grid x:Name="IsoMarker" Width="36" Height="36" HorizontalAlignment="Center" VerticalAlignment="Center">
        <Path Data="M 4,18 L 13,18 M 23,18 L 32,18 M 18,4 L 18,13 M 18,23 L 18,32" Stroke="#17212B" StrokeThickness="4"/>
        <Path Data="M 4,18 L 13,18 M 23,18 L 32,18 M 18,4 L 18,13 M 18,23 L 18,32" Stroke="White" StrokeThickness="1.5"/>
        <Ellipse Width="4" Height="4" Fill="White" Stroke="#17212B" StrokeThickness="1"/>
        <Border Background="#E617212B" Padding="5,2" Margin="39,-8,0,0" Width="92" HorizontalAlignment="Left" VerticalAlignment="Top">
-        <TextBlock Text="ISO · projiziert" Foreground="White" FontSize="11"/>
+        <TextBlock Text="{lang:Translate Value='ISO · projiziert'}" Foreground="White" FontSize="11"/>
        </Border>
       </Grid>
      </Grid>
@@ -51,7 +52,7 @@
       <TextBlock x:Name="ScenePoseHeading" Foreground="White" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap"/>
       <TextBlock FontSize="12" Margin="0,4,0,0" Foreground="#DCE5EC" TextWrapping="Wrap">
        <Run x:Name="SceneSummary"/>
-       <Run Text=" · Aktiv: "/><Run x:Name="SceneActiveStatus"/>
+       <Run Text="{lang:Translate Value=' · Aktiv: '}"/><Run x:Name="SceneActiveStatus"/>
        <Run x:Name="SceneSampling"/>
       </TextBlock>
      </StackPanel>
@@ -59,25 +60,25 @@
       <Border.Style><Style TargetType="Border"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding RoomView}" Value="True"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></Border.Style>
       <Grid x:Name="OrientationLayout"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="1.1*"/><RowDefinition Height="*"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-       <TextBlock x:Name="OrientationTitle" Text="Raumorientierung" Foreground="#DCE5EC" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap"/>
-       <Viewport3D x:Name="RoomReferenceViewport" Grid.Row="1" ClipToBounds="True" AutomationProperties.Name="Schematischer fester Linacsockel, Gantryachse und gedrehte Patienten-/Tischachse; kein Kollisionsmodell"/>
-       <TextBlock x:Name="RoomReferenceUnavailable" Grid.Row="1" Text="Kein C-Arm-Schema" Foreground="#DCE5EC" FontSize="11" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8"/>
-       <Image x:Name="GantryCompass" Grid.Row="2" Stretch="Uniform" AutomationProperties.Name="Gantrywinkel; nominelle Frontansicht mit fester Nullgradreferenz"/>
-       <Image x:Name="RoomCompass" Grid.Row="3" Stretch="Uniform" AutomationProperties.Name="Tischwinkel; nominelle Draufsicht mit fester Nullgradreferenz"/>
-       <TextBlock x:Name="OrientationFooter" Grid.Row="4" Text="Nominal · 0° gestrichelt&#10;Kein Kollisionsmodell" Foreground="#BFCFD9" FontSize="10" TextWrapping="Wrap"/>
+       <TextBlock x:Name="OrientationTitle" Text="{lang:Translate Value='Raumorientierung'}" Foreground="#DCE5EC" FontSize="11" FontWeight="SemiBold" TextWrapping="Wrap"/>
+       <Viewport3D x:Name="RoomReferenceViewport" Grid.Row="1" ClipToBounds="True" AutomationProperties.Name="{lang:Translate Value='Schematischer fester Linacsockel, Gantryachse und gedrehte Patienten-/Tischachse; kein Kollisionsmodell'}"/>
+       <TextBlock x:Name="RoomReferenceUnavailable" Grid.Row="1" Text="{lang:Translate Value='Kein C-Arm-Schema'}" Foreground="#DCE5EC" FontSize="11" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="8"/>
+       <Image x:Name="GantryCompass" Grid.Row="2" Stretch="Uniform" AutomationProperties.Name="{lang:Translate Value='Gantrywinkel; nominelle Frontansicht mit fester Nullgradreferenz'}"/>
+       <Image x:Name="RoomCompass" Grid.Row="3" Stretch="Uniform" AutomationProperties.Name="{lang:Translate Value='Tischwinkel; nominelle Draufsicht mit fester Nullgradreferenz'}"/>
+       <TextBlock x:Name="OrientationFooter" Grid.Row="4" Text="{lang:Translate Value='Nominal · 0° gestrichelt&#10;Kein Kollisionsmodell'}" Foreground="#BFCFD9" FontSize="10" TextWrapping="Wrap"/>
       </Grid>
      </Border>
-     <TextBlock Text="Geometrie laden, um Oberflächen zu sehen." Foreground="#DCE5EC" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24">
+     <TextBlock Text="{lang:Translate Value='Geometrie laden, um Oberflächen zu sehen.'}" Foreground="#DCE5EC" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24">
       <TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding HasScene}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></TextBlock.Style>
      </TextBlock>
      <WrapPanel x:Name="SceneLegend" VerticalAlignment="Bottom" Margin="16,10">
-      <TextBlock Text="Körper" Foreground="#5EC7BC" Margin="0,0,18,0"/>
-      <TextBlock Text="Support" Foreground="#BAC7D7" Margin="0,0,18,0"/>
-      <TextBlock Text="Full clear" Foreground="#69D391" Margin="0,0,12,0"/>
-      <TextBlock Text="Still clear / Ungewiss" Foreground="#F2C45C" Margin="0,0,12,0" ToolTip="Still clear: teilweise erfasste Geometrie frei. Ungewiss: kein belastbarer Freinachweis. Details rechts."/>
-      <TextBlock Text="Treffer" Foreground="#FF7B72" Margin="0,0,18,0"/>
-      <TextBlock Text="{Binding ViewFrameText}" Foreground="#DCE5EC" Margin="0,0,12,0"/>
-      <TextBlock Text="10°: Statuspunkte · ISO: projiziert" Foreground="White"/>
+      <TextBlock Text="{lang:Translate Value='Körper'}" Foreground="#5EC7BC" Margin="0,0,18,0"/>
+      <TextBlock Text="{lang:Translate Value='Support'}" Foreground="#BAC7D7" Margin="0,0,18,0"/>
+      <TextBlock Text="{lang:Translate Value='Full clear'}" Foreground="#69D391" Margin="0,0,12,0"/>
+      <TextBlock Text="{lang:Translate Value='Still clear / Ungewiss'}" Foreground="#F2C45C" Margin="0,0,12,0" ToolTip="{lang:Translate Value='Still clear: teilweise erfasste Geometrie frei. Ungewiss: kein belastbarer Freinachweis. Details rechts.'}"/>
+      <TextBlock Text="{lang:Translate Value='Treffer'}" Foreground="#FF7B72" Margin="0,0,18,0"/>
+      <TextBlock Text="{lang:Translate Path=ViewFrameText}" Foreground="#DCE5EC" Margin="0,0,12,0"/>
+      <TextBlock Text="{lang:Translate Value='10°: Statuspunkte · ISO: projiziert'}" Foreground="White"/>
       <TextBlock Text="{Binding BoundaryNote}" Foreground="White" Margin="12,0,0,0"/>
      </WrapPanel>
     </Grid>
@@ -87,49 +88,49 @@
      <Grid Margin="0,0,0,14">
       <Grid.ColumnDefinitions><ColumnDefinition Width="174"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
       <Border Background="#17212B" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="1" Width="166" Height="166" HorizontalAlignment="Left">
-       <Image x:Name="MlcInset" Stretch="Uniform" AutomationProperties.Name="MLC-Apertur des beschrifteten erfassten Kontrollpunkts in BLD-Koordinaten" ToolTip="Grün: MLC / effektive Öffnung · Blau gestrichelt: zweite Lage · Gelb: bewegliche Blenden · Weiß gestrichelt: feste Feldgrenze · Kreuz: Isozentrum"/>
+       <Image x:Name="MlcInset" Stretch="Uniform" AutomationProperties.Name="{lang:Translate Value='MLC-Apertur des beschrifteten erfassten Kontrollpunkts in BLD-Koordinaten'}" ToolTip="{lang:Translate Value='Grün: MLC / effektive Öffnung · Blau gestrichelt: zweite Lage · Gelb: bewegliche Blenden · Weiß gestrichelt: feste Feldgrenze · Kreuz: Isozentrum'}"/>
       </Border>
       <StackPanel Grid.Column="1" Margin="8,0,0,0">
-       <TextBlock Text="MLC / Kontrollpunkt" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8"/>
+       <TextBlock Text="{lang:Translate Value='MLC / Kontrollpunkt'}" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8"/>
        <TextBlock Text="{Binding MlcCaption}" TextWrapping="Wrap" FontSize="12" FontWeight="SemiBold"/>
        <TextBlock Text="{Binding MlcScope}" TextWrapping="Wrap" FontSize="11" Margin="0,6,0,12" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
-       <TextBlock FontSize="12"><Run Text="Körper: "/><Run Text="{Binding SelectedFrame.BodyResultText, Mode=OneWay}"/></TextBlock>
-       <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="Tisch: "/><Run Text="{Binding SelectedFrame.TableResultText, Mode=OneWay}"/></TextBlock>
+       <TextBlock FontSize="12"><Run Text="{lang:Translate Value='Körper: '}"/><Run Text="{lang:Translate Path=SelectedFrame.BodyResultText}"/></TextBlock>
+       <TextBlock FontSize="12" Margin="0,4,0,0"><Run Text="{lang:Translate Value='Tisch: '}"/><Run Text="{lang:Translate Path=SelectedFrame.TableResultText}"/></TextBlock>
       </StackPanel>
      </Grid>
    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <StackPanel>
-     <TextBlock Text="Geometrischer Befund" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,8"/>
-     <TextBlock Text="{Binding SelectedFrame.EvidenceText}" TextWrapping="Wrap" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
-     <TextBlock Text="{Binding SurfaceAvailabilityText}" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6"/>
-     <TextBlock Text="{Binding StatusText}" ToolTip="{Binding StatusDetail}" Focusable="True" AutomationProperties.HelpText="{Binding StatusDetail}" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,12"/>
-     <TextBlock Text="{Binding AssuranceText}" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,10" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
-     <TextBlock Text="No-fly-Zone → Oberfläche [mm]" FontWeight="SemiBold" Margin="0,0,0,5"/>
-     <TextBlock Text="Untergrenze … Stichprobenwert. Nur ein negativer Stichprobenwert belegt eine Modellüberschneidung. ≤: Untergrenze unbekannt. Zeile auswählen." FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+     <TextBlock Text="{lang:Translate Value='Geometrischer Befund'}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,8"/>
+     <TextBlock Text="{lang:Translate Path=SelectedFrame.EvidenceText}" TextWrapping="Wrap" FontWeight="SemiBold" FontSize="12" Margin="0,0,0,8"/>
+     <TextBlock Text="{lang:Translate Path=SurfaceAvailabilityText}" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6"/>
+     <TextBlock Text="{lang:Translate Path=StatusText}" ToolTip="{Binding StatusDetail}" Focusable="True" AutomationProperties.HelpText="{Binding StatusDetail}" TextWrapping="Wrap" FontSize="12" Margin="0,0,0,12"/>
+     <TextBlock Text="{lang:Translate Path=AssuranceText}" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,10" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+     <TextBlock Text="{lang:Translate Value='No-fly-Zone → Oberfläche [mm]'}" FontWeight="SemiBold" Margin="0,0,0,5"/>
+     <TextBlock Text="{lang:Translate Value='Untergrenze … Stichprobenwert. Nur ein negativer Stichprobenwert belegt eine Modellüberschneidung. ≤: Untergrenze unbekannt. Zeile auswählen.'}" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
      <DataGrid x:Name="FrameTable" ItemsSource="{Binding AllFrames}" SelectedItem="{Binding SelectedFrame, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single"
         CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False" HeadersVisibility="Column" GridLinesVisibility="Horizontal" MinHeight="150" MaxHeight="330" FontSize="11"
-        AutomationProperties.Name="Alle Felder: 10-Grad-Positionen, Status und Abstand zu Körper und Tisch">
+        AutomationProperties.Name="{lang:Translate Value='Alle Felder: 10-Grad-Positionen, Status und Abstand zu Körper und Tisch'}">
       <DataGrid.RowStyle><Style TargetType="DataGridRow"><Setter Property="ToolTip" Value="{Binding EvidenceText}"/></Style></DataGrid.RowStyle>
       <DataGrid.Columns>
-       <DataGridTextColumn Header="Feld" Binding="{Binding Frame.Pose.BeamId}" Width="60"/>
-       <DataGridTextColumn Header="Winkel" Binding="{Binding AngleText}" Width="48"/>
-       <DataGridTextColumn Header="Tisch °" Binding="{Binding CouchText}" Width="45"/>
-       <DataGridTextColumn Header="Status" Binding="{Binding StatusText}" Width="94"/>
-       <DataGridTextColumn Header="Körper" Binding="{Binding BodyDistanceText}" Width="*"/>
-       <DataGridTextColumn Header="Tisch" Binding="{Binding TableDistanceText}" Width="*"/>
+       <DataGridTextColumn Header="{lang:Translate Value='Feld'}" Binding="{Binding Frame.Pose.BeamId}" Width="60"/>
+       <DataGridTextColumn Header="{lang:Translate Value='Winkel'}" Binding="{Binding AngleText}" Width="48"/>
+       <DataGridTextColumn Header="{lang:Translate Value='Tisch °'}" Binding="{Binding CouchText}" Width="45"/>
+       <DataGridTextColumn Header="{lang:Translate Value='Status'}" Binding="{Binding StatusText}" Width="94"/>
+       <DataGridTextColumn Header="{lang:Translate Value='Körper'}" Binding="{Binding BodyDistanceText}" Width="*"/>
+       <DataGridTextColumn Header="{lang:Translate Value='Tisch'}" Binding="{Binding TableDistanceText}" Width="*"/>
       </DataGrid.Columns>
      </DataGrid>
-     <TextBlock Text="{Binding SelectedFrame.Reason}" TextWrapping="Wrap" MaxHeight="90" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedFrame.Reason}" FontSize="11" Margin="0,10,0,0" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
-     <Expander Header="Kamera und Modellnachweis" Margin="0,16,0,0"><StackPanel>
+     <TextBlock Text="{lang:Translate Path=SelectedFrame.Reason}" TextWrapping="Wrap" MaxHeight="90" TextTrimming="CharacterEllipsis" ToolTip="{lang:Translate Path=SelectedFrame.Reason}" FontSize="11" Margin="0,10,0,0" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
+     <Expander Header="{lang:Translate Value='Kamera und Modellnachweis'}" Margin="0,16,0,0"><StackPanel>
      <CheckBox IsChecked="{Binding ZeroPitchRollConfirmed}" IsEnabled="{Binding CanConfirmCoordinates}" Margin="0,0,0,12"
-       ToolTip="ESAPI liefert hier kein Pitch/Roll. Bestätigung nur für diesen Plan: fest 0° für alle Felder, keine variablen 6D-Korrekturen. Anschließend Geometrie laden. Keine Freigabe für die Behandlung.">
+       ToolTip="{lang:Translate Value='ESAPI liefert hier kein Pitch/Roll. Bestätigung nur für diesen Plan: fest 0° für alle Felder, keine variablen 6D-Korrekturen. Anschließend Geometrie laden. Keine Freigabe für die Behandlung.'}">
       <CheckBox.Style><Style TargetType="CheckBox"><Setter Property="Visibility" Value="Visible"/><Style.Triggers><DataTrigger Binding="{Binding IsSynthetic}" Value="True"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></CheckBox.Style>
-      <TextBlock Text="Pitch/Roll für alle Felder fest 0° · manuell geprüft" TextWrapping="Wrap"/>
+      <TextBlock Text="{lang:Translate Value='Pitch/Roll für alle Felder fest 0° · manuell geprüft'}" TextWrapping="Wrap"/>
      </CheckBox>
-     <TextBlock Text="Drehung" FontSize="12"/><Slider Minimum="-180" Maximum="180" Value="{Binding Yaw}" AutomationProperties.Name="Kamera drehen"/>
-     <TextBlock Text="Neigung" FontSize="12" Margin="0,8,0,0"/><Slider Minimum="-75" Maximum="75" Value="{Binding Elevation}" AutomationProperties.Name="Kamera neigen"/>
-     <TextBlock Text="Zoom" FontSize="12" Margin="0,8,0,0"/><Slider Minimum="0.6" Maximum="2" Value="{Binding Zoom}" AutomationProperties.Name="Kamera vergrößern"/>
-     <Button Content="Ansicht zurücksetzen" Command="{Binding ResetCameraCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,10,0,0"/>
+     <TextBlock Text="{lang:Translate Value='Drehung'}" FontSize="12"/><Slider Minimum="-180" Maximum="180" Value="{Binding Yaw}" AutomationProperties.Name="{lang:Translate Value='Kamera drehen'}"/>
+     <TextBlock Text="{lang:Translate Value='Neigung'}" FontSize="12" Margin="0,8,0,0"/><Slider Minimum="-75" Maximum="75" Value="{Binding Elevation}" AutomationProperties.Name="{lang:Translate Value='Kamera neigen'}"/>
+     <TextBlock Text="{lang:Translate Value='Zoom'}" FontSize="12" Margin="0,8,0,0"/><Slider Minimum="0.6" Maximum="2" Value="{Binding Zoom}" AutomationProperties.Name="{lang:Translate Value='Kamera vergrößern'}"/>
+     <Button Content="{lang:Translate Value='Ansicht zurücksetzen'}" Command="{Binding ResetCameraCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="0,10,0,0"/>
      <TextBlock Text="{Binding ProfileEvidence}" FontSize="11" TextWrapping="Wrap" Margin="0,10,0,0"/>
      </StackPanel></Expander>
     </StackPanel>
@@ -140,20 +141,20 @@
    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
    <StackPanel Margin="0,0,20,0">
     <WrapPanel Margin="0,0,0,5">
-     <Button Content="Zurück" Command="{Binding PreviousPoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="12,5" Margin="0,0,6,0"/>
-     <Button Content="{Binding PlayText}" Command="{Binding PlayPauseCommand}" Style="{StaticResource ClinicalBlueprintPrimaryButton}" Padding="16,5" Margin="0,0,6,0"/>
-     <Button Content="Weiter" Command="{Binding NextPoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="12,5" Margin="0,0,12,0"/>
-     <CheckBox Content="Alle Felder" IsChecked="{Binding AllFieldsPlayback}" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip="Nach dem Feldende zur ersten Position des nächsten Feldes springen. Keine Simulation der Bewegung zwischen Feldern."/>
-     <CheckBox Content="Wiederholen" IsChecked="{Binding RepeatPlayback}" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip="Nach der letzten Position wieder am Anfang beginnen. Nur bei gestarteter Wiedergabe."/>
-     <TextBlock Text="{Binding PoseText}" FontSize="12" VerticalAlignment="Center"/>
+     <Button Content="{lang:Translate Value='Zurück'}" Command="{Binding PreviousPoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="12,5" Margin="0,0,6,0"/>
+     <Button Content="{lang:Translate Path=PlayText}" Command="{Binding PlayPauseCommand}" Style="{StaticResource ClinicalBlueprintPrimaryButton}" Padding="16,5" Margin="0,0,6,0"/>
+     <Button Content="{lang:Translate Value='Weiter'}" Command="{Binding NextPoseCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="12,5" Margin="0,0,12,0"/>
+     <CheckBox Content="{lang:Translate Value='Alle Felder'}" IsChecked="{Binding AllFieldsPlayback}" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip="{lang:Translate Value='Nach dem Feldende zur ersten Position des nächsten Feldes springen. Keine Simulation der Bewegung zwischen Feldern.'}"/>
+     <CheckBox Content="{lang:Translate Value='Wiederholen'}" IsChecked="{Binding RepeatPlayback}" VerticalAlignment="Center" Margin="0,0,12,0" ToolTip="{lang:Translate Value='Nach der letzten Position wieder am Anfang beginnen. Nur bei gestarteter Wiedergabe.'}"/>
+     <TextBlock Text="{lang:Translate Path=PoseText}" FontSize="12" VerticalAlignment="Center"/>
     </WrapPanel>
-    <Slider Minimum="0" Maximum="{Binding MaximumPosePosition}" Value="{Binding PosePosition}" IsSnapToTickEnabled="True" TickFrequency="1" IsMoveToPointEnabled="True" AutomationProperties.Name="Kollisionsansicht Kontrollpunkt"/>
+    <Slider Minimum="0" Maximum="{Binding MaximumPosePosition}" Value="{Binding PosePosition}" IsSnapToTickEnabled="True" TickFrequency="1" IsMoveToPointEnabled="True" AutomationProperties.Name="{lang:Translate Value='Kollisionsansicht Kontrollpunkt'}"/>
    </StackPanel>
-   <CheckBox Grid.Column="1" Content="3D-Abbildung in HTML / PDF" IsChecked="{Binding IncludeInReport}" IsEnabled="{Binding HasScene}" VerticalAlignment="Center"
-             ToolTip="Eine Abbildung am kleinsten Modellabstand über alle Felder sowie eine Tabelle der Feld-Minima übernehmen. Keine Neuberechnung klinischer Ziele."/>
+   <CheckBox Grid.Column="1" Content="{lang:Translate Value='3D-Abbildung in HTML / PDF'}" IsChecked="{Binding IncludeInReport}" IsEnabled="{Binding HasScene}" VerticalAlignment="Center"
+             ToolTip="{lang:Translate Value='Eine Abbildung am kleinsten Modellabstand über alle Felder sowie eine Tabelle der Feld-Minima übernehmen. Keine Neuberechnung klinischer Ziele.'}"/>
   </Grid>
   <TextBlock Grid.Row="4" Text="{Binding ShortLimitations}"
-      ToolTip="{Binding LimitationsText}" AutomationProperties.HelpText="{Binding LimitationsText}" Focusable="True" TextTrimming="CharacterEllipsis"
+      ToolTip="{lang:Translate Path=LimitationsText}" AutomationProperties.HelpText="{lang:Translate Path=LimitationsText}" Focusable="True" TextTrimming="CharacterEllipsis"
       Foreground="{StaticResource ClinicalBlueprintTextMuted}" FontSize="11"/>
  </Grid>
 </UserControl>

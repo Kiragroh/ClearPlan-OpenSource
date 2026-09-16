@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using ClearPlan.Core.PlanAnalysis;
+using ClearPlan.Core.Localization;
 
 namespace ClearPlan.Rendering
 {
@@ -423,7 +424,7 @@ namespace ClearPlan.Rendering
             // Keep the isocenter and central aperture inspectable even when there is no CT projection.
             Fill(g, Color.FromArgb(228, 23, 33, 43), new RectangleF(160, 705, 680, 153));
             Text(g, "CT projection unavailable", new RectangleF(182, 718, 636, 38), 28, Color.White, true, StringAlignment.Center);
-            Text(g, Clean(reason, "No CT projection supplied.", 240), new RectangleF(182, 764, 636, 83), 21, Color.FromArgb(217, 227, 236), false, StringAlignment.Center);
+            Text(g, Clean(ReviewLanguage.Text(reason), "No CT projection supplied.", 240), new RectangleF(182, 764, 636, 83), 21, Color.FromArgb(217, 227, 236), false, StringAlignment.Center);
         }
 
         private static string LeafWidthLabel(ApertureLayer layer)
@@ -464,7 +465,8 @@ namespace ClearPlan.Rendering
             if (!compactStatus)
             {
                 Text(g, state.ImageAvailable ? state.ImageMessage + " available" : "DRR unavailable — pixels withheld", new RectangleF(x, 640, w, 30), 22, state.ImageAvailable ? Teal : Color.FromArgb(151, 88, 19), true);
-                string detail = !state.ImageAvailable ? state.ImageMessage : (!state.GeometryAvailable ? state.GeometryMessage : Clean(image == null ? null : image.ProjectionDescription, "Detached CT-derived line-integral projection.", 320));
+                // Exact diagnostic translation only; never translate machine/beam IDs or whole drawing strings.
+                string detail = !state.ImageAvailable ? ReviewLanguage.Text(state.ImageMessage) : (!state.GeometryAvailable ? ReviewLanguage.Text(state.GeometryMessage) : Clean(ReviewLanguage.Text(image == null ? null : image.ProjectionDescription), "Detached CT-derived line-integral projection.", 320));
                 Text(g, detail, new RectangleF(x, 710, w, 55), 20, Muted);
             }
             Text(g, state.GeometryAvailable ? "Complete MLC / boundary geometry" : "MLC / boundary geometry unavailable", new RectangleF(x, compactStatus ? 640 : 675, w, 28), 21, state.GeometryAvailable ? Ink : Color.FromArgb(151, 88, 19));

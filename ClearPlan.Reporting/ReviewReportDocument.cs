@@ -11,6 +11,7 @@ namespace ClearPlan.Reporting
         public const string ReportTitle = "Plan Quality Report";
         public ReviewReportDocument()
         {
+            LanguageCode = ClearPlan.Core.Localization.ReviewLanguage.Code;
             var version = (System.Reflection.AssemblyInformationalVersionAttribute)Attribute.GetCustomAttribute(
                 typeof(ReviewReportDocument).Assembly, typeof(System.Reflection.AssemblyInformationalVersionAttribute));
             SoftwareVersion = version == null ? typeof(ReviewReportDocument).Assembly.GetName().Version.ToString() : version.InformationalVersion;
@@ -30,6 +31,7 @@ namespace ClearPlan.Reporting
         }
 
         public int SchemaVersion { get; set; }
+        public string LanguageCode { get; set; }
         public string SoftwareVersion { get; set; }
         public string ScenarioId { get; set; }
         public string ScenarioTitle { get; set; }

@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.2.0-dev.20260916.1] Display language and exact CT approvals
+- Added a shared German/English selector, display-only labels and plot refresh. Reports capture their display language independently of later GUI changes; clinical identifiers, numeric values and canonical status codes are not renamed.
+- Added a versioned exact manufacturer/model/serial/HU-calibration approval configuration with an empty public starter. Missing, invalid, disabled or absent approvals cannot pass. Native integration is deliberately limited to the documented legacy fallback tuple; other private checks are unchanged.
+- Added synthetic CT-policy and GUI/HTML/PDF language round-trip regressions. This remains development source requiring local commissioning; no clinical assets or local approval tuples are distributed.
+
 ## [3.2.0-dev.20260915.7] Development source snapshot
 - Added editable isodose percentages/colors and visibility, one shared GUI legend, synchronized PDF/HTML presentation, and versioned defaults.
 - Added optional read-only sampled geometry playback with body/support distances, a CP-linked MLC inset and separate gantry/couch orientation views. Public catalogs contain no local device dimensions; the display is not clinical collision clearance.

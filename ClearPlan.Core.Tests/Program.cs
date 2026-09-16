@@ -37,7 +37,21 @@ namespace ClearPlan.Core.Tests
             string filter = args.FirstOrDefault() ?? string.Empty;
             var tests = new List<TestCase>
             {
+                new TestCase("ReviewLanguage.EnglishGermanRoundTrip", ReviewLanguageTests.EnglishGermanRoundTrip),
+                new TestCase("ReviewLanguage.LiveBindingsAndReportScope", ReviewLanguageTests.LiveBindingsAndReportScope),
+                new TestCase("ReviewLanguage.AllViewsAndPlotIdentity", ReviewLanguageTests.AllViewsAndPlotIdentity),
+                new TestCase("ReviewLanguage.ExplicitBilingualLabelScopes", ReviewLanguageTests.ExplicitBilingualLabelScopes),
+                new TestCase("ReviewLanguage.GuiSelectorRoundTripPreservesIdentity", ReviewLanguageTests.GuiSelectorRoundTripPreservesIdentity),
+                new TestCase("ReviewLanguage.HtmlAndPdfLanguageRoundTripPreservesClinicalValues", ReviewLanguageTests.HtmlAndPdfLanguageRoundTripPreservesClinicalValues),
                 new TestCase("IsodoseDisplay.DefaultsValidation", IsodoseDisplayTests.DefaultsAndValidation),
+                new TestCase("CtCompatibility.ExactTuple", CtCompatibilityTests.ApprovedExactTuple),
+                new TestCase("CtCompatibility.WrongTuple", CtCompatibilityTests.WrongTupleNeverPasses),
+                new TestCase("CtCompatibility.MissingDisabled", CtCompatibilityTests.MissingDisabledAndUnconfiguredNeverPass),
+                new TestCase("CtCompatibility.Invalid", CtCompatibilityTests.InvalidConfigurationNeverPasses),
+                new TestCase("CtCompatibility.LegacyBoundary", CtCompatibilityTests.LegacyBoundaryIsExact),
+                new TestCase("CtCompatibility.Settings", CtCompatibilityTests.SettingsIntegration),
+                new TestCase("CtCompatibility.NativeGui", CtCompatibilityTests.NativeAndGuiIntegration),
+                new TestCase("CtCompatibility.VersionReload", CtCompatibilityTests.VersionHistoryAndReload),
                 new TestCase("IsodoseDisplay.RealDetachedLevels", IsodoseDisplayTests.PlaneLevelsAreRealAndDetached),
                 new TestCase("IsodoseDisplay.GuiExport", IsodoseDisplayTests.GuiEditsAndExportUseSamePalette),
                 new TestCase("IsodoseDisplay.Settings", IsodoseDisplayTests.SettingsPathAndValidation),

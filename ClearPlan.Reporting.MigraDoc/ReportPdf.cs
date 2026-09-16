@@ -8,9 +8,81 @@ using MigraDoc.Rendering;
 using ClearPlan.Reporting.MigraDoc.Internal;
 using ClearPlan.Core.Review;
 using ClearPlan.Core.PlanAnalysis;
+using ClearPlan.Core.Localization;
 
 namespace ClearPlan.Reporting.MigraDoc
 {
+    // Fixed presentation labels only. Do not call this on identity cells or free clinical text.
+    internal static class ReviewReportLabels
+    {
+        private static readonly IDictionary<string, string> German = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            { "Active plan", "Aktiver Plan" }, { "Current plan", "Aktueller Plan" },
+            { "Clinical goals", "Klinische Ziele" }, { "Plan quality metrics (PQM)", "Planqualitätsmetriken (PQM)" },
+            { "Delivery and modulation summary", "Applikations- und Modulationsübersicht" },
+            { "PTV quality | Conformity, gradient and homogeneity", "PTV-Qualität | Konformität, Gradient und Homogenität" },
+            { "Target quality", "Zielvolumenqualität" }, { "Plan parameters", "Planparameter" },
+            { "CT overview", "CT-Übersicht" }, { "Coronal (orthogonal)", "Koronal (orthogonal)" },
+            { "Dose-volume overview | Active plan", "Dosis-Volumen-Übersicht | Aktiver Plan" },
+            { "Review details | Active plan", "Prüfdetails | Aktiver Plan" },
+            { "DVH statistics | Dose in Gy", "DVH-Statistik | Dosis in Gy" },
+            { "Field identifiers and names", "Feldkennungen und -namen" }, { "Structure mapping", "Strukturzuordnung" },
+            { "Field reviews | Unavailable inputs", "Feldübersichten | Nicht verfügbare Daten" },
+            { "Collision / 3D | Sampled geometry review", "Kollision / 3D | Stichprobenartige Geometrieprüfung" },
+            { "Collision / 3D | Minimum model distance", "Kollision / 3D | Kleinster Modellabstand" },
+            { "Beam's-eye views and control-point trajectories", "Beam's-Eye-Views und Kontrollpunktverläufe" },
+            { "Control-point trajectories", "Kontrollpunktverläufe" },
+            { "Created", "Erstellt" }, { "Dose/Fx [Gy]", "Dosis/Fx [Gy]" },
+            { "Total [Gy]", "Gesamt [Gy]" }, { "Total dose [Gy]", "Gesamtdosis [Gy]" },
+            { "Dose / fraction [Gy]", "Dosis / Fraktion [Gy]" }, { "Fractions", "Fraktionen" }, { "Target", "Zielvolumen" },
+            { "Total MU", "Gesamt-MU" }, { "MU / Gy per fraction", "MU / Gy je Fraktion" },
+            { "Mean aperture [cm2]", "Mittlere Apertur [cm2]" }, { "Mean aperture [cm²]", "Mittlere Apertur [cm²]" },
+            { "Small-aperture fraction", "Anteil kleiner Aperturen" }, { "Small aperture fraction", "Anteil kleiner Aperturen" },
+            { "Beam", "Feld" }, { "Field", "Feld" }, { "MLC model", "MLC-Modell" }, { "Layers", "Lagen" },
+            { "Geometry", "Geometrie" }, { "Availability note", "Verfügbarkeitshinweis" },
+            { "Geometry / availability", "Geometrie / Verfügbarkeit" }, { "Availability / scope", "Verfügbarkeit / Geltungsbereich" },
+            { "Technique / energy", "Technik / Energie" }, { "Normalization [%]", "Normierung [%]" },
+            { "Template", "Vorlage" }, { "Template structure", "Vorlagenstruktur" },
+            { "Resolved structure", "Zugeordnete Struktur" }, { "Matched structure", "Zugeordnete Struktur" },
+            { "Template structure → matched structure", "Vorlagenstruktur → zugeordnete Struktur" },
+            { "Objective", "Kriterium" }, { "Rule", "Regel" }, { "Goal", "Ziel" }, { "Achieved", "Erreicht" },
+            { "Result", "Ergebnis" }, { "Message", "Meldung" }, { "Check", "Prüfung" }, { "Category", "Kategorie" },
+            { "Order", "Reihenfolge" }, { "Beam #", "Feld #" }, { "Current ID", "Aktuelle ID" }, { "Expected ID", "Erwartete ID" },
+            { "Current name", "Aktueller Name" }, { "Suggested name", "Namensvorschlag" },
+            { "ID status", "ID-Status" }, { "Name status", "Namensstatus" }, { "Structure", "Struktur" },
+            { "Volume [cm3]", "Volumen [cm3]" }, { "Volume [cm³]", "Volumen [cm³]" },
+            { "Target / body", "Zielvolumen / Körper" }, { "Target [cm³]", "Zielvolumen [cm³]" },
+            { "PTV / inputs", "PTV / Eingangswerte" }, { "Body V100 [cm3]", "Körper V100 [cm3]" },
+            { "Body V50 [cm3]", "Körper V50 [cm3]" }, { "Couch", "Tisch" },
+            { "Status (whole field)", "Status (gesamtes Feld)" }, { "Body [mm]", "Körper [mm]" }, { "Table [mm]", "Tisch [mm]" }
+        };
+        public static string Text(string label)
+        {
+            string german;
+            return label != null && German.TryGetValue(label, out german) ? ReviewLanguage.Label(german, label) : label;
+        }
+        public static string Status(string code)
+        {
+            switch ((code ?? string.Empty).ToLowerInvariant())
+            {
+                case "pass": case "passed": return ReviewLanguage.Label("Erfüllt", "Met");
+                case "fail": case "failed": return ReviewLanguage.Label("Nicht erfüllt", "Not met");
+                case "variation": return ReviewLanguage.Label("Abweichung", "Variation");
+                case "warning": return ReviewLanguage.Label("Warnung", "Warning");
+                case "error": return ReviewLanguage.Label("Fehler", "Error");
+                case "info": return ReviewLanguage.Label("Hinweis", "Note");
+                case "available": return ReviewLanguage.Label("Verfügbar", "Available");
+                case "unavailable": return ReviewLanguage.Label("Nicht verfügbar", "Unavailable");
+                case "not-evaluated": return ReviewLanguage.Label("Nicht bewertet", "Not evaluated");
+                case "unmatched": return ReviewLanguage.Label("Nicht zugeordnet", "Unmatched");
+                case "uncertain": return ReviewLanguage.Label("Ungewiss", "Uncertain");
+                case "hit": return ReviewLanguage.Label("Treffer", "Intersection");
+                case "model-hit": return ReviewLanguage.Label("Modelltreffer", "Model intersection");
+                default: return ReviewLanguage.Text(code);
+            }
+        }
+    }
+
     public partial class ReportPdf : IReport
     {
         public void Export(string path, ReportData data)
@@ -62,6 +134,12 @@ namespace ClearPlan.Reporting.MigraDoc
 
         private Document CreateReviewReport(ReviewReportDocument data)
         {
+            using (ClearPlan.Core.Localization.ReviewLanguage.Scope(data.LanguageCode ?? "de"))
+                return CreateLocalizedReviewReport(data);
+        }
+
+        private Document CreateLocalizedReviewReport(ReviewReportDocument data)
+        {
             var document = new Document();
             CustomStyles.Define(document);
             document.Styles[StyleNames.Normal].Font.Name = "Segoe UI";
@@ -76,7 +154,7 @@ namespace ClearPlan.Reporting.MigraDoc
                 : data.Watermark;
 
             document.Info.Title = ReviewReportDocument.ReportTitle;
-            document.Info.Subject = Safe(watermark, data.ModeLabel);
+            document.Info.Subject = ReviewLanguage.Text(Safe(watermark, data.ModeLabel));
 
             var section = new Section();
             SetUpReviewPage(section);
@@ -144,11 +222,11 @@ namespace ClearPlan.Reporting.MigraDoc
                 "ClearPlan · " +
                 Safe(data.SoftwareVersion, "version unavailable"));
             footer.AddTab();
-            footer.AddText("Page ");
+            footer.AddText(ReviewLanguage.Label("Seite ", "Page "));
             footer.AddPageField();
-            footer.AddText(" of ");
+            footer.AddText(ReviewLanguage.Label(" von ", " of "));
             footer.AddNumPagesField();
-            var status = section.Footers.Primary.AddParagraph(Safe(watermark, data.ModeLabel));
+            var status = section.Footers.Primary.AddParagraph(ReviewLanguage.Text(Safe(watermark, data.ModeLabel)));
             status.Format.Font.Size = 7;
             status.Format.Font.Color = Color.FromRgb(86, 103, 121);
         }
@@ -159,7 +237,7 @@ namespace ClearPlan.Reporting.MigraDoc
             string watermark)
         {
             Paragraph banner = section.AddParagraph(
-                Safe(watermark, data.ModeLabel));
+                ReviewLanguage.Text(Safe(watermark, data.ModeLabel)));
             banner.Format.Font.Size = 8;
             banner.Format.Font.Color = Color.FromRgb(86, 103, 121);
             banner.Format.SpaceAfter = Unit.FromCentimeter(0.3);
@@ -223,7 +301,7 @@ namespace ClearPlan.Reporting.MigraDoc
                 using (var stream = new System.IO.MemoryStream(data.CollisionPreviewPng))
                 using (var image = System.Drawing.Image.FromStream(stream))
                     collisionImage.Width = Unit.FromCentimeter(Math.Min(22, 12.0 * image.Width / image.Height));
-                var caption = section.AddParagraph(data.CollisionPreviewCaption ?? "Read-only geometry illustration; not clinical clearance.");
+                var caption = section.AddParagraph(ReviewLanguage.Text(data.CollisionPreviewCaption) ?? "Read-only geometry illustration; not clinical clearance.");
                 caption.Format.Font.Size = 9;
                 caption.Format.SpaceBefore = Unit.FromMillimeter(3);
             }
@@ -254,7 +332,7 @@ namespace ClearPlan.Reporting.MigraDoc
             note.Format.SpaceAfter = Unit.FromPoint(0);
             if (!analysis.Pam.HasValue)
             {
-                var unavailable = section.AddParagraph("PAM unavailable: " + ReviewImageRenderer.PamUnavailableReason(analysis));
+                var unavailable = section.AddParagraph("PAM unavailable: " + ReviewLanguage.Text(ReviewImageRenderer.PamUnavailableReason(analysis)));
                 unavailable.Format.Font.Size = 8;
                 unavailable.Format.SpaceAfter = Unit.FromPoint(0);
             }
@@ -293,7 +371,7 @@ namespace ClearPlan.Reporting.MigraDoc
                 {
                     SetCells(table.AddRow(), row.StructureId, QualityNumber(row.ReferenceDoseGy), QualityNumber(row.PaddickCi),
                         QualityNumber(row.PlanCheckCi), QualityNumber(row.GradientIndex), QualityNumber(row.HomogeneityIndex));
-                    if (!string.IsNullOrWhiteSpace(row.Note)) section.AddParagraph(row.StructureId + ": " + row.Note).Format.Font.Size = 8;
+                    if (!string.IsNullOrWhiteSpace(row.Note)) section.AddParagraph(row.StructureId + ": " + ReviewLanguage.Text(row.Note)).Format.Font.Size = 8;
                 }
                 Table inputs = CreateTable(section, 5.3, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0);
                 AddHeader(inputs, "PTV / inputs", "TV [cm3]", "TV at Rx [cm3]", "Body V100 [cm3]", "Body V50 [cm3]", "D2 [Gy]", "D98 [Gy]");
@@ -316,7 +394,7 @@ namespace ClearPlan.Reporting.MigraDoc
             for (int index = 0; index < 3; index++)
             {
                 if (index > 0) section.AddPageBreak();
-                AddHeading(section, (synthetic ? "Synthetic CT | " : "Isocenter CT | ") + labels[index]);
+                AddHeading(section, (synthetic ? ReviewLanguage.Label("Synthetisches CT | ", "Synthetic CT | ") : ReviewLanguage.Label("Isozentrums-CT | ", "Isocenter CT | ")) + ReviewReportLabels.Text(labels[index]));
                 Table table = CreateTable(section, 17.4, 9.9);
                 table.Borders.Visible = false;
                 Row panel = table.AddRow();
@@ -325,7 +403,7 @@ namespace ClearPlan.Reporting.MigraDoc
                 if (source == null || source.SourceStatus != ReviewStatusCodes.Available)
                 {
                     panel.Cells[0].AddParagraph("IMAGE UNAVAILABLE");
-                    legend.AddParagraph(source == null ? "No planning-image snapshot was supplied." : Safe(source.UnavailableReason, "Image extraction did not provide usable pixels."));
+                    legend.AddParagraph(source == null ? "No planning-image snapshot was supplied." : Safe(ReviewLanguage.Text(source.UnavailableReason), "Image extraction did not provide usable pixels."));
                     continue;
                 }
                 try
@@ -391,7 +469,7 @@ namespace ClearPlan.Reporting.MigraDoc
                     if (includeBeamEyeViews) unavailable.Add(Safe(beam.BeamId, "Beam") + " · " + ReviewImageRenderer.StartAngles(cp) + " DRR and trajectories unavailable.");
                     continue;
                 }
-                section.AddPageBreak(); AddHeading(section, "Field review | " + Safe(beam.BeamId, "Beam"));
+                section.AddPageBreak(); AddHeading(section, ReviewLanguage.Label("Feldübersicht | ", "Field review | ") + Safe(beam.BeamId, "Beam"));
                 var introduction = section.AddParagraph(includeBeamEyeViews
                     ? "Beam's-eye view: field start · Exact CP 0 · Not arc-integrated fluence. Control-point trajectories: whole field."
                     : "Control-point trajectories | Whole field");
@@ -534,7 +612,7 @@ namespace ClearPlan.Reporting.MigraDoc
                     FormatValue(row.Variation, row.Unit),
                     FormatValue(row.AchievedValue, row.Unit),
                     StatusWithSeverity(row.Status, row.Severity == "info" ? null : row.Severity) +
-                    (string.IsNullOrWhiteSpace(ReviewImageRenderer.PqmUnavailableReason(row)) ? "" : "\n" + ReviewImageRenderer.PqmUnavailableReason(row)));
+                    (string.IsNullOrWhiteSpace(ReviewImageRenderer.PqmUnavailableReason(row)) ? "" : "\n" + ReviewLanguage.Text(ReviewImageRenderer.PqmUnavailableReason(row))));
                 ShadeStatus(target.Cells[7], row.Status);
             }
             if (rows.Any(row => row.Status == ReviewStatusCodes.NotEvaluated))
@@ -562,10 +640,10 @@ namespace ClearPlan.Reporting.MigraDoc
                 Row target = table.AddRow();
                 SetCells(
                     target,
-                    row.Message,
+                    ReviewLanguage.Text(row.Message),
                     StatusWithSeverity(row.Status, row.Severity),
                     row.CheckCode,
-                    row.Category);
+                    ReviewLanguage.Text(row.Category));
                 ShadeStatus(target.Cells[1], row.Status);
             }
         }
@@ -608,8 +686,8 @@ namespace ClearPlan.Reporting.MigraDoc
                     row.ExpectedId,
                     row.CurrentName,
                     row.SuggestedName,
-                    row.IdStatus,
-                    row.NameStatus);
+                    ReviewReportLabels.Status(row.IdStatus),
+                    ReviewReportLabels.Status(row.NameStatus));
                 ShadeStatus(target.Cells[6], row.IdStatus);
                 ShadeStatus(target.Cells[7], row.NameStatus);
             }
@@ -639,7 +717,7 @@ namespace ClearPlan.Reporting.MigraDoc
                     target,
                     row.TemplateStructure,
                     row.SelectedStructureId,
-                    row.Status);
+                    ReviewReportLabels.Status(row.Status));
                 ShadeStatus(target.Cells[2], row.Status);
             }
         }
@@ -673,7 +751,7 @@ namespace ClearPlan.Reporting.MigraDoc
 
         private void AddHeading(Section section, string text)
         {
-            section.AddParagraph(text, StyleNames.Heading2);
+            section.AddParagraph(ReviewReportLabels.Text(text), StyleNames.Heading2);
         }
 
         private Table CreateTable(
@@ -716,7 +794,7 @@ namespace ClearPlan.Reporting.MigraDoc
             row.HeadingFormat = true;
             row.Format.Font.Bold = true;
             row.Shading.Color = Color.FromRgb(224, 237, 243);
-            SetCells(row, labels);
+            SetCells(row, labels.Select(ReviewReportLabels.Text).ToArray());
         }
 
         private void SetCells(Row row, params string[] values)
@@ -757,14 +835,14 @@ namespace ClearPlan.Reporting.MigraDoc
             if (string.IsNullOrWhiteSpace(severity) ||
                 severity.Equals("none", StringComparison.OrdinalIgnoreCase))
             {
-                return Safe(status, string.Empty);
+                return Safe(ReviewReportLabels.Status(status), string.Empty);
             }
 
             return string.Format(
                 CultureInfo.InvariantCulture,
                 "{0} ({1})",
-                Safe(status, string.Empty),
-                severity);
+                Safe(ReviewReportLabels.Status(status), string.Empty),
+                ReviewReportLabels.Status(severity));
         }
 
         private string FormatValue(double? value, string unit)

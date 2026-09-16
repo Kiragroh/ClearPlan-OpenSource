@@ -1,4 +1,11 @@
-# Development source: 3.2.0-dev.20260915.7
+# Development source: 3.2.0-dev.20260916.1
+
+The language/CT update follows commit
+`8f3ab54728b45e0937ec229fcd10095e0ecf16e9`. It adds shared German/English display
+selection and report-language capture, plus an editable exact CT/HU tuple policy
+with no public approvals. See [language](../LANGUAGE.md) and
+[CT compatibility](../CT_COMPATIBILITY.md) for its intentionally narrow scope.
+The earlier workspace update below remains part of this source snapshot.
 
 This source update follows public commit `d21dbd50fb1b02ce7180cbf44a2531eda48ce8d3`
 and the archived v3.2.0 release. It is a development snapshot, not a new approved

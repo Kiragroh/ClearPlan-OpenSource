@@ -44,6 +44,7 @@ namespace ClearPlan.Core.Settings
         public string AriaUploadConfigJsonPath { get; set; }
         public string DefaultReviewRulesJsonPath { get; set; }
         public string PlanCheckSelectionJsonPath { get; set; }
+        public string CtCompatibilityJsonPath { get; set; }
         public string FieldNamingRulesJsonPath { get; set; }
         public string IsodoseDisplayJsonPath { get; set; }
         public string ConstraintTemplatesDirectory { get; set; }

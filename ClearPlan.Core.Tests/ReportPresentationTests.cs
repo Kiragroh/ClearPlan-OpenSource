@@ -68,6 +68,7 @@ namespace ClearPlan.Core.Tests
         private static ReviewReportDocument DvhLegendFixture(int count)
         {
             var data = new ReviewSnapshotReportMapper().Map(SyntheticScenarioFactory.Create("baseline-pass"));
+            data.LanguageCode = "en";
             data.DvhSeries = Enumerable.Range(0, count).Select(index => new ReviewReportDvhSeries {
                 StructureId = "DEMO_" + index,
                 DisplayName = "DEMO_" + new string('L', index % 3 == 0 ? 95 : 12) + "_TAIL_" + index,
@@ -444,8 +445,9 @@ namespace ClearPlan.Core.Tests
             var rows = new List<ReviewReportCheckRow> { new ReviewReportCheckRow {
                 CheckCode = "test", Category = "Geometry", Status = "info", Message = "Named finding",
                 ObservedValue = "4", ExpectedValue = "5", Unit = "mm" } };
-            typeof(ReportPdf).GetMethod("AddPlanCheckRows", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(new ReportPdf(), new object[] { section, rows });
+            using (ClearPlan.Core.Localization.ReviewLanguage.Scope("en"))
+                typeof(ReportPdf).GetMethod("AddPlanCheckRows", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(new ReportPdf(), new object[] { section, rows });
             TestAssert.Equal(4, section.Elements.Cast<DocumentObject>().OfType<Table>().Single().Columns.Count);
             string ddl = DdlWriter.WriteToString(document);
             TestAssert.True(ddl.Contains("Named finding") && !ddl.Contains("Observed:") && !ddl.Contains("Expected:"));
@@ -544,8 +546,9 @@ namespace ClearPlan.Core.Tests
                 new ReviewReportPqmRow { TemplateStructure = "Brain", SourceLabel = "Eclipse Clinical Goals: assigned plan objectives", MappingDescription = "Exact native structure" },
                 new ReviewReportPqmRow { TemplateStructure = "Kidney", SourceLabel = "Another reference paper", MappingDescription = "Alias" }
             };
-            typeof(ReportPdf).GetMethod("AddPqmRows", BindingFlags.Instance | BindingFlags.NonPublic)
-                .Invoke(new ReportPdf(), new object[] { section, rows });
+            using (ClearPlan.Core.Localization.ReviewLanguage.Scope("en"))
+                typeof(ReportPdf).GetMethod("AddPqmRows", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(new ReportPdf(), new object[] { section, rows });
             string ddl = DdlWriter.WriteToString(document);
             TestAssert.False(ddl.Contains("Reference test paper") || ddl.Contains("Another reference paper") || ddl.Contains("S1:"),
                 "Clinical report goals must not print literature references or bibliography footnotes.");
@@ -553,8 +556,10 @@ namespace ClearPlan.Core.Tests
             TestAssert.Equal(8, section.Elements.Cast<DocumentObject>().OfType<Table>().Single().Columns.Count);
             TestAssert.True(ddl.Contains("Heart") && ddl.Contains("Lung"));
             TestAssert.True(rows[0].SourceLabel.Contains("Reference test paper"), "Report formatting must retain original configuration provenance in the detached data.");
-            TestAssert.True(ddl.Contains("not-evaluated") && !ddl.Contains("(info)"),
+            TestAssert.True(ddl.Contains("Not evaluated") && !ddl.Contains("(Note)") && !ddl.Contains("(info)"),
                 "A redundant info suffix must not double every unconfirmed PQM row and orphan report notes.");
+            TestAssert.Equal("not-evaluated", rows[1].Status);
+            TestAssert.Equal("info", rows[1].Severity);
         }
         public static void BeamStartPanelsStayWithinOnePagePerBeam()
         {

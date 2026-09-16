@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:oxy="http://oxyplot.org/wpf"
              xmlns:views="clr-namespace:ClearPlan.Presentation.Views"
+             xmlns:lang="clr-namespace:ClearPlan.Presentation.Localization"
              FontFamily="Segoe UI"
              FontWeight="Normal"
              HorizontalContentAlignment="Stretch"
@@ -16,13 +17,13 @@
             </ResourceDictionary.MergedDictionaries>
 
             <DataTemplate x:Key="WorkspaceDvhLegend">
-                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Margin="2,5" HorizontalContentAlignment="Stretch" ToolTip="Sichtbarkeit in DVH und Schnittbildern umschalten">
+                <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}" Margin="2,5" HorizontalContentAlignment="Stretch" ToolTip="{lang:Translate Value='Sichtbarkeit in DVH und Schnittbildern umschalten'}">
                     <StackPanel Orientation="Horizontal"><Border Width="17" Height="3" Background="{Binding ColorHex}" Margin="3,0,7,0" VerticalAlignment="Center"/>
                         <TextBlock Text="{Binding DisplayName}" TextWrapping="Wrap" MaxWidth="165" Foreground="{StaticResource ClinicalBlueprintText}"/></StackPanel>
                 </CheckBox>
             </DataTemplate>
             <DataTemplate x:Key="WorkspaceStatusCellTemplate">
-                <Border Style="{StaticResource ClinicalBlueprintStatusBadge}"><TextBlock Text="{Binding StatusText}" Style="{DynamicResource WorkspaceStatusText}"/></Border>
+                <Border Style="{StaticResource ClinicalBlueprintStatusBadge}"><TextBlock Text="{lang:Translate Path=StatusText}" Style="{DynamicResource WorkspaceStatusText}"/></Border>
             </DataTemplate>
             <ControlTemplate x:Key="WorkspaceDvhTrackerTemplate">
                 <oxy:TrackerControl Position="{Binding Position}"
@@ -184,7 +185,7 @@
                                FontSize="21"
                                FontWeight="SemiBold"
                                Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
-                    <TextBlock Text="{Binding ScenarioDescription}"
+                    <TextBlock Text="{lang:Translate Path=ScenarioDescription}"
                                Foreground="{StaticResource ClinicalBlueprintTextMuted}"
                                TextTrimming="CharacterEllipsis"/>
                 </StackPanel>
@@ -193,35 +194,39 @@
                         Margin="16,0"
                         VerticalAlignment="Center">
                     <StackPanel>
-                        <TextBlock Text="{Binding ModeBadgeText}"
+                        <TextBlock Text="{lang:Translate Path=ModeBadgeText}"
                                    FontSize="11"
                                    FontWeight="Bold"
                                    Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
-                        <TextBlock Text="{Binding ModeBadgeDescription}"
+                        <TextBlock Text="{lang:Translate Path=ModeBadgeDescription}"
                                    FontSize="10"
                                    FontWeight="SemiBold"
                                    Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
                     </StackPanel>
                 </Border>
                 <StackPanel Grid.Column="2" VerticalAlignment="Center"><StackPanel Orientation="Horizontal">
+                <ComboBox x:Name="ReviewLanguageSelector" Width="65" Margin="0,0,8,0" VerticalAlignment="Center"
+                          ItemsSource="{Binding Codes, Source={x:Static lang:DisplayLanguage.Instance}}"
+                          SelectedItem="{Binding Code, Source={x:Static lang:DisplayLanguage.Instance}, Mode=TwoWay}"
+                          ToolTip="{lang:Translate Value='Deutsch / English · GUI, PDF, HTML'}" AutomationProperties.Name="{lang:Translate Value='Review language'}"/>
                 <Button x:Name="HtmlReportButton"
-                        Content="HTML-Quicklook"
+                        Content="{lang:Translate Value='HTML-Quicklook'}"
                         Command="{Binding HtmlReportCommand}"
-                        ToolTip="Aktuellen Stand als HTML ansehen. Optionale Feldstart-DRRs werden bei Bedarf ergänzt."
+                        ToolTip="{lang:Translate Value='Aktuellen Stand als HTML ansehen. Optionale Feldstart-DRRs werden bei Bedarf ergänzt.'}"
                         Style="{StaticResource ClinicalBlueprintSecondaryButton}"
                         Margin="0,0,8,0" VerticalAlignment="Center"/>
                 <Button x:Name="ReportButton"
-                        Content="PDF-Report"
+                        Content="{lang:Translate Value='PDF-Report'}"
                         Command="{Binding ReportCommand}"
                         Style="{StaticResource ClinicalBlueprintPrimaryButton}"
                         VerticalAlignment="Center"/>
-                <Button x:Name="AriaUploadButton" Content="{Binding AriaUploadText}"
+                <Button x:Name="AriaUploadButton" Content="{lang:Translate Path=AriaUploadText}"
                         Command="{Binding AriaUploadCommand}" ToolTip="{Binding AriaUploadStatus}"
-                        ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="Aktuellen Planreport an ARIA senden"
+                        ToolTipService.ShowOnDisabled="True" AutomationProperties.Name="{lang:Translate Value='Aktuellen Planreport an ARIA senden'}"
                         Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="8,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
-                <CheckBox Content="BEV / DRR am Feldstart im Report" IsChecked="{Binding IncludeBeamEyeViews, Mode=TwoWay}" Margin="0,5,0,0" FontSize="11"
-                          ToolTip="Bei Bedarf werden Projektionen der ersten Kontrollpunkte einmalig erfasst; ohne Häkchen werden keine BEV-Seiten erzeugt."/>
+                <CheckBox Content="{lang:Translate Value='BEV / DRR am Feldstart im Report'}" IsChecked="{Binding IncludeBeamEyeViews, Mode=TwoWay}" Margin="0,5,0,0" FontSize="11"
+                          ToolTip="{lang:Translate Value='Bei Bedarf werden Projektionen der ersten Kontrollpunkte einmalig erfasst; ohne Häkchen werden keine BEV-Seiten erzeugt.'}"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -250,13 +255,13 @@
                                     <Border Height="2"
                                             Margin="0,0,0,10"
                                             Background="{StaticResource ClinicalBlueprintTeal}"/>
-                                    <TextBlock Text="{Binding ModeBadgeDescription}"
+                                    <TextBlock Text="{lang:Translate Path=ModeBadgeDescription}"
                                                Foreground="#B8C5D1"
                                                FontSize="10"
                                                FontWeight="Bold"
                                                TextWrapping="Wrap"/>
                                     <TextBlock x:Name="NavigationSourceStatusText"
-                                               Text="{Binding SourceStatusSummary}"
+                                               Text="{lang:Translate Path=SourceStatusSummary}"
                                                Foreground="#899AA9"
                                                FontSize="10"
                                                Margin="0,4,0,0"
@@ -280,7 +285,7 @@
             </TabControl.Template>
 
             <TabItem x:Name="OverviewTab"
-                     Header="Gesamtansicht"
+                     Header="{lang:Translate Value='Gesamtansicht'}"
                      Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <ScrollViewer x:Name="OverallReviewView"
                               VerticalScrollBarVisibility="Auto"
@@ -301,9 +306,9 @@
                                            HorizontalAlignment="Right"/>
                             </StackPanel>
                             <StackPanel>
-                                <TextBlock Text="Gesamtansicht"
+                                <TextBlock Text="{lang:Translate Value='Gesamtansicht'}"
                                            Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
-                                <TextBlock Text="Plan, PQM, PlanCheck, Feldlogik, Zuordnung und DVH in einer Lesereihenfolge."
+                                <TextBlock Text="{lang:Translate Value='Plan, PQM, PlanCheck, Feldlogik, Zuordnung und DVH in einer Lesereihenfolge.'}"
                                            Style="{StaticResource WorkspaceMutedText}"/>
                             </StackPanel>
                         </DockPanel>
@@ -311,11 +316,11 @@
                         <Border Style="{StaticResource ClinicalBlueprintCard}"
                                 Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Datenquellen"
+                                <TextBlock Text="{lang:Translate Value='Datenquellen'}"
                                            FontSize="16"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
-                                <TextBlock Text="{Binding ProvenanceText}"
+                                <TextBlock Text="{lang:Translate Path=ProvenanceText}"
                                            Style="{StaticResource WorkspaceMutedText}"
                                            TextWrapping="Wrap"
                                            Margin="0,3,0,9"/>
@@ -325,27 +330,27 @@
                                           IsReadOnly="True"
                                           MaxHeight="210">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Quelle"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Quelle'}"
                                                             Binding="{Binding SourceCode}"
                                                             Width="1.1*"/>
-                                        <DataGridTextColumn Header="Typ"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Typ'}"
                                                             Binding="{Binding SourceType}"
                                                             Width="0.9*"/>
-                                        <DataGridTextColumn Header="Pfad / Quelle"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Pfad / Quelle'}"
                                                             Binding="{Binding PathDisplayLabel}"
                                                             Width="1.4*"/>
-                                        <DataGridTemplateColumn Header="Status"
+                                        <DataGridTemplateColumn Header="{lang:Translate Value='Status'}"
                                                                 Width="0.9*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border Style="{StaticResource ClinicalBlueprintStatusBadge}">
-                                                        <TextBlock Text="{Binding StatusText}"
+                                                        <TextBlock Text="{lang:Translate Path=StatusText}"
                                                                    Style="{StaticResource WorkspaceStatusText}"/>
                                                     </Border>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="Meldung"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Meldung'}"
                                                             Binding="{Binding Message}"
                                                             Width="2*"/>
                                     </DataGrid.Columns>
@@ -356,7 +361,7 @@
                         <Border Style="{StaticResource ClinicalBlueprintCard}"
                                 Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Pläne"
+                                <TextBlock Text="{lang:Translate Value='Pläne'}"
                                            FontSize="16"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource ClinicalBlueprintCobaltDark}"
@@ -367,14 +372,14 @@
                                           IsReadOnly="True"
                                           MaxHeight="240">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Plan"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Plan'}"
                                                             Binding="{Binding DisplayLabel}"
                                                             Width="1.6*"/>
                                         <DataGridTemplateColumn Header=""
                                                                 Width="Auto">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
-                                                    <Button Content="Öffnen"
+                                                    <Button Content="{lang:Translate Value='Öffnen'}"
                                                             Command="{Binding DataContext.OpenPlanCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                             CommandParameter="{Binding}"
                                                             Style="{StaticResource ClinicalBlueprintSecondaryButton}"
@@ -382,27 +387,27 @@
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="Erstellt"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Erstellt'}"
                                                             Binding="{Binding CreatedText}"
                                                             Width="1.1*"/>
-                                        <DataGridTextColumn Header="Dosis/Fx"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Dosis/Fx'}"
                                                             Binding="{Binding DosePerFractionText}"
                                                             Width="0.8*"/>
-                                        <DataGridTextColumn Header="Gesamtdosis"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Gesamtdosis'}"
                                                             Binding="{Binding TotalDoseText}"
                                                             Width="0.8*"/>
-                                        <DataGridTextColumn Header="Fx"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Fx'}"
                                                             Binding="{Binding FractionCountText}"
                                                             Width="0.5*"/>
-                                        <DataGridTextColumn Header="Ziel"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Ziel'}"
                                                             Binding="{Binding TargetDisplayLabel}"
                                                             Width="1.1*"/>
-                                        <DataGridTemplateColumn Header="Status"
+                                        <DataGridTemplateColumn Header="{lang:Translate Value='Status'}"
                                                                 Width="0.9*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border Style="{StaticResource ClinicalBlueprintStatusBadge}">
-                                                        <TextBlock Text="{Binding StatusText}"
+                                                        <TextBlock Text="{lang:Translate Path=StatusText}"
                                                                    Style="{StaticResource WorkspaceStatusText}"/>
                                                     </Border>
                                                 </DataTemplate>
@@ -418,9 +423,9 @@
                             <StackPanel>
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock DockPanel.Dock="Right"
-                                               Text="{Binding PqmSummary}"
+                                               Text="{lang:Translate Path=PqmSummary}"
                                                Style="{StaticResource WorkspaceMutedText}"/>
-                                    <TextBlock Text="Plan Quality Metrics (PQM)"
+                                    <TextBlock Text="{lang:Translate Value='Plan Quality Metrics (PQM)'}"
                                                FontSize="16"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
@@ -431,20 +436,20 @@
                                           IsReadOnly="True"
                                           MaxHeight="300">
                                     <DataGrid.Columns>
-                                    <DataGridTemplateColumn Header="Struktur" Width="1.5*" MinWidth="170">
+                                    <DataGridTemplateColumn Header="{lang:Translate Value='Struktur'}" Width="1.5*" MinWidth="170">
                                         <DataGridTemplateColumn.CellTemplate><DataTemplate>
-                                            <StackPanel Margin="2,3" ToolTip="{Binding DetailsText}">
+                                            <StackPanel Margin="2,3" ToolTip="{lang:Translate Path=DetailsText}">
                                                 <TextBlock Text="{Binding TemplateStructure}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding StructureText}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" TextWrapping="Wrap"/>
                                             </StackPanel>
                                         </DataTemplate></DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Kriterium" Binding="{Binding Objective}" Width="80"/>
-                                    <DataGridTextColumn Header="Ziel" Binding="{Binding GoalText}" Width="95"/>
-                                    <DataGridTextColumn Header="Variation" Binding="{Binding VariationText}" Width="90"/>
-                                    <DataGridTextColumn Header="Erreicht" Binding="{Binding AchievedText}" Width="90"/>
-                                    <DataGridTemplateColumn Header="Status" Width="120" CellTemplate="{StaticResource WorkspaceStatusCellTemplate}"/>
-                                    <DataGridTextColumn Header="Quelle" Binding="{Binding SourceLabel}" Width="1*" MinWidth="115">
+                                    <DataGridTextColumn Header="{lang:Translate Value='Kriterium'}" Binding="{Binding Objective}" Width="80"/>
+                                    <DataGridTextColumn Header="{lang:Translate Value='Zielwert'}" Binding="{Binding GoalText}" Width="95"/>
+                                    <DataGridTextColumn Header="{lang:Translate Value='Variation'}" Binding="{Binding VariationText}" Width="90"/>
+                                    <DataGridTextColumn Header="{lang:Translate Value='Erreicht'}" Binding="{Binding AchievedText}" Width="90"/>
+                                    <DataGridTemplateColumn Header="{lang:Translate Value='Status'}" Width="120" CellTemplate="{StaticResource WorkspaceStatusCellTemplate}"/>
+                                    <DataGridTextColumn Header="{lang:Translate Value='Quelle'}" Binding="{Binding SourceLabel}" Width="1*" MinWidth="115">
                                         <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="ToolTip" Value="{Binding DetailsText}"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style></DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
                                 </DataGrid.Columns>
@@ -457,9 +462,9 @@
                             <StackPanel>
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock DockPanel.Dock="Right"
-                                               Text="{Binding PlanCheckSummary}"
+                                               Text="{lang:Translate Path=PlanCheckSummary}"
                                                Style="{StaticResource WorkspaceMutedText}"/>
-                                    <TextBlock Text="PlanCheck"
+                                    <TextBlock Text="{lang:Translate Value='PlanCheck'}"
                                                FontSize="16"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
@@ -470,13 +475,13 @@
                                           IsReadOnly="True"
                                           MaxHeight="300">
                                     <DataGrid.Columns>
-                                <DataGridTextColumn Header="Meldung" Binding="{Binding Message}" Width="*" MinWidth="300">
+                                <DataGridTextColumn Header="{lang:Translate Value='Meldung'}" Binding="{Binding Message}" Width="*" MinWidth="300">
                                     <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="ToolTip" Value="{Binding DetailsText}"/><Setter Property="Margin" Value="3,5"/></Style></DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="Status" Width="120" CellTemplate="{StaticResource WorkspaceStatusCellTemplate}"/>
-                                <DataGridTextColumn Header="Schweregrad" Binding="{Binding SeverityText}" Width="95"/>
-                                <DataGridTextColumn Header="Code" Binding="{Binding CheckCode}" Width="65"/>
-                                <DataGridTextColumn Header="Kategorie" Binding="{Binding Category}" Width="100"/>
+                                <DataGridTemplateColumn Header="{lang:Translate Value='Status'}" Width="120" CellTemplate="{StaticResource WorkspaceStatusCellTemplate}"/>
+                                <DataGridTextColumn Header="{lang:Translate Value='Schweregrad'}" Binding="{Binding SeverityText}" Width="95"/>
+                                <DataGridTextColumn Header="{lang:Translate Value='Code'}" Binding="{Binding CheckCode}" Width="65"/>
+                                <DataGridTextColumn Header="{lang:Translate Value='Kategorie'}" Binding="{Binding Category}" Width="100"/>
                             </DataGrid.Columns>
                                 </DataGrid>
                             </StackPanel>
@@ -487,9 +492,9 @@
                             <StackPanel>
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock DockPanel.Dock="Right"
-                                               Text="{Binding FieldSummary}"
+                                               Text="{lang:Translate Path=FieldSummary}"
                                                Style="{StaticResource WorkspaceMutedText}"/>
-                                    <TextBlock Text="Feld-ID und Feldname"
+                                    <TextBlock Text="{lang:Translate Value='Feld-ID und Feldname'}"
                                                FontSize="16"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
@@ -503,38 +508,38 @@
                                         <DataGridTextColumn Header="#"
                                                             Binding="{Binding TreatmentOrder}"
                                                             Width="0.4*"/>
-                                        <DataGridTextColumn Header="Beam #"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Beam #'}"
                                                             Binding="{Binding BeamNumber}"
                                                             Width="0.55*"/>
-                                        <DataGridTextColumn Header="Aktuelle ID"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Aktuelle ID'}"
                                                             Binding="{Binding CurrentId}"
                                                             Width="1*"/>
-                                        <DataGridTextColumn Header="Erwartete ID"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Erwartete ID'}"
                                                             Binding="{Binding ExpectedId}"
                                                             Width="1*"/>
-                                        <DataGridTemplateColumn Header="ID-Status"
+                                        <DataGridTemplateColumn Header="{lang:Translate Value='ID-Status'}"
                                                                 Width="0.9*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border Style="{StaticResource WorkspaceFieldIdBadge}">
-                                                        <TextBlock Text="{Binding IdStatusText}"
+                                                        <TextBlock Text="{lang:Translate Path=IdStatusText}"
                                                                    Style="{StaticResource WorkspaceBodyText}"/>
                                                     </Border>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="Aktueller Name"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Aktueller Name'}"
                                                             Binding="{Binding CurrentName}"
                                                             Width="1.5*"/>
-                                        <DataGridTextColumn Header="Vorschlag"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Vorschlag'}"
                                                             Binding="{Binding SuggestedName}"
                                                             Width="1.5*"/>
-                                        <DataGridTemplateColumn Header="Name-Status"
+                                        <DataGridTemplateColumn Header="{lang:Translate Value='Name-Status'}"
                                                                 Width="0.95*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border Style="{StaticResource WorkspaceFieldNameBadge}">
-                                                        <TextBlock Text="{Binding NameStatusText}"
+                                                        <TextBlock Text="{lang:Translate Path=NameStatusText}"
                                                                    Style="{StaticResource WorkspaceBodyText}"/>
                                                     </Border>
                                                 </DataTemplate>
@@ -548,7 +553,7 @@
                         <Border Style="{StaticResource ClinicalBlueprintCard}"
                                 Margin="0,0,0,14">
                             <StackPanel>
-                                <TextBlock Text="Strukturzuordnung"
+                                <TextBlock Text="{lang:Translate Value='Strukturzuordnung'}"
                                            FontSize="16"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource ClinicalBlueprintCobaltDark}"
@@ -559,24 +564,24 @@
                                           IsReadOnly="True"
                                           MaxHeight="240">
                                     <DataGrid.Columns>
-                                        <DataGridTextColumn Header="Template"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Template'}"
                                                             Binding="{Binding TemplateStructure}"
                                                             Width="1*"/>
-                                        <DataGridTextColumn Header="Zugeordnet"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Zugeordnet'}"
                                                             Binding="{Binding SelectedStructureId}"
                                                             Width="1*"/>
-                                        <DataGridTemplateColumn Header="Status"
+                                        <DataGridTemplateColumn Header="{lang:Translate Value='Status'}"
                                                                 Width="0.9*">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border Style="{StaticResource ClinicalBlueprintStatusBadge}">
-                                                        <TextBlock Text="{Binding StatusText}"
+                                                        <TextBlock Text="{lang:Translate Path=StatusText}"
                                                                    Style="{StaticResource WorkspaceStatusText}"/>
                                                     </Border>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>
                                         </DataGridTemplateColumn>
-                                        <DataGridTextColumn Header="Hinweis"
+                                        <DataGridTextColumn Header="{lang:Translate Value='Hinweis'}"
                                                             Binding="{Binding Message}"
                                                             Width="2.4*"/>
                                     </DataGrid.Columns>
@@ -594,16 +599,16 @@
                                 <DockPanel Grid.Row="0" Margin="0,0,0,8">
                                     <StackPanel DockPanel.Dock="Right"
                                                 Orientation="Horizontal">
-                                        <Button Content="DVH zurücksetzen"
+                                        <Button Content="{lang:Translate Value='DVH zurücksetzen'}"
                                                 Command="{Binding ResetDvhCommand}"
                                                 Style="{StaticResource ClinicalBlueprintSecondaryButton}"
                                                 Margin="5,0"/>
-                                        <Button Content="DVH exportieren"
+                                        <Button Content="{lang:Translate Value='DVH exportieren'}"
                                                 Command="{Binding ExportDvhCommand}"
                                                 Style="{StaticResource ClinicalBlueprintSecondaryButton}"
                                                 Margin="5,0"/>
                                     </StackPanel>
-                                    <TextBlock Text="Dosis-Volumen-Histogramm"
+                                    <TextBlock Text="{lang:Translate Value='Dosis-Volumen-Histogramm'}"
                                                FontSize="16"
                                                FontWeight="SemiBold"
                                                Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
@@ -625,7 +630,7 @@
             </TabItem>
 
             <TabItem x:Name="PqmTab"
-                     Header="PQM"
+                     Header="{lang:Translate Value='PQM'}"
                      Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <Grid Margin="24"
                       HorizontalAlignment="Stretch"
@@ -637,12 +642,12 @@
                         <RowDefinition Height="2*"/>
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                        <TextBlock Text="Plan Quality Metrics"
+                        <TextBlock Text="{lang:Translate Value='Plan Quality Metrics'}"
                                    Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
-                        <TextBlock Text="Template, feste Strukturzuordnung und dosimetrische Bewertung bleiben gemeinsam sichtbar."
+                        <TextBlock Text="{lang:Translate Value='Template, feste Strukturzuordnung und dosimetrische Bewertung bleiben gemeinsam sichtbar.'}"
                                    Style="{StaticResource WorkspaceMutedText}"/>
-                    <CheckBox Content="Nicht zugeordnete Kriterien ausblenden (GUI + Report)" IsChecked="{Binding HideUnmatched, Mode=TwoWay}" Margin="0,8,0,0"/>
-                        <TextBlock Text="{Binding PqmVisibilityText}" Style="{StaticResource WorkspaceMutedText}" Margin="0,3,0,0"/>
+                    <CheckBox Content="{lang:Translate Value='Nicht zugeordnete Kriterien ausblenden (GUI + Report)'}" IsChecked="{Binding HideUnmatched, Mode=TwoWay}" Margin="0,8,0,0"/>
+                        <TextBlock Text="{lang:Translate Path=PqmVisibilityText}" Style="{StaticResource WorkspaceMutedText}" Margin="0,3,0,0"/>
                     </StackPanel>
                     <Border Grid.Row="1"
                             Style="{StaticResource ClinicalBlueprintCard}">
@@ -651,20 +656,20 @@
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True">
                             <DataGrid.Columns>
-                                    <DataGridTemplateColumn Header="Struktur" Width="1.5*" MinWidth="170">
+                                    <DataGridTemplateColumn Header="{lang:Translate Value='Struktur'}" Width="1.5*" MinWidth="170">
                                         <DataGridTemplateColumn.CellTemplate><DataTemplate>
-                                            <StackPanel Margin="2,3" ToolTip="{Binding DetailsText}">
+                                            <StackPanel Margin="2,3" ToolTip="{lang:Translate Path=DetailsText}">
                                                 <TextBlock Text="{Binding TemplateStructure}" FontWeight="SemiBold" TextWrapping="Wrap"/>
                                                 <TextBlock Text="{Binding StructureText}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" TextWrapping="Wrap"/>
                                             </StackPanel>
                                         </DataTemplate></DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Kriterium" Binding="{Binding Objective}" Width="80"/>
-                                    <DataGridTextColumn Header="Ziel" Binding="{Binding GoalText}" Width="95"/>
-                                    <DataGridTextColumn Header="Variation" Binding="{Binding VariationText}" Width="90"/>
-                                    <DataGridTextColumn Header="Erreicht" Binding="{Binding AchievedText}" Width="90"/>
-                                    <DataGridTemplateColumn Header="Status" Width="120" CellTemplate="{StaticResource WorkspaceStatusCellTemplate}"/>
-                                    <DataGridTextColumn Header="Quelle" Binding="{Binding SourceLabel}" Width="1*" MinWidth="115">
+                                    <DataGridTextColumn Header="{lang:Translate Value='Kriterium'}" Binding="{Binding Objective}" Width="80"/>
+                                    <DataGridTextColumn Header="{lang:Translate Value='Zielwert'}" Binding="{Binding GoalText}" Width="95"/>
+                                    <DataGridTextColumn Header="{lang:Translate Value='Variation'}" Binding="{Binding VariationText}" Width="90"/>
+                                    <DataGridTextColumn Header="{lang:Translate Value='Erreicht'}" Binding="{Binding AchievedText}" Width="90"/>
+                                    <DataGridTemplateColumn Header="{lang:Translate Value='Status'}" Width="120" CellTemplate="{StaticResource WorkspaceStatusCellTemplate}"/>
+                                    <DataGridTextColumn Header="{lang:Translate Value='Quelle'}" Binding="{Binding SourceLabel}" Width="1*" MinWidth="115">
                                         <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="ToolTip" Value="{Binding DetailsText}"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style></DataGridTextColumn.ElementStyle>
                                     </DataGridTextColumn>
                                 </DataGrid.Columns>
@@ -677,7 +682,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
-                            <TextBlock Text="Strukturzuordnung"
+                            <TextBlock Text="{lang:Translate Value='Strukturzuordnung'}"
                                        FontSize="16"
                                        FontWeight="SemiBold"
                                        Foreground="{StaticResource ClinicalBlueprintCobaltDark}"
@@ -688,11 +693,11 @@
                                       AutoGenerateColumns="False"
                                       IsReadOnly="False">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Template"
+                                    <DataGridTextColumn Header="{lang:Translate Value='Template'}"
                                                         Binding="{Binding TemplateStructure}"
                                                         IsReadOnly="True"
                                                         Width="1*"/>
-                                    <DataGridTemplateColumn Header="Zugeordnete Struktur"
+                                    <DataGridTemplateColumn Header="{lang:Translate Value='Zugeordnete Struktur'}"
                                                             Width="1.2*">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
@@ -706,7 +711,7 @@
                                                             Width="Auto">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
-                                                <Button Content="Übernehmen"
+                                                <Button Content="{lang:Translate Value='Übernehmen'}"
                                                         Command="{Binding DataContext.ApplyStructureMappingCommand, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                         CommandParameter="{Binding}"
                                                         Style="{StaticResource ClinicalBlueprintSecondaryButton}"
@@ -714,19 +719,19 @@
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Status"
+                                    <DataGridTemplateColumn Header="{lang:Translate Value='Status'}"
                                                             IsReadOnly="True"
                                                             Width="0.9*">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <Border Style="{StaticResource ClinicalBlueprintStatusBadge}">
-                                                    <TextBlock Text="{Binding StatusText}"
+                                                    <TextBlock Text="{lang:Translate Path=StatusText}"
                                                                Style="{StaticResource WorkspaceStatusText}"/>
                                                 </Border>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Hinweis"
+                                    <DataGridTextColumn Header="{lang:Translate Value='Hinweis'}"
                                                         Binding="{Binding Message}"
                                                         IsReadOnly="True"
                                                         Width="2.1*"/>
@@ -738,7 +743,7 @@
             </TabItem>
 
             <TabItem x:Name="PlanCheckTab"
-                     Header="PlanCheck"
+                     Header="{lang:Translate Value='PlanCheck'}"
                      Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <Grid Margin="24"
                       HorizontalAlignment="Stretch"
@@ -748,9 +753,9 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <StackPanel Margin="0,0,0,12">
-                        <TextBlock Text="PlanCheck"
+                        <TextBlock Text="{lang:Translate Value='PlanCheck'}"
                                    Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
-                        <TextBlock Text="Meldung und Ergebnis · technische Werte im Tooltip · Prüfumfang unter Einstellungen"
+                        <TextBlock Text="{lang:Translate Value='Meldung und Ergebnis · technische Werte im Tooltip · Prüfumfang unter Einstellungen'}"
                                    Style="{StaticResource WorkspaceMutedText}"/>
                     </StackPanel>
                     <Border Grid.Row="1"
@@ -760,13 +765,13 @@
                                   AutoGenerateColumns="False"
                                   IsReadOnly="True">
                             <DataGrid.Columns>
-                                <DataGridTextColumn Header="Meldung" Binding="{Binding Message}" Width="*" MinWidth="300">
+                                <DataGridTextColumn Header="{lang:Translate Value='Meldung'}" Binding="{Binding Message}" Width="*" MinWidth="300">
                                     <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="ToolTip" Value="{Binding DetailsText}"/><Setter Property="Margin" Value="3,5"/></Style></DataGridTextColumn.ElementStyle>
                                 </DataGridTextColumn>
-                                <DataGridTemplateColumn Header="Status" Width="120" CellTemplate="{StaticResource WorkspaceStatusCellTemplate}"/>
-                                <DataGridTextColumn Header="Schweregrad" Binding="{Binding SeverityText}" Width="95"/>
-                                <DataGridTextColumn Header="Code" Binding="{Binding CheckCode}" Width="65"/>
-                                <DataGridTextColumn Header="Kategorie" Binding="{Binding Category}" Width="100"/>
+                                <DataGridTemplateColumn Header="{lang:Translate Value='Status'}" Width="120" CellTemplate="{StaticResource WorkspaceStatusCellTemplate}"/>
+                                <DataGridTextColumn Header="{lang:Translate Value='Schweregrad'}" Binding="{Binding SeverityText}" Width="95"/>
+                                <DataGridTextColumn Header="{lang:Translate Value='Code'}" Binding="{Binding CheckCode}" Width="65"/>
+                                <DataGridTextColumn Header="{lang:Translate Value='Kategorie'}" Binding="{Binding Category}" Width="100"/>
                             </DataGrid.Columns>
                         </DataGrid>
                     </Border>
@@ -774,7 +779,7 @@
             </TabItem>
 
             <TabItem x:Name="FieldsTab"
-                     Header="Feldnamen"
+                     Header="{lang:Translate Value='Feldnamen'}"
                      Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <Grid Margin="24"
                       HorizontalAlignment="Stretch"
@@ -784,9 +789,9 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <StackPanel Margin="0,0,0,12">
-                        <TextBlock Text="Feld-ID und Feldnamen"
+                        <TextBlock Text="{lang:Translate Value='Feld-ID und Feldnamen'}"
                                    Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
-                        <TextBlock Text="ID-Konformität und Namenslogik werden unabhängig bewertet; die Ansicht verändert weder ID noch Name."
+                        <TextBlock Text="{lang:Translate Value='ID-Konformität und Namenslogik werden unabhängig bewertet; die Ansicht verändert weder ID noch Name.'}"
                                    Style="{StaticResource WorkspaceMutedText}"/>
                     </StackPanel>
                     <Border Grid.Row="1"
@@ -799,38 +804,38 @@
                                 <DataGridTextColumn Header="#"
                                                     Binding="{Binding TreatmentOrder}"
                                                     Width="0.4*"/>
-                                <DataGridTextColumn Header="Beam #"
+                                <DataGridTextColumn Header="{lang:Translate Value='Beam #'}"
                                                     Binding="{Binding BeamNumber}"
                                                     Width="0.55*"/>
-                                <DataGridTextColumn Header="Aktuelle ID"
+                                <DataGridTextColumn Header="{lang:Translate Value='Aktuelle ID'}"
                                                     Binding="{Binding CurrentId}"
                                                     Width="1*"/>
-                                <DataGridTextColumn Header="Erwartete ID"
+                                <DataGridTextColumn Header="{lang:Translate Value='Erwartete ID'}"
                                                     Binding="{Binding ExpectedId}"
                                                     Width="1*"/>
-                                <DataGridTemplateColumn Header="ID-Status"
+                                <DataGridTemplateColumn Header="{lang:Translate Value='ID-Status'}"
                                                         Width="0.9*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border Style="{StaticResource WorkspaceFieldIdBadge}">
-                                                <TextBlock Text="{Binding IdStatusText}"
+                                                <TextBlock Text="{lang:Translate Path=IdStatusText}"
                                                            Style="{StaticResource WorkspaceBodyText}"/>
                                             </Border>
                                         </DataTemplate>
                                     </DataGridTemplateColumn.CellTemplate>
                                 </DataGridTemplateColumn>
-                                <DataGridTextColumn Header="Aktueller Name"
+                                <DataGridTextColumn Header="{lang:Translate Value='Aktueller Name'}"
                                                     Binding="{Binding CurrentName}"
                                                     Width="1.5*"/>
-                                <DataGridTextColumn Header="Vorschlag"
+                                <DataGridTextColumn Header="{lang:Translate Value='Vorschlag'}"
                                                     Binding="{Binding SuggestedName}"
                                                     Width="1.5*"/>
-                                <DataGridTemplateColumn Header="Name-Status"
+                                <DataGridTemplateColumn Header="{lang:Translate Value='Name-Status'}"
                                                         Width="0.95*">
                                     <DataGridTemplateColumn.CellTemplate>
                                         <DataTemplate>
                                             <Border Style="{StaticResource WorkspaceFieldNameBadge}">
-                                                <TextBlock Text="{Binding NameStatusText}"
+                                                <TextBlock Text="{lang:Translate Path=NameStatusText}"
                                                            Style="{StaticResource WorkspaceBodyText}"/>
                                             </Border>
                                         </DataTemplate>
@@ -843,7 +848,7 @@
             </TabItem>
 
             <TabItem x:Name="DvhTab"
-                     Header="DVH"
+                     Header="{lang:Translate Value='DVH'}"
                      Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <Grid Margin="16"
                       HorizontalAlignment="Stretch"
@@ -855,19 +860,19 @@
                     <DockPanel Margin="0,0,0,12">
                         <StackPanel DockPanel.Dock="Right"
                                     Orientation="Horizontal">
-                            <Button Content="DVH zurücksetzen"
+                            <Button Content="{lang:Translate Value='DVH zurücksetzen'}"
                                     Command="{Binding ResetDvhCommand}"
                                     Style="{StaticResource ClinicalBlueprintSecondaryButton}"
                                     Margin="5,0"/>
-                            <Button Content="DVH exportieren"
+                            <Button Content="{lang:Translate Value='DVH exportieren'}"
                                     Command="{Binding ExportDvhCommand}"
                                     Style="{StaticResource ClinicalBlueprintSecondaryButton}"
                                     Margin="5,0"/>
                         </StackPanel>
                         <StackPanel>
-                            <TextBlock Text="Dosis-Volumen-Histogramm"
+                            <TextBlock Text="{lang:Translate Value='Dosis-Volumen-Histogramm'}"
                                        Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
-                            <TextBlock Text="Strukturen auswählen und die Kurven in voller verfügbarer Breite prüfen."
+                            <TextBlock Text="{lang:Translate Value='Strukturen auswählen und die Kurven in voller verfügbarer Breite prüfen.'}"
                                        Style="{StaticResource WorkspaceMutedText}"/>
                         </StackPanel>
                     </DockPanel>
@@ -891,7 +896,7 @@
                                     <RowDefinition Height="Auto"/>
                                     <RowDefinition Height="*"/>
                                 </Grid.RowDefinitions>
-                                <TextBlock Text="Strukturen"
+                                <TextBlock Text="{lang:Translate Value='Strukturen'}"
                                            FontSize="15"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource ClinicalBlueprintCobaltDark}"
@@ -899,27 +904,27 @@
                                 <TextBox x:Name="DvhFilterTextBox"
                                          Grid.Row="1"
                                          Text="{Binding DvhFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                         ToolTip="Strukturname oder Rolle filtern"
+                                         ToolTip="{lang:Translate Value='Strukturname oder Rolle filtern'}"
                                          Margin="0,0,0,8"
                                          Padding="7,5"/>
                                 <StackPanel Grid.Row="2"
                                             Margin="0,0,0,8">
                                     <ToggleButton x:Name="DvhSelectedOnlyToggle"
-                                                  Content="Nur ausgewählte"
+                                                  Content="{lang:Translate Value='Nur ausgewählte'}"
                                                   IsChecked="{Binding ShowSelectedDvhOnly, Mode=TwoWay}"
-                                                  ToolTip="Aus: alle gefilterten Strukturen"
+                                                  ToolTip="{lang:Translate Value='Aus: alle gefilterten Strukturen'}"
                                                   HorizontalAlignment="Stretch"
                                                   Padding="7,4"
                                                   Margin="0,0,0,5"/>
                                     <UniformGrid Columns="2">
                                         <Button x:Name="DvhSelectAllButton"
-                                                Content="Alle"
+                                                Content="{lang:Translate Value='Alle'}"
                                                 Command="{Binding SelectAllDvhCommand}"
                                                 Style="{StaticResource ClinicalBlueprintSecondaryButton}"
                                                 Padding="6,4"
                                                 Margin="0,0,3,0"/>
                                         <Button x:Name="DvhClearSelectionButton"
-                                                Content="Keine"
+                                                Content="{lang:Translate Value='Keine'}"
                                                 Command="{Binding ClearDvhSelectionCommand}"
                                                 Style="{StaticResource ClinicalBlueprintSecondaryButton}"
                                                 Padding="6,4"
@@ -962,33 +967,33 @@
                     </Grid>
                 </Grid>
             </TabItem>
-            <TabItem x:Name="PlanImagesTab" Header="Schnittbilder" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+            <TabItem x:Name="PlanImagesTab" Header="{lang:Translate Value='Schnittbilder'}" Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <views:PlanImagesView DataContext="{Binding PlanImages}"/>
             </TabItem>
-            <TabItem x:Name="PlanParametersTab" Header="Planparameter" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+            <TabItem x:Name="PlanParametersTab" Header="{lang:Translate Value='Planparameter'}" Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <views:PlanParametersView DataContext="{Binding Analysis}"/>
             </TabItem>
-            <TabItem x:Name="ComparisonTab" Header="Vergleich" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+            <TabItem x:Name="ComparisonTab" Header="{lang:Translate Value='Vergleich'}" Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <views:PlanComparisonView/>
             </TabItem>
-            <TabItem x:Name="CollisionTab" Header="Kollision / 3D" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+            <TabItem x:Name="CollisionTab" Header="{lang:Translate Value='Kollision / 3D'}" Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <views:CollisionView DataContext="{Binding Collision}"/>
             </TabItem>
-            <TabItem x:Name="BevTab" Header="BEV / MLC" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+            <TabItem x:Name="BevTab" Header="{lang:Translate Value='BEV / MLC'}" Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <views:BeamEyeView DataContext="{Binding Analysis}"/>
             </TabItem>
-            <TabItem x:Name="WarningsTab" Header="Warnings" Style="{StaticResource ClinicalBlueprintNavigationTab}">
+            <TabItem x:Name="WarningsTab" Header="{lang:Translate Value='Warnings'}" Style="{StaticResource ClinicalBlueprintNavigationTab}">
                 <Grid Margin="24,22">
                     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-                    <TextBlock Text="Native Eclipse-Prüfmeldungen" FontSize="21" FontWeight="SemiBold"
+                    <TextBlock Text="{lang:Translate Value='Native Eclipse-Prüfmeldungen'}" FontSize="21" FontWeight="SemiBold"
                                Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
-                    <TextBlock Grid.Row="1" Text="{Binding WarningSourceText}" TextWrapping="Wrap" Margin="0,8,0,20"
+                    <TextBlock Grid.Row="1" Text="{lang:Translate Path=WarningSourceText}" TextWrapping="Wrap" Margin="0,8,0,20"
                                Foreground="{StaticResource ClinicalBlueprintText}"/>
                     <DataGrid Grid.Row="2" ItemsSource="{Binding WarningRows}" AutoGenerateColumns="False" IsReadOnly="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="Code" Binding="{Binding ObservedValue}" Width="1.2*"/>
-                            <DataGridTextColumn Header="Status" Binding="{Binding StatusCode}" Width="1*"/>
-                            <DataGridTextColumn Header="Meldung" Binding="{Binding Message}" Width="5*">
+                            <DataGridTextColumn Header="{lang:Translate Value='Code'}" Binding="{Binding ObservedValue}" Width="1.2*"/>
+                            <DataGridTextColumn Header="{lang:Translate Value='Status'}" Binding="{Binding StatusCode}" Width="1*"/>
+                            <DataGridTextColumn Header="{lang:Translate Value='Meldung'}" Binding="{Binding Message}" Width="5*">
                                 <DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/></Style></DataGridTextColumn.ElementStyle>
                             </DataGridTextColumn>
                         </DataGrid.Columns>

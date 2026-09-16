@@ -31,6 +31,8 @@ namespace ClearPlan.Core.Settings
                 value => settings.Paths.DefaultReviewRulesJsonPath = value);
             Apply(values, "PlanCheckSelectionJsonPath",
                 value => settings.Paths.PlanCheckSelectionJsonPath = value);
+            Apply(values, "CtCompatibilityJsonPath",
+                value => settings.Paths.CtCompatibilityJsonPath = value);
             Apply(values, "FieldNamingRulesJsonPath",
                 value => settings.Paths.FieldNamingRulesJsonPath = value);
             Apply(values, "IsodoseDisplayJsonPath",
@@ -97,6 +99,7 @@ namespace ClearPlan.Core.Settings
             Append(builder, "AriaUploadConfigJsonPath", settings.Paths.AriaUploadConfigJsonPath);
             Append(builder, "DefaultReviewRulesJsonPath", settings.Paths.DefaultReviewRulesJsonPath);
             Append(builder, "PlanCheckSelectionJsonPath", settings.Paths.PlanCheckSelectionJsonPath);
+            Append(builder, "CtCompatibilityJsonPath", settings.Paths.CtCompatibilityJsonPath);
             Append(builder, "FieldNamingRulesJsonPath", settings.Paths.FieldNamingRulesJsonPath);
             Append(builder, "IsodoseDisplayJsonPath", settings.Paths.IsodoseDisplayJsonPath);
             Append(builder, "RefDbJsonPath",

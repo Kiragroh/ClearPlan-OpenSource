@@ -5,6 +5,7 @@ using ClearPlan.Presentation.ViewModels;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
+using ClearPlan.Core.Localization;
 
 namespace ClearPlan.Presentation.Plot
 {
@@ -51,7 +52,7 @@ namespace ClearPlan.Presentation.Plot
                 new LinearAxis
                 {
                     Position = AxisPosition.Bottom,
-                    Title = "Dosis [Gy]",
+                    Title = ReviewLanguage.Text("Dosis [Gy]"),
                     IsZoomEnabled = false,
                     IsPanEnabled = false,
                     Minimum = 0,
@@ -65,7 +66,7 @@ namespace ClearPlan.Presentation.Plot
                 new LinearAxis
                 {
                     Position = AxisPosition.Left,
-                    Title = "Relatives Volumen [%]",
+                    Title = ReviewLanguage.Text("Relatives Volumen [%]"),
                     IsZoomEnabled = false,
                     IsPanEnabled = false,
                     Minimum = 0,
@@ -90,7 +91,7 @@ namespace ClearPlan.Presentation.Plot
                     IsVisible = row.IsSelected,
                     CanTrackerInterpolatePoints = true,
                     TrackerFormatString =
-                        "{0}\nDosis: {2:0.00} Gy\nVolumen: {4:0.00} %"
+                        ReviewLanguage.Text("{0}\nDosis: {2:0.00} Gy\nVolumen: {4:0.00} %")
                 };
                 foreach (Core.Review.ReviewDvhPoint point in row.Points)
                 {
@@ -102,6 +103,16 @@ namespace ClearPlan.Presentation.Plot
             }
 
             return model;
+        }
+
+        public static void RefreshLanguage(PlotModel model)
+        {
+            if (model == null) return;
+            foreach (var axis in model.Axes)
+                axis.Title = ReviewLanguage.Text(axis.Position == AxisPosition.Bottom ? "Dosis [Gy]" : "Relatives Volumen [%]");
+            foreach (var line in model.Series.OfType<LineSeries>())
+                line.TrackerFormatString = ReviewLanguage.Text("{0}\nDosis: {2:0.00} Gy\nVolumen: {4:0.00} %");
+            model.InvalidatePlot(false);
         }
 
         public static void SetSeriesVisibility(

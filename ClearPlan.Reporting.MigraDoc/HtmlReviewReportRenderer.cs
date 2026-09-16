@@ -7,6 +7,7 @@ using System.Net;
 using System.Text;
 using ClearPlan.Core.PlanAnalysis;
 using ClearPlan.Core.Review;
+using ClearPlan.Core.Localization;
 using ClearPlan.Rendering;
 using ClearPlan.Reporting.MigraDoc.Internal;
 
@@ -24,16 +25,23 @@ namespace ClearPlan.Reporting.MigraDoc
         public string Render(ReviewReportDocument document)
         {
             if (document == null) throw new ArgumentNullException("document");
+            using (ClearPlan.Core.Localization.ReviewLanguage.Scope(document.LanguageCode ?? "de"))
+                return RenderLocalized(document);
+        }
+
+        private string RenderLocalized(ReviewReportDocument document)
+        {
+            if (document == null) throw new ArgumentNullException("document");
             var html = new StringBuilder(32768);
-            html.Append("<!DOCTYPE html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+            html.Append("<!DOCTYPE html>\n<html lang=\"").Append(ReviewLanguage.Code).Append("\"><head><meta charset=\"utf-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
             html.Append("<title>Plan Quality Report — ").Append(E(document.PlanDisplayLabel)).Append("</title><style>").Append(Styles).Append("</style></head><body>");
             html.Append("<!-- THESIS: inspect the current detached review without reacquiring plan data. OWN-WORLD: Clinical Blueprint navy headings, teal wayfinding, white evidence tables. STORY: identify the plan, inspect goals and checks, then dose and image evidence. FIRST VIEWPORT: report identity and timestamp above a compact plan table and clinical goals. FORM: precisely scoped report extension of DESIGN.md, code-led. FINISH: regression tests and bounded desktop/mobile review; incumbent DESIGN.md retained. -->");
             html.Append("<div class=\"report\"><header><h1>Plan Quality Report</h1><p class=\"identity\">").Append(E(document.PatientDisplayLabel)).Append(" <span class=\"separator\">/</span> ").Append(E(document.PlanDisplayLabel)).Append("</p>");
-            html.Append("<p class=\"snapshot\">Current snapshot · ").Append(document.GeneratedUtc == default(DateTimeOffset) ? Missing : E(document.GeneratedUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture))).Append("</p>");
+            html.Append("<p class=\"snapshot\">").Append(E(ReviewLanguage.Label("Aktueller Datenstand · ", "Current snapshot · "))).Append(document.GeneratedUtc == default(DateTimeOffset) ? Missing : E(document.GeneratedUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture))).Append("</p>");
             if (document.Synthetic) html.Append("<p class=\"simulation\">SYNTHETIC DEMONSTRATION — NOT FOR CLINICAL USE</p>");
-            else if (!string.IsNullOrWhiteSpace(document.ModeLabel)) Paragraph(html, document.ModeLabel, "note");
-            html.Append("<p class=\"note\">Captured review data · Read-only · Not treatment approval.</p></header>");
-            html.Append("<nav aria-label=\"Report sections\"><a href=\"#goals\">Clinical goals</a><a href=\"#checks\">PlanCheck</a><a href=\"#dvh\">DVH</a><a href=\"#parameters\">Plan parameters</a><a href=\"#ct\">CT</a>");
+            else if (!string.IsNullOrWhiteSpace(document.ModeLabel)) Paragraph(html, ReviewLanguage.Text(document.ModeLabel), "note");
+            html.Append("<p class=\"note\">").Append(E(ReviewLanguage.Label("Erfasste Prüfdaten · Nur lesend · Keine Behandlungsfreigabe.", "Captured review data · Read-only · Not treatment approval."))).Append("</p></header>");
+            html.Append("<nav aria-label=\"").Append(E(ReviewLanguage.Label("Reportabschnitte", "Report sections"))).Append("\"><a href=\"#goals\">").Append(E(ReviewReportLabels.Text("Clinical goals"))).Append("</a><a href=\"#checks\">PlanCheck</a><a href=\"#dvh\">DVH</a><a href=\"#parameters\">").Append(E(ReviewReportLabels.Text("Plan parameters"))).Append("</a><a href=\"#ct\">CT</a>");
             if (document.IncludeBeamEyeViews) html.Append("<a href=\"#bev\">BEV / DRR</a>");
             html.Append("</nav>");
             if (!string.IsNullOrWhiteSpace(document.VisibilityDisclosure())) Paragraph(html, document.VisibilityDisclosure(), "note");
@@ -51,10 +59,10 @@ namespace ClearPlan.Reporting.MigraDoc
                 Section(html, "collision", "Collision / 3D | Sampled geometry review");
                 html.Append("<img style=\"max-width:100%;max-height:70vh;object-fit:contain\" alt=\"Read-only 3D geometry illustration, not clinical clearance\" src=\"data:image/png;base64,")
                     .Append(Convert.ToBase64String(document.CollisionPreviewPng)).Append("\"/>");
-                Paragraph(html, document.CollisionPreviewCaption, "note");
+                Paragraph(html, ReviewLanguage.Text(document.CollisionPreviewCaption), "note");
                 html.Append("</section>");
             }
-            html.Append("<footer>ClearPlan · ").Append(E(document.SoftwareVersion)).Append(" · Unavailable is not passed.</footer></div></body></html>");
+            html.Append("<footer>ClearPlan · ").Append(E(document.SoftwareVersion)).Append(" · ").Append(E(ReviewLanguage.Label("Nicht verfügbar bedeutet nicht bestanden.", "Unavailable is not passed."))).Append("</footer></div></body></html>");
             return html.ToString();
         }
 
@@ -157,8 +165,8 @@ namespace ClearPlan.Reporting.MigraDoc
             Table(html, "Message", "Status", "Check", "Category");
             foreach (var row in rows)
             {
-                html.Append("<tr>"); Cell(html, row.Message); StatusCell(html, row.Status);
-                Cell(html, row.CheckCode); Cell(html, row.Category); html.Append("</tr>");
+                html.Append("<tr>"); Cell(html, ReviewLanguage.Text(row.Message)); StatusCell(html, row.Status);
+                Cell(html, row.CheckCode); Cell(html, ReviewLanguage.Text(row.Category)); html.Append("</tr>");
             }
             EndTable(html, rows.Count, 4); html.Append("</section>");
         }
@@ -206,20 +214,20 @@ namespace ClearPlan.Reporting.MigraDoc
             Row(html, N(plan.TotalMetersetMu), N(plan.MuPerGy), N(plan.Pam), N(plan.MeanApertureAreaCm2), N(plan.SmallApertureFraction), N(plan.PlanNormalizationPercent));
             EndTable(html, 1, 6);
             Paragraph(html, ReviewImageRenderer.PamTargetSummary(plan) + " · " + T(plan.PamWeightingMode) +
-                (N(plan.Pam) == Missing ? " · " + ReviewImageRenderer.PamUnavailableReason(plan) : ""), "note");
+                (N(plan.Pam) == Missing ? " · " + ReviewLanguage.Text(ReviewImageRenderer.PamUnavailableReason(plan)) : ""), "note");
             Paragraph(html, "Small aperture: < " + (analysis == null ? Missing : N(plan.SmallApertureThresholdCm2)) + " cm².", "note");
             var beams = Rows(plan.Beams).ToList();
             Table(html, "Beam", "Technique / energy", "MU", "PAM", "Mean aperture [cm²]", "Nominal MU/min", "Geometry / availability");
-            foreach (var beam in beams) Row(html, beam.BeamId, Join(beam.Technique, beam.EnergyDisplay), N(beam.MetersetMu), N(beam.Pam), N(beam.MeanApertureAreaCm2), N(beam.NominalDoseRateMuPerMin), Join(beam.GeometryStatus, beam.GeometryReason));
+            foreach (var beam in beams) Row(html, beam.BeamId, Join(beam.Technique, beam.EnergyDisplay), N(beam.MetersetMu), N(beam.Pam), N(beam.MeanApertureAreaCm2), N(beam.NominalDoseRateMuPerMin), Join(ReviewLanguage.Text(beam.GeometryStatus), ReviewLanguage.Text(beam.GeometryReason)));
             EndTable(html, beams.Count, 7);
             Paragraph(html, "Nominal MU/min: plan setting, not measured delivery. PAM / aperture metrics: descriptive.", "note");
-            html.Append("<h3>Target quality</h3>");
+            html.Append("<h3>").Append(E(ReviewReportLabels.Text("Target quality"))).Append("</h3>");
             var targets = Rows(plan.TargetQuality).ToList();
             Table(html, "Target / body", "Plan Rx [Gy]", "Target [cm³]", "Paddick CI", "1 / Paddick CI", "GI", "HI", "Availability / scope");
-            foreach (var target in targets) Row(html, Join(target.StructureId, target.BodyStructureId), N(target.ReferenceDoseGy), N(target.TargetVolumeCm3), N(target.PaddickCi), N(target.PlanCheckCi), N(target.GradientIndex), N(target.HomogeneityIndex), target.AvailabilityScope);
+            foreach (var target in targets) Row(html, Join(target.StructureId, target.BodyStructureId), N(target.ReferenceDoseGy), N(target.TargetVolumeCm3), N(target.PaddickCi), N(target.PlanCheckCi), N(target.GradientIndex), N(target.HomogeneityIndex), ReviewLanguage.Text(target.AvailabilityScope));
             EndTable(html, targets.Count, 8);
             Paragraph(html, "GI: whole EXTERNAL V50 / V100. HI: (D2 − D98) / plan Rx. Rx is the displayed plan prescription.", "note");
-            foreach (var warning in Rows(plan.Warnings)) Paragraph(html, warning, "note");
+            foreach (var warning in Rows(plan.Warnings)) Paragraph(html, ReviewLanguage.Text(warning), "note");
             html.Append("</section>");
         }
 
@@ -232,16 +240,16 @@ namespace ClearPlan.Reporting.MigraDoc
             foreach (string kind in new[] { "transversal", "coronal", "sagittal" })
             {
                 var img = images.FirstOrDefault(item => string.Equals(item.Kind, kind, StringComparison.OrdinalIgnoreCase));
-                html.Append("<div class=\"ct-image\"><h3>").Append(E(img == null ? CultureInfo.InvariantCulture.TextInfo.ToTitleCase(kind) : img.Title)).Append("</h3>");
+                html.Append("<div class=\"ct-image\"><h3>").Append(E(img == null ? CultureInfo.InvariantCulture.TextInfo.ToTitleCase(kind) : ReviewLanguage.Text(img.Title))).Append("</h3>");
                 if (ValidCt(img, document.Synthetic))
                 {
-                    Image(html, ReviewImageRenderer.Ct(img), T(img.Title), "ct-raster");
+                    Image(html, ReviewImageRenderer.Ct(img), T(ReviewLanguage.Text(img.Title)), "ct-raster");
                     CtLegend(html, img);
                     Paragraph(html, ReviewImageRenderer.CtSummary(img), "note");
                     string missingOverlays = ReviewImageRenderer.CtUnavailableOverlays(img);
                     if (!string.IsNullOrWhiteSpace(missingOverlays)) Paragraph(html, missingOverlays, "note");
                 }
-                else Paragraph(html, "Unavailable — " + (img == null ? "no cached view in this snapshot." : T(img.UnavailableReason, "invalid or unavailable cached image.")), "empty");
+                else Paragraph(html, "Unavailable — " + (img == null ? "no cached view in this snapshot." : T(ReviewLanguage.Text(img.UnavailableReason), "invalid or unavailable cached image.")), "empty");
                 html.Append("</div>");
             }
             html.Append("</div></section>");
@@ -258,7 +266,7 @@ namespace ClearPlan.Reporting.MigraDoc
             foreach (var beam in beams)
             {
                 var cp = ReviewImageRenderer.StartControlPoint(beam);
-                html.Append("<article class=\"field-review\"><h3>Field review | ").Append(E(beam.BeamId)).Append("</h3>");
+                html.Append("<article class=\"field-review\"><h3>").Append(E(ReviewLanguage.Label("Feldübersicht | ", "Field review | "))).Append(E(beam.BeamId)).Append("</h3>");
                 if (document.IncludeBeamEyeViews) Paragraph(html, "Field start · Exact CP 0 · Not arc-integrated fluence. Control-point trajectories: whole field.", "note");
                 html.Append("<div class=\"field-layout\"><div class=\"field-bev\">");
                 if (document.IncludeBeamEyeViews && cp != null && ValidBev(beam, cp, document.Synthetic))
@@ -273,7 +281,7 @@ namespace ClearPlan.Reporting.MigraDoc
                     ? "Estimate profile: " + T(beam.DoseRateEstimateProfile) + "; gantry assumption: " + N(beam.DoseRateEstimateMaxGantrySpeedDegreesPerSecond) + " deg/s; estimated duration: " + N(beam.EstimatedBeamDurationSeconds) + " s. Configured assumptions require local verification."
                     : "Rate estimate unavailable; check machine profile and native input completeness.", "note");
                 if (!string.IsNullOrWhiteSpace(beam.DoseRateEstimateReason))
-                    html.Append("<details><summary>Model assumptions / availability</summary><p class=\"note rate-assumptions\" tabindex=\"0\">").Append(E(beam.DoseRateEstimateReason)).Append("</p></details>");
+                    html.Append("<details><summary>Model assumptions / availability</summary><p class=\"note rate-assumptions\" tabindex=\"0\">").Append(E(ReviewLanguage.Text(beam.DoseRateEstimateReason))).Append("</p></details>");
                 html.Append("</div></div>");
                 Paragraph(html, "Estimated plan trajectory: dashed, PlanCheck-style segment averages. Supplied plan values: solid. Not measured delivery. Model excludes acceleration, leaf/jaw motion, ramping and holds; index is not time.", "note");
                 html.Append("</article>");
@@ -354,7 +362,7 @@ namespace ClearPlan.Reporting.MigraDoc
         private static string E(string value) { return WebUtility.HtmlEncode(T(value)); }
         private static string Join(params string[] values) { return T(string.Join(" · ", values.Where(value => !string.IsNullOrWhiteSpace(value)))); }
         private static string SafeColor(string value) { return value != null && value.Length == 7 && value[0] == '#' && value.Skip(1).All(Uri.IsHexDigit) ? value : "#0F766E"; }
-        private static void Section(StringBuilder html, string id, string title) { html.Append("<section id=\"").Append(id).Append("\"><h2>").Append(E(title)).Append("</h2>"); }
+        private static void Section(StringBuilder html, string id, string title) { html.Append("<section id=\"").Append(id).Append("\"><h2>").Append(E(ReviewReportLabels.Text(title))).Append("</h2>"); }
         private static void Paragraph(StringBuilder html, string value, string css) { html.Append("<p class=\"").Append(css).Append("\">").Append(E(value)).Append("</p>"); }
         private static void Cell(StringBuilder html, string value) { html.Append("<td>").Append(E(value)).Append("</td>"); }
         private static void Row(StringBuilder html, params string[] values) { html.Append("<tr>"); foreach (string value in values) Cell(html, value); html.Append("</tr>"); }
@@ -362,12 +370,12 @@ namespace ClearPlan.Reporting.MigraDoc
         {
             string status = (value ?? "").ToLowerInvariant();
             string css = status == "pass" || status == "passed" ? "pass" : status == "fail" || status == "failed" ? "fail" : status == "variation" || status == "warning" ? "variation" : "info";
-            html.Append("<td><span class=\"status ").Append(css).Append("\">").Append(E(value)).Append("</span>");
-            if (!string.IsNullOrWhiteSpace(reason)) html.Append("<br>").Append(E(reason));
+            html.Append("<td><span class=\"status ").Append(css).Append("\">").Append(E(ReviewReportLabels.Status(value))).Append("</span>");
+            if (!string.IsNullOrWhiteSpace(reason)) html.Append("<br>").Append(E(ReviewLanguage.Text(reason)));
             html.Append("</td>");
         }
-        private static void Table(StringBuilder html, params string[] headings) { html.Append("<div class=\"table-scroll\" tabindex=\"0\"><table><thead><tr>"); foreach (string heading in headings) html.Append("<th scope=\"col\">").Append(E(heading)).Append("</th>"); html.Append("</tr></thead><tbody>"); }
-        private static void EndTable(StringBuilder html, int count, int columns) { if (count == 0) html.Append("<tr><td colspan=\"").Append(columns).Append("\">Unavailable — no entries in this snapshot.</td></tr>"); html.Append("</tbody></table></div>"); }
+        private static void Table(StringBuilder html, params string[] headings) { html.Append("<div class=\"table-scroll\" tabindex=\"0\"><table><thead><tr>"); foreach (string heading in headings) html.Append("<th scope=\"col\">").Append(E(ReviewReportLabels.Text(heading))).Append("</th>"); html.Append("</tr></thead><tbody>"); }
+        private static void EndTable(StringBuilder html, int count, int columns) { if (count == 0) html.Append("<tr><td colspan=\"").Append(columns).Append("\">").Append(E(ReviewLanguage.Label("Nicht verfügbar — keine Einträge in diesem Datenstand.", "Unavailable — no entries in this snapshot."))).Append("</td></tr>"); html.Append("</tbody></table></div>"); }
         private static void Image(StringBuilder html, string encoded, string label, string css)
         {
             // Only the internal PNG encoders supply image bytes; no caller-controlled URL or MIME type is accepted.

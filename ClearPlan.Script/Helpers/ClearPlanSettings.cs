@@ -450,6 +450,7 @@ namespace ClearPlan.Helpers
             Paths.DefaultReviewRulesJsonPath = Paths.DefaultReviewRulesJsonPath ?? "DefaultReviewRules.json";
             Paths.FieldNamingRulesJsonPath = Paths.FieldNamingRulesJsonPath ?? "FieldNamingRules.json";
             Paths.IsodoseDisplayJsonPath = Paths.IsodoseDisplayJsonPath ?? "IsodoseDisplay.json";
+            Paths.CtCompatibilityJsonPath = Paths.CtCompatibilityJsonPath ?? "CtCompatibility.json";
 
             Paths.ConstraintTemplatesDirectory = DefaultIfBlank(
                 Paths.ConstraintTemplatesDirectory,
