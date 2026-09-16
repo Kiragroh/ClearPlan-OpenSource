@@ -365,7 +365,7 @@ namespace ClearPlan.Views
             _viewModel.SetAliases(catalog == null ? null : catalog.Structures);
             _viewModel.InitializeCheckSelection(_checkSelectionRows);
             _aliasesDirty = false;
-            AliasStatusText.Text = "Angezeigt: aktive Strukturzuordnungen. Änderungen werden nur nach explizitem Speichern aktiviert.";
+            AliasStatusText.Text = ClearPlan.Core.Localization.ReviewLanguage.Text("Angezeigt: aktive Strukturzuordnungen. Änderungen werden nur nach explizitem Speichern aktiviert.");
             DataContext = _viewModel;
         }
 

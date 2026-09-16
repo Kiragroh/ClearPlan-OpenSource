@@ -38,6 +38,7 @@ namespace ClearPlan.Core.Tests
             var tests = new List<TestCase>
             {
                 new TestCase("ReviewLanguage.EnglishGermanRoundTrip", ReviewLanguageTests.EnglishGermanRoundTrip),
+                new TestCase("ReviewLanguage.SettingsDisplayBindingsKeepConfigurationContentRaw", ReviewLanguageTests.SettingsDisplayBindingsKeepConfigurationContentRaw),
                 new TestCase("ReviewLanguage.LiveBindingsAndReportScope", ReviewLanguageTests.LiveBindingsAndReportScope),
                 new TestCase("ReviewLanguage.AllViewsAndPlotIdentity", ReviewLanguageTests.AllViewsAndPlotIdentity),
                 new TestCase("ReviewLanguage.ExplicitBilingualLabelScopes", ReviewLanguageTests.ExplicitBilingualLabelScopes),

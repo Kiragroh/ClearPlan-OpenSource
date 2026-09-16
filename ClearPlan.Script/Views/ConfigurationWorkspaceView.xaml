@@ -33,6 +33,7 @@
         </StackPanel>
         <StackPanel Grid.Row="1">
             <ListBox x:Name="EntriesList" ItemsSource="{Binding Entries}" SelectedItem="{Binding SelectedEntry, Mode=OneWay}"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                      SelectionChanged="EntryChanged" BorderBrush="{StaticResource ClinicalBlueprintBorder}"
                      AutomationProperties.Name="{lang:Translate Value='Konfigurationsbereiche'}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemContainerStyle>
@@ -71,7 +72,7 @@
             <StackPanel Margin="0,0,12,4">
                 <TextBlock Text="{lang:Translate Path=SelectedEntry.Title}" FontSize="19" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
                 <TextBlock Text="{lang:Translate Path=SelectedEntry.Description}" TextWrapping="Wrap" Margin="0,4,0,10" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>
-                <TextBlock Text="{Binding StateLabel}" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintText}"/>
+                <TextBlock Text="{lang:Translate Path=StateLabel}" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintText}"/>
                 <TextBlock Text="{lang:Translate Value='Konfigurierter Quellpfad (Einstellungsentwurf)'}" Style="{StaticResource ConfigurationLabel}"/>
                 <TextBox Text="{Binding ConfiguredPath, Mode=OneWay}" Style="{StaticResource ConfigurationPath}" AutomationProperties.Name="{lang:Translate Value='Konfigurierter Quellpfad'}"/>
                 <TextBlock Text="{lang:Translate Value='Geprüfter Versionspfad · Aktivierung erst mit Einstellungen speichern'}" Style="{StaticResource ConfigurationLabel}"/>

@@ -5,6 +5,28 @@ namespace ClearPlan.Core.Tests
 {
     internal static class ReviewLanguageTests
     {
+        public static void SettingsDisplayBindingsKeepConfigurationContentRaw()
+        {
+            string configuration = System.IO.File.ReadAllText(System.IO.Path.Combine("ClearPlan.Script", "Views", "ConfigurationWorkspaceView.xaml"));
+            string settings = System.IO.File.ReadAllText(System.IO.Path.Combine("ClearPlan.Script", "Views", "SettingsView.xaml"));
+            TestAssert.True(configuration.Contains("Text=\"{lang:Translate Path=StateLabel}\""));
+            TestAssert.True(settings.Contains("Text=\"{lang:Translate Path=PlanCheckSelectionStatus}\""));
+            TestAssert.True(configuration.Contains("Text=\"{Binding EditorText, UpdateSourceTrigger=PropertyChanged}\""));
+            TestAssert.True(configuration.Contains("Text=\"{Binding ConfiguredPath, Mode=OneWay}\""));
+            TestAssert.True(settings.Contains("Binding=\"{Binding CanonicalName, UpdateSourceTrigger=PropertyChanged}\""));
+            string original = ClearPlan.Core.Localization.ReviewLanguage.Code;
+            try
+            {
+                ClearPlan.Core.Localization.ReviewLanguage.Code = "en";
+                TestAssert.Equal("Managed · version 3", ClearPlan.Core.Localization.ReviewLanguage.Display("Verwaltet · Version 3"));
+                TestAssert.Equal("Overview: 4 check families. Descriptions remain in memory only.",
+                    ClearPlan.Core.Localization.ReviewLanguage.Display("Übersicht: 4 Check-Familien. Beschreibungen bleiben nur im Arbeitsspeicher."));
+                ClearPlan.Core.Localization.ReviewLanguage.Code = "de";
+                TestAssert.Equal("Verwaltet · Version 3", ClearPlan.Core.Localization.ReviewLanguage.Display("Verwaltet · Version 3"));
+            }
+            finally { ClearPlan.Core.Localization.ReviewLanguage.Code = original; }
+        }
+
         public static void ExplicitBilingualLabelScopes()
         {
             string original = ClearPlan.Core.Localization.ReviewLanguage.Code;
