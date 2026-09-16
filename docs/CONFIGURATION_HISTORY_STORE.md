@@ -1,5 +1,7 @@
 # Managed configuration history
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 `ClearPlan.Core.Configuration.ConfigurationHistoryStore` is an ESAPI-free,
 file-based store for configuration documents. The application supplies an explicit
 managed root, document-specific validation, the Windows actor and a change reason.

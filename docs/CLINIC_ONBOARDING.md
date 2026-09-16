@@ -1,6 +1,9 @@
 # ClearPlan: receiving-clinic onboarding
 
-This unpublished v3.2.0 candidate is not an approved clinical installation.
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
+This development snapshot is not an approved clinical installation. The archived
+v3.2.0 release and its evidence describe an earlier source state.
 Record named local owners: MPE lead for acceptance, TPS administrator for
 deployment, information-security contact for storage/access, and configuration
 custodian for rules and rollback.
@@ -24,7 +27,7 @@ authorization. RayStation support is an illustrative, unvalidated snapshot adapt
 Clinical-build paths are in `built\settings.ini`, section `[Paths]`; non-path
 options are in `built\settings.json`. Relative paths resolve from the loaded
 ClearPlan assembly/settings directory, not the shell directory. Distribution
-files are templates. Use `Extras` → `Einstellungen …` → `Pfade & Quellen`.
+files are templates. Open **Settings → Paths & sources** in the English display.
 
 | Setting | Purpose / distributed default |
 |---|---|
@@ -37,16 +40,16 @@ files are templates. Use `Extras` → `Einstellungen …` → `Pfade & Quellen`.
 | `ReportsDirectory`, `CsvExportDirectory`, `LogsDirectory`, `StateDirectory` | `Reports`, `Exports`, `Logs`, `State` |
 | `AriaUploadConfigJsonPath` | Blank: upload disabled |
 
-Select the source mode, run `Quelle testen`, and inspect path/fallback. Under
-`Konfigurationen & Versionen`, select a document, enter an
-`Änderungsgrund`, then use `Quelle importieren` or `Andere Datei importieren …`.
+Select the source mode, run **Test source**, and inspect path/fallback. Under
+**Configurations & versions**, select a document, enter a
+**Reason for change**, then use **Import source** or **Import another file …**.
 Import validates a copy, preserving the source. JSON edits use
-`Prüfen & als Version speichern`; Excel uses `Excel-Entwurf öffnen`, then
-`Änderung übernehmen` after saving and closing the separate draft.
+**Validate & save as version**; Excel uses **Open Excel draft**, then
+**Apply changes** after saving and closing the separate draft.
 
 Review version, UTC time, recorded Windows actor and SHA-256.
-Only `Einstellungen speichern` activates the candidate path; rebuild the review
-afterward. `Ausgewählte Version wiederherstellen …` requires a reason and appends
+Only **Save settings** activates the candidate path; rebuild the review
+afterward. **Restore selected version …** requires a reason and appends
 a revision; save Settings to activate it. Back up the whole managed store.
 Actor names and hashes are neither authenticated attribution nor tamper-proof
 auditing. Stop on integrity errors; never repair checksums manually.

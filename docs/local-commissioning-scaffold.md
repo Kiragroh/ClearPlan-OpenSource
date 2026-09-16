@@ -1,11 +1,13 @@
-# Proposed local commissioning scaffold for the v3.2.0 candidate
+# Proposed local commissioning scaffold
+
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
 
 This checklist is a transfer aid for medical-physics groups adapting ClearPlan
 or its snapshot contract. It is not a validated universal commissioning
 protocol, a substitute for local risk analysis, or evidence that the public
 examples are clinically suitable.
 
-The candidate remains unpublished until final release readback. Use the actual
+Current development source is separate from the archived v3.2.0 release. Use the actual
 evaluated source/artifact manifests and execution receipts, not an old release's
 test totals, environment inventory or sample hashes. The
 [reproducibility guide](reproducibility.md) describes public software tests;
@@ -95,8 +97,9 @@ the clinical acceptance activities below are additional local work.
   and report options. Confirm that a compact or filtered report discloses its
   scope and does not turn omitted or unavailable evidence into a pass.
 - Treat every native snapshot and report as confidential, including pseudonymous
-  files. Confirm that manuscript sandbox captures contain only generated synthetic
-  data and that native images are never substituted into publication artifacts.
+  files. Public examples may use synthetic data or patient-free configuration
+  screens; do not substitute masked native patient images. Any clinical publication
+  material needs its own institutional privacy, ethics, and release review.
 
 ### Optional ARIA document transfer
 

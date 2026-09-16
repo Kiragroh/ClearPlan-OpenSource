@@ -1,14 +1,16 @@
 # Structure names and local aliases
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 ClearPlan can apply a separate, versioned alias JSON without changing a constraint workbook, a RefDB export, a prescription mapping, or a TPS structure. `StructureAliasesJsonPath` lives in `[Paths]` in `settings.ini`; relative paths resolve from the application build folder. The default is blank, preserving the selected source's existing mappings, including local installations.
 
 ## Configure in the clinical settings window
 
-The **Strukturnamen und Aliase** table displays the active source mappings. Use **Quelle übernehmen** to start from the selected source without existing overrides, or **Import JSON / Excel** to read an alias document, a RefDB constraint export, or an existing ClearPlan constraint workbook (`Structures` worksheet in the established catalog schema).
+The **Structure names and aliases** table displays the active source mappings. Use **Apply source** to start from the selected source without existing overrides, or **Import JSON / Excel** to read an alias document, a RefDB constraint export, or an existing ClearPlan constraint workbook (`Structures` worksheet in the established catalog schema).
 
-Edit the canonical name, explicit aliases separated by `|`, laterality and side aliases. The optional source ID is retained read-only when imported. **Aliase prüfen** checks duplicate identities, normalized name collisions, unknown laterality and cross-side aliases, including conflicts with the selected source. It does not certify TG-263 nomenclature or anatomical equivalence; a qualified local review remains necessary.
+Edit the canonical name, explicit aliases separated by `|`, laterality and side aliases. The optional source ID is retained read-only when imported. **Validate aliases** checks duplicate identities, normalized name collisions, unknown laterality and cross-side aliases, including conflicts with the selected source. It does not certify TG-263 nomenclature or anatomical equivalence; a qualified local review remains necessary.
 
-**Als versionierten Entwurf übernehmen** stages the aliases under **Konfigurationen & Versionen**. Enter a change reason and choose **Prüfen & als Version speichern**; **Einstellungen speichern** then activates the committed path and reloads the catalog. **JSON exportieren …** exports a copy without changing active settings. No import writes back to its source. Exporting over an existing valid alias document creates a `.bak`; other JSON schemas (including RefDB exports) cannot be overwritten by the alias writer.
+**Apply as versioned draft** stages the aliases under **Configurations & versions**. Enter a change reason and choose **Validate & save as version**; **Save settings** then activates the committed path and reloads the catalog. **Export JSON …** exports a copy without changing active settings. No import writes back to its source. Exporting over an existing valid alias document creates a `.bak`; other JSON schemas (including RefDB exports) cannot be overwritten by the alias writer.
 
 ## Application and safety
 
@@ -25,6 +27,6 @@ Edit the canonical name, explicit aliases separated by `|`, laterality and side 
 
 Canonical names were checked against the [AAPM TG-263 resources](https://www.aapm.org/pubs/reports/RPT_263_Supplemental/default.asp) and their [Eclipse structure templates](https://www.aapm.org/pubs/reports/RPT_263_Supplemental/EclipseStructureTemplates.zip). `Lungs` and the semantic/side conventions are stated in [TG-263, section 7.2](https://www.aapm.org/pubs/reports/RPT_263.pdf). Verified 7 September 2026. This does not imply AAPM endorsement.
 
-The existing public Starter constraint workbook remains an illustrative software test/reference catalog. Its values have not been replaced or relabeled as Timmermann-derived guidance. No claim of clinical validation, institutional endorsement, or verified Timmermann provenance is made. Local UKL prescription/RefDB tables are not distributed in this repository.
+The existing public Starter constraint workbook remains an illustrative software test/reference catalog. Its values have not been replaced or relabeled as Timmermann-derived guidance. No claim of clinical validation, institutional endorsement, or verified Timmermann provenance is made. Local institutional prescription/RefDB tables are not distributed in this repository.
 
 The JSON schema is `ClearPlan.structure_aliases.v1`. Each `structures` entry supports `canonical_name`, optional `structure_id`, `aliases`, `laterality`, `side_aliases_left`, and `side_aliases_right`. Omit `structure_id` in portable mappings unless matching one specific source catalog is intentional.

@@ -1,5 +1,7 @@
 # Review display language
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 The shared review workspace has a `de` / `en` selector. Fixed controls and
 presentation labels update in place; DVH series identity, values and visibility
 are retained. German is the default. The preference is stored per Windows account

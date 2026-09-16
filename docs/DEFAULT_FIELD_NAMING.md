@@ -1,12 +1,14 @@
 # Default field-name nomenclature
 
-The native settings page includes **Konfigurationen & Versionen → Default · Feldnamen**.
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
+The native settings page includes the field-name document under **Configurations & versions**.
 This controls read-only suggestions in ClearPlan. It does not rename fields in the TPS
 or alter the separately deployed PlanFieldNamer script.
 
 1. Select the configured JSON source and enter a change reason. Import explicitly;
    this creates a managed copy without modifying the original.
-2. Edit the JSON and choose **Prüfen & als Version speichern**.
+2. Edit the JSON and choose **Validate & save as version**.
 3. Save the settings to activate that exact revision, then reload the plan review.
    Merely creating a revision does not change the active configuration.
 4. To return to an older configuration, select it in the version history and restore

@@ -1,5 +1,7 @@
 # Optional ARIA report upload
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 The native workspace has an **An ARIA senden** action next to PDF and HTML.
 It creates the current single-plan report, including the current visibility and
 optional field-start BEV settings. It does not upload an arbitrary older PDF.

@@ -3,24 +3,30 @@ name: ClearPlan Clinical Blueprint - CT workspace
 description: Scoped record of the built read-only native three-plane CT surface; inherits the existing Clinical Blueprint design authority.
 ---
 
-# Design System: ClearPlan CT workspace
+# Historical design record: ClearPlan CT workspace
+
+[Documentation](../index.md) · [Configuration guide](../configuration-guide.md)
+
+Archived record of the September 9 layout. Current isodose levels are editable;
+these earlier fixed-level details and local captures are not current acceptance
+evidence. See the [configuration guide](../configuration-guide.md).
 
 ## Overview
 
 **Creative North Star: "Clinical Blueprint"**
 
-This is a scoped implementation record for the native **Schnittbilder** surface, observed on 2026-09-09. The established [root DESIGN.md](../../DESIGN.md) remains the visual authority. This addition does not replace its identity, redefine its tokens, or establish a new global page template. Its surface mode is **Operate**: inspect three orthogonal overviews, enlarge one plane, and understand the displayed evidence and its limits.
+This is a scoped implementation record for the native **CT views** surface, observed on 2026-09-09. The established [root DESIGN.md](../../DESIGN.md) remains the visual authority. This addition does not replace its identity, redefine its tokens, or establish a new global page template. Its surface mode is **Operate**: inspect three orthogonal overviews, enlarge one plane, and understand the displayed evidence and its limits.
 
 The built surface extends the incumbent paper-like workspace with dark image fields. It keeps the native controls and quiet slate/teal hierarchy around physically scaled images. Availability is stated in words and counts; image, contour, and dose availability remain separate concepts.
 
 **Key Characteristics:**
 
-- Three simultaneous planes by default: Transversal, Koronal, Sagittal.
+- Three simultaneous planes by default: Transverse, Coronal, Sagittal.
 - Explicit enlargement with native scrolling and persistent selected-plane context.
 - Display-only switches for detached contours, isodoses, and viewport framing.
 - Source-specific limitations, fixed CT windowing, and conspicuous synthetic labeling.
 
-Primary evidence is [PlanImagesView.xaml](../../ClearPlan.Presentation/Views/PlanImagesView.xaml), [PlanImagesViewModel.cs](../../ClearPlan.Presentation/ViewModels/PlanImagesViewModel.cs), and [PlanImageRenderer.cs](../../ClearPlan.Rendering/PlanImageRenderer.cs). Geometry comes from [PlanImageViewport.cs](../../ClearPlan.Core/Review/PlanImageViewport.cs); native source bounds come from [EsapiPlanImageBuilder.cs](../../ClearPlan.Script/Review/EsapiPlanImageBuilder.cs). The delivery scope is recorded in the [CT workspace and target-consistency plan](../superpowers/plans/2026-09-09-ct-target-consistency.md). This document describes the built CT surface, not every intention in that plan.
+Primary evidence is [PlanImagesView.xaml](../../ClearPlan.Presentation/Views/PlanImagesView.xaml), [PlanImagesViewModel.cs](../../ClearPlan.Presentation/ViewModels/PlanImagesViewModel.cs), and [PlanImageRenderer.cs](../../ClearPlan.Rendering/PlanImageRenderer.cs). Geometry comes from [PlanImageViewport.cs](../../ClearPlan.Core/Review/PlanImageViewport.cs); native source bounds come from [EsapiPlanImageBuilder.cs](../../ClearPlan.Script/Review/EsapiPlanImageBuilder.cs). The historical implementation plan is not part of this public source. This document records the earlier design, not the current complete feature set.
 
 No additional token primitives are declared here. Inherited color, type, spacing, shape, and button tokens stay in the root authority and [ClinicalBlueprint.xaml](../../ClearPlan.Presentation/Styles/ClinicalBlueprint.xaml). There is no scoped sidecar: this record adds neither a new token system nor HTML/CSS component previews.
 
@@ -50,9 +56,9 @@ Plane names, HU, millimeters, percentage of Rx, and Gy labels identify what is b
 
 The surface uses the incumbent horizontal/vertical inset (24/22 DIPs). The order is title and reload action, wrapping display controls, availability and status, image viewport, then orientation key and a collapsible legend. The first three areas remain outside the image scroll region.
 
-The default view is a single row of three equal-width plane cells. Each contains a name and **Vergrößern** action, a stretching dark image container, and its own availability and field-of-view readout. The image area has a minimum content height (180 DIPs); the layout does not silently switch into a mobile stack.
+The default view is a single row of three equal-width plane cells. Each contains a name and **Enlarge** action, a stretching dark image container, and its own availability and field-of-view readout. The image area has a minimum content height (180 DIPs); the layout does not silently switch into a mobile stack.
 
-Enlarging selects one cell and one column. Its minimum content height becomes **520 DIPs**, so it is genuinely larger at compact window sizes. A native vertical ScrollViewer exposes the remaining image content; horizontal scrolling is disabled. The surface title changes to **Schnittbilder · [selected plane]**, and **Drei Ebenen** remains above the scroll region. The selected plane is therefore still named when its in-cell heading has scrolled away. This is viewport scrolling, not CT slice navigation.
+Enlarging selects one cell and one column. Its minimum content height becomes **520 DIPs**, so it is genuinely larger at compact window sizes. A native vertical ScrollViewer exposes the remaining image content; horizontal scrolling is disabled. The surface title changes to **CT views · [selected plane]**, and **Three planes** remains above the scroll region. The selected plane is therefore still named when its in-cell heading has scrolled away. This is viewport scrolling, not CT slice navigation.
 
 Images use uniform stretching and nearest-neighbor bitmap scaling. The renderer maps both axes in physical units into a square viewport, preserving non-square source pixel spacing. Extra space is a dark margin, not stretched anatomy. The legend expands below the image area and has its own bounded vertical scroll region (maximum 112 DIPs).
 
@@ -60,8 +66,8 @@ The four inspected screenshots use mathematical synthetic images only:
 
 | State | Larger window | Compact window |
 | --- | --- | --- |
-| Three-plane overview | [1600 × 1000](../../.impeccable/review/ct-three-planes-1600x1000.png) | [1180 × 720](../../.impeccable/review/ct-three-planes-1180x720.png) |
-| Enlarged coronal plane | [1600 × 1000](../../.impeccable/review/ct-enlarged-coronal-1600x1000.png) | [1180 × 720](../../.impeccable/review/ct-enlarged-coronal-1180x720.png) |
+| Three-plane overview | 1600 × 1000 (local archive) | 1180 × 720 (local archive) |
+| Enlarged coronal plane | 1600 × 1000 (local archive) | 1180 × 720 (local archive) |
 
 Sizes name the tested windows, not a promise about exported PNG pixel dimensions. These images document the layout and explicit simulation states; they do not contain actual patient CT data and do not establish clinical commissioning, mobile support, or accessibility conformance.
 
@@ -77,21 +83,21 @@ Display actions retain the shared modestly rounded button shape. CT image fields
 
 ### Display controls
 
-**Strukturen** and **Isodosen** are native CheckBox controls, both checked by default and disabled when no valid image is available. They rebuild only the detached display and legend; they neither recapture anatomy nor edit a clinical structure or dose. Buttons retain inherited hover, keyboard-focus, and disabled states. Control labels, image names, loading progress, and selected detail text have explicit automation names or help text in XAML; this implementation evidence is not a complete assistive-technology test.
+**Structures** and **Isodoses** are native CheckBox controls, both checked by default and disabled when no valid image is available. They rebuild only the detached display and legend; they neither recapture anatomy nor edit a clinical structure or dose. Buttons retain inherited hover, keyboard-focus, and disabled states. Control labels, image names, loading progress, and selected detail text have explicit automation names or help text in XAML; this implementation evidence is not a complete assistive-technology test.
 
-**CT laden** requests a new capture for the current plan and is disabled while loading. Loading clears the old detached image set and shows explicit per-plane placeholders plus indeterminate progress. Failure exposes a retry message instead of retaining substitute images. Image replacement accepts only exact, nonempty matching plan keys; duplicate captures of a plane yield an ambiguous/unavailable plane, not arbitrary selection.
+**Load CT** requests a new capture for the current plan and is disabled while loading. Loading clears the old detached image set and shows explicit per-plane placeholders plus indeterminate progress. Failure exposes a retry message instead of retaining substitute images. Image replacement accepts only exact, nonempty matching plan keys; duplicate captures of a plane yield an ambiguous/unavailable plane, not arbitrary selection.
 
 ### Windowing and framing
 
 **W 400 / L 40 HU** is a focusable informational readout, not a window/level editor. Its tooltip explains that the snapshot already contains windowed 8-bit pixels. Native capture uses vendor HU conversion and this fixed window; simulation uses an HU-equivalent mathematical phantom.
 
-**Iso-Fokus** is the initial framing mode. With a valid in-bounds isocenter and captured dose region, the physical viewport is centered on that isocenter and fits the sampled **at least 2% Rx** region plus a margin (10 mm). Source-limited dose coverage is named explicitly. If the dose region is unavailable, the entire CT extent remains visible; if the isocenter is also unavailable, framing falls back to image center. The local readout identifies missing isocenter or absent dose zoom.
+**Isocenter focus** is the initial framing mode. With a valid in-bounds isocenter and captured dose region, the physical viewport is centered on that isocenter and fits the sampled **at least 2% Rx** region plus a margin (10 mm). Source-limited dose coverage is named explicitly. If the dose region is unavailable, the entire CT extent remains visible; if the isocenter is also unavailable, framing falls back to image center. The local readout identifies missing isocenter or absent dose zoom.
 
-**Gesamte CT** fits the whole CT around image center. It does not remove the captured isocenter or dose region from the snapshot. Overlay visibility and framing are independent: hiding isodose lines does not discard the captured dose-region framing data. Neither mode extrapolates beyond the captured CT.
+**Whole CT** fits the whole CT around image center. It does not remove the captured isocenter or dose region from the snapshot. Overlay visibility and framing are independent: hiding isodose lines does not discard the captured dose-region framing data. Neither mode extrapolates beyond the captured CT.
 
 ### Availability, legend, and sources
 
-The summary states **n / 3 Ebenen verfügbar**. Each valid plane reports **CT verfügbar** or **Simulation**, followed by displayed contour and isodose counts and any unavailable-source count. A count reflects available overlays with drawable paths, not the total structure inventory or a clinical completeness verdict. A valid source with no intersection in the selected plane contributes no displayed contour and is distinct from an unavailable source.
+The summary states **n / 3 planes available**. Each valid plane reports **CT available** or **Simulation**, followed by displayed contour and isodose counts and any unavailable-source count. A count reflects available overlays with drawable paths, not the total structure inventory or a clinical completeness verdict. A valid source with no intersection in the selected plane contributes no displayed contour and is distinct from an unavailable source.
 
 The collapsible legend contains currently displayed overlays, deduplicated across planes by kind, label, and color. Source descriptions remain attached to legend items. The focusable field-of-view readout exposes its caption, capture summary, framing explanation, and unavailable-source reasons through a tooltip and automation help text. The ordinary status line stays short rather than repeating this technical detail.
 

@@ -1,5 +1,7 @@
 # Contributing to ClearPlan
 
+[Documentation](docs/index.md) · [Developer handoff](docs/developer-handoff.md)
+
 ClearPlan is a read-only starter framework for automated radiotherapy plan review. Contributions should remain understandable outside one clinic, testable without patient data, and safe when required structures or metadata are absent.
 
 ## Before changing code
@@ -15,7 +17,7 @@ ClearPlan is a read-only starter framework for automated radiotherapy plan revie
 
 Both RefDB JSON and Excel must map into the same `ConstraintCatalog`. Consumer code must not branch on source-specific fields.
 
-For Excel contributions, keep the public workbook small and use the existing `Structures`, `Tables`, and `Constraints` sheets. Required identifiers must be unique and all table/structure relationships valid. Do not merge cells inside the data ranges.
+For Excel contributions, keep the catalog maintainable and use the existing `Structures`, `Tables`, and `Constraints` sheets. Required identifiers must be unique and all table/structure relationships valid. Do not merge cells inside the data ranges.
 
 For RefDB contributions, validate the supported schema before joining entities. Preserve active flags, canonical structure identifiers, aliases, side-specific aliases, table metadata, and source diagnostics. A schema mismatch must fail clearly.
 
@@ -54,16 +56,20 @@ PlanCheck changes require separate clinical review and are not implied by a sour
 
 Use `settings.ini` for every file-system path and `settings.json` for non-path options. Prefer relative paths in the public starter and keep optional integrations blank or public-safe. Both files are editable through the ClearPlan settings page; save only after path and catalog validation succeeds.
 
-Public defaults must not log direct patient/user identifiers or place them in filenames. Screenshots, figures, workbooks, test fixtures, logs, and issue reports must use deterministic synthetic data.
+Public defaults must not log direct patient/user identifiers or place them in filenames. Screenshots, figures, workbooks, test fixtures, logs, and issue reports must be patient-free: use synthetic test data or public-only configuration screens. Masked clinical captures do not meet that requirement.
 
 ## Required validation
 
 Before opening a pull request:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tools\build-and-test.ps1
+.\tools\test-portable-review.ps1
 git diff --check
 ```
+
+Use your approved execution policy. For licensed ESAPI changes, also run the
+separate native build and protected acceptance described in the
+[developer handoff](docs/developer-handoff.md); portable tests do not execute ESAPI.
 
 If constraints changed, also state:
 

@@ -1,5 +1,7 @@
 # Collision / 3D: read-only development preview
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 This feature visualizes detached body/support meshes and sampled treatment-field
 positions. It is **not a clinical clearance decision, a machine interlock, or a
 validated motion simulator**. No plan, structure, dose, or treatment parameter is
@@ -7,10 +9,10 @@ written back to the TPS.
 
 ## Use
 
-1. Open **Kollision / 3D**. In the simulator, select the explicit C-arm sphere or
+1. Open **Collision / 3D**. In the simulator, select the explicit C-arm sphere or
    ring-bore demonstration. These dimensions do not describe a clinical device.
 2. For ESAPI, configure an exact-machine, locally commissioned geometry catalog
-   under **Einstellungen → CollisionProfilesJsonPath**. The path is persisted in
+   under **Settings → CollisionProfilesJsonPath**. The path is persisted in
    `settings.ini`; the existing configuration-history editor supports revisions,
    author/comment records, validation, and restoration. The distributed example
    has an intentionally empty `Profiles` array.
@@ -20,15 +22,15 @@ written back to the TPS.
    report image. This is operator assurance, not an API measurement. It does not
    capture treatment-day 6D corrections.
 4. Load geometry and select a field. Its actual planned arc is sampled every 10°
-   plus exact endpoints. **Abspielen / Pause**, **Zurück / Weiter**, the slider,
-   and table rows use the same cached states. **Alle Felder** advances to the
-   next field (on by default); **Wiederholen** loops the selected sequence (off
+   plus exact endpoints. **Play / Pause**, **Previous / Next**, the slider,
+   and table rows use the same cached states. **All beams** advances to the
+   next field (on by default); **Loop** loops the selected sequence (off
    by default). Field transitions are discrete, not simulated couch motion.
    Playback stops on manual selection or changing plans, tabs, or geometry.
    Static fields do not gain an invented rotation. No ESAPI queries or
    clearance recalculation run on ticks.
-5. **10°-Verlauf** is enabled by default: for a moving head, status markers trace
-   the sampled positions. **Alle Hüllen** optionally adds overlapping contours
+5. **10° trajectory** is enabled by default: for a moving head, status markers trace
+   the sampled positions. **All envelopes** optionally adds overlapping contours
    from the other positions and is initially off. The active source-head no-fly
    model has a translucent shell with opaque status-colored contours; the
    contours are not a replacement for the evaluated volume. Green means the
@@ -46,23 +48,22 @@ written back to the TPS.
    therefore cannot produce global pass. Unknown, open, or CT-edge-truncated
    External coverage prevents global pass, including meshes artificially capped
    by the TPS. The separate Halcyon source-model radial review can show
-   **Frei (erfasst)** (`clear`) when the captured body and support surfaces lie
+   **Clear (captured)** (`clear`) when the captured body and support surfaces lie
    beyond the configured radial warning margin. This is an open-bore radial
    check at nominal setup, not axial clearance, complete anatomy coverage or
    treatment clearance. It does not turn the global uncertain result into pass;
    missing/invalid radial geometry remains uncertain.
 7. Drag with the left mouse button to rotate; use the wheel to zoom or
-   **Ansicht zurücksetzen** to restore the camera. Framing uses the whole field's
+   **Reset view** to restore the camera. Framing uses the whole field's
    sampled geometry, so changing the active angle does not refit the camera.
    The HFS room view applies one display-only rotation by the negative couch
    angle about the vertical axis through isocenter to body, support, source and
    model together. It does not modify native coordinates used for distances or
-   establish noncoplanar clinical validity. Camera, **Körper**, **Tisch / Support**,
-   **Gerätehülle** and trajectory/contour visibility change only the illustration,
+   establish noncoplanar clinical validity. Camera, **Body**, **Couch / support**,
+   **Machine envelope** and trajectory/contour visibility change only the illustration,
    never the collision calculation or clinical evaluation.
-8. Optionally select **3D-Abbildung in HTML / PDF**. Export captures an overview
-   and compact angle/status/body/table rows for every beam, restoring the GUI
-   selection afterward. No new pages are appended to existing reports. Retained
+8. Optionally select **3D figure in HTML / PDF**. Export uses an overview at the smallest displayed model distance across beams
+   and a table of per-beam minima, restoring the GUI selection afterward. No new pages are appended to existing reports. Retained
    report PNGs cannot reconstruct the meshes or new CT-coverage metadata: those
    require a fresh read-only native capture.
 
@@ -111,7 +112,7 @@ and no other CP's DRR is underlaid. Native plan/beam fingerprints and finite
 isocenter coordinates must match; missing or changed geometry clears the inset.
 All capture stamps stay in memory. Playback never accesses ESAPI.
 
-**Alle Felder** continues across fields, and **Wiederholen** optionally loops.
+**All beams** continues across fields, and **Loop** optionally loops.
 Transitions between fields are discrete jumps, not inferred couch trajectories.
 Manual navigation, tab/context changes and failures stop playback. The MLC panel
 stays fixed above the independently scrolling distance table.

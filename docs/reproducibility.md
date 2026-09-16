@@ -1,9 +1,12 @@
-# ClearPlan v3.2.0 candidate: reproducibility and evidence
+# Reproducibility and evidence scopes
 
-Version 3.2.0 is an unpublished candidate until its tag, source and released
-assets have been independently checked. These instructions describe the current
-public workflow, not a completed release or a clinical acceptance record. The
-[v3.1.0 release record](releases/v3.1.0.md) remains historical.
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
+The archived v3.2.0 release and its paper evidence describe an earlier snapshot.
+For current development-source verification, start with the
+[developer handoff](developer-handoff.md). The packaging workflow below is retained
+for release engineering; a successful run is not a new release or clinical
+acceptance. Do not relabel archived v3.2.0 artifacts with development bytes.
 
 ## Requirements and environment provenance
 
@@ -24,9 +27,9 @@ an earlier workstation inventory as evidence for another run. The collector's
 UTC values are execution timestamps, not independent validation of workstation
 or server clock accuracy; a deterministic fixture timestamp is not a test date.
 
-## Build and execute the candidate checks
+## Historical v3.2.0 packaging workflow
 
-From the reviewed public checkout, use:
+For reproducing the reviewed v3.2.0 source checkout, the workflow is:
 
 ```powershell
 $clearPlanPython = 'python'
@@ -152,8 +155,10 @@ recorded clean build and an explicitly defined output comparison.
 Eclipse inspection is a separate licensed, read-only workflow. Its detached
 snapshots, dosimetry, CT/BEV images and reports remain confidential even if a
 display name is hidden. A neutral schema is not an anonymization guarantee.
-Public paper inputs must come exclusively from the synthetic fixtures or original
-diagrams, not native cases with identifying labels removed.
+Public examples may contain synthetic fixtures, original diagrams, or patient-free
+configuration screens—not native cases with identifying labels removed. Clinical
+publication material requires separate institutional review and is not part of
+this public development-source update.
 
 Optional [ARIA document upload](ARIA_REPORT_UPLOAD.md) is an explicitly confirmed
 write to the patient record, separate from read-only treatment-plan access.

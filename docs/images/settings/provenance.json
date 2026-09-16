@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "capturedUtc": "2026-09-16T07:26:48.3759306Z",
+  "codeCommit": "98aed7bc2fb3ecbced7cc2a520f691da36c53bfa",
+  "language": "en",
+  "method": "Actual WPF SettingsView and ConfigurationWorkspaceView rendered with RenderTargetBitmap at 288 DPI; no image retouching or simulated UI",
+  "privacy": "Only public generic configuration fixtures and generated DEMO account/history rows; no patients, anatomy, private rule matrix, credentials, or institutional network paths",
+  "visiblePaths": "Only the generic Windows Public Documents demo directory is visible; no personal account directory",
+  "interpretation": "Configuration illustrations, not clinical validation. Demo actor/history rows are generated. German alias strings are source data and are deliberately not translated.",
+  "sourceFiles": [
+    {
+      "path": "ClearPlan.Script/Views/SettingsView.xaml",
+      "workingFileSha256": "a5102d50046add7787ee143c8148531c7f33b7cbc2529cc0cb3396cda12e6e7d"
+    },
+    {
+      "path": "ClearPlan.Script/Views/SettingsView.xaml.cs",
+      "workingFileSha256": "450aedad9ff44701acb43251d811d6f8837a4a047ea84492c1dc0f22f1fe4794"
+    },
+    {
+      "path": "ClearPlan.Script/Views/ConfigurationWorkspaceView.xaml",
+      "workingFileSha256": "d28605f7ce0b4bad7381330e2cf27eef1f307ca629bf05e4d64c31a0bf91ff71"
+    },
+    {
+      "path": "ClearPlan.Script/ViewModels/SettingsViewModel.cs",
+      "workingFileSha256": "ca8f1013a583dc391a00642c53eeade637fe3b6b313995f8e9122966e3642d39"
+    },
+    {
+      "path": "ClearPlan.Script/ViewModels/ConfigurationWorkspaceViewModel.cs",
+      "workingFileSha256": "10fd7e54e6e490b02ad51622e9e7c64bacc532d0eaf9692bdc892811e92e3394"
+    },
+    {
+      "path": "ClearPlan.Core/Localization/ReviewLanguage.en.json",
+      "workingFileSha256": "aed3736beff11ddd761ad42a61881a51d4762ae24440858d5ff287466bd46630"
+    }
+  ],
+  "publicDataSources": [
+    {
+      "path": "ClearPlan.Script/Distribution/DefaultReviewRules.json",
+      "sha256": "4705e9d250c6cce16d886e24f3ba3cc163a255a6602499d45b78dec3a7c6b1a3"
+    },
+    {
+      "path": "ClearPlan.Script/Distribution/ConstraintTemplates/TG263_StructureAliases.example.json",
+      "sha256": "8d69b2df3191a4a6d23dfb4fa39bfd40bfcc2b833c54b984ef4950f33828feef"
+    },
+    {
+      "path": "ClearPlan.Script/Distribution/ConstraintTemplates/ClearPlan_StockConstraints2024.xlsx",
+      "sha256": "f9157ef46b6637e989aaa12478b3f4fea66750c0bb43d4212abc965a7d8acad8"
+    }
+  ],
+  "captures": [
+    {
+      "file": "settings-configuration-editor.png",
+      "title": "Versioned default-rule editor",
+      "description": "Actual SettingsView / ConfigurationWorkspaceView; public DefaultReviewRules.json and generated demonstration history.",
+      "width": 4218,
+      "height": 3618,
+      "dpi": 288,
+      "sha256": "051fcdf25d86728534bb630090732d6f6b5a24b269c576782ad591e4c43111a6",
+      "pngChunks": [
+        "IHDR",
+        "sRGB",
+        "gAMA",
+        "pHYs",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "file": "settings-constraints-history.png",
+      "title": "Constraint workbook version history",
+      "description": "Actual configuration view; public stock Excel workbook, generated demonstration history, no clinical table mappings.",
+      "width": 4218,
+      "height": 3618,
+      "dpi": 288,
+      "sha256": "8a231995822bf1a04f564df4a3aca613fe9e3c4a6d85913a9d980fe51a5f48c0",
+      "pngChunks": [
+        "IHDR",
+        "sRGB",
+        "gAMA",
+        "pHYs",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "file": "settings-check-selection.png",
+      "title": "Configurable check selection",
+      "description": "Actual check-selection settings; six explicitly constructed generic example descriptions, not a clinical or private legacy check matrix.",
+      "width": 4146,
+      "height": 1837,
+      "dpi": 288,
+      "sha256": "d8a2e087d527a8314572dba07b9480475643764551cf4b12b06058d9f032794a",
+      "pngChunks": [
+        "IHDR",
+        "sRGB",
+        "gAMA",
+        "pHYs",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "file": "settings-structure-aliases.png",
+      "title": "Explicit structure aliases",
+      "description": "Actual alias editor; TG263_StructureAliases.example.json from the public distribution. German aliases remain untranslated data.",
+      "width": 3933,
+      "height": 1751,
+      "dpi": 288,
+      "sha256": "c5f381e5e308db0fa1b93ddf9a860dab015c5c67305851bb52ea51ce981951ee",
+      "pngChunks": [
+        "IHDR",
+        "sRGB",
+        "gAMA",
+        "pHYs",
+        "IDAT",
+        "IEND"
+      ]
+    },
+    {
+      "file": "settings-alias-grid-detail.png",
+      "title": "Explicit aliases: editable grid detail",
+      "description": "Unmodified actual AliasesGrid control cropped at its bounds, including its original column headers. Public TG-263 example aliases only.",
+      "width": 3831,
+      "height": 870,
+      "dpi": 288,
+      "sha256": "b88cd9d35c7fe2ad28fcc0017e43d5294d34ba3ff3fe568a7782a538448c751f",
+      "pngChunks": [
+        "IHDR",
+        "sRGB",
+        "gAMA",
+        "pHYs",
+        "IDAT",
+        "IEND"
+      ]
+    }
+  ]
+}

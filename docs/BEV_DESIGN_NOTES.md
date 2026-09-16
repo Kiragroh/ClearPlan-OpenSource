@@ -1,14 +1,20 @@
-# BEV surface design notes
+# Historical BEV surface design notes
+
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
+This is an archived layout record. Colors, rulers, and captions below describe an
+earlier iteration, not the current renderer. Use the [analysis method](plan-analysis-method.md)
+and [configuration guide](configuration-guide.md) for current behavior.
 
 ## Scope and authority
 
-Mode: **OPERATE**. This is a scoped native WPF extension for selecting a field and control point (CP), then inspecting its projection, aperture and parameters. It does not introduce a new visual identity. [DESIGN.md](../DESIGN.md) and [.impeccable/design.json](../.impeccable/design.json) remain the authoritative, unchanged design-system documents; this note adds no global tokens or product strategy.
+Mode: **OPERATE**. This is a scoped native WPF extension for selecting a field and control point (CP), then inspecting its projection, aperture and parameters. It does not introduce a new visual identity. [DESIGN.md](../DESIGN.md) records the public design system; this note adds no global tokens or product strategy.
 
 The direction contract is at the top of [BeamEyeView.xaml](../ClearPlan.Presentation/Views/BeamEyeView.xaml). The implementation retains the Clinical Blueprint navigation, Segoe UI typography, teal actions and quiet white information surfaces. The dark viewport serves image inspection within that system.
 
 ## Layout and selection
 
-- Field selection sits above the large BEV panel. Previous/next commands and a discrete CP slider support deliberate movement through the selected field; `DRR berechnen` is an explicit action for the selected CP.
+- Field selection sits above the large BEV panel. Previous/next commands and a discrete CP slider support deliberate movement through the selected field; the DRR calculation action is an explicit action for the selected CP.
 - The image container stretches with the available area and has a **640 DIP minimum height**. In compact windows its inner vertical scroll area preserves that height instead of shrinking the entire panel into a thumbnail. Horizontal scrolling is disabled. This is a container constraint, not a guarantee of a 640-pixel anatomical image.
 - CP controls, the DRR action and status text occupy separate rows outside that scroll area, keeping them adjacent and pinned while the panel content scrolls.
 - The shared renderer composes a square image viewport and an adjacent white field-information panel. It shows field/CP identity, machine and MLC model, energy, technique, meterset, planned and nominal rates, aperture area, and current/field-start angles. Missing values remain explicitly unavailable; a later CP must not be presented as CP0.
@@ -29,13 +35,13 @@ The direction contract is at the top of [BeamEyeView.xaml](../ClearPlan.Presenta
 
 ## Evidence and limits
 
-The [BEV finish review](../.impeccable/review/bev-finish-review.md) records **PASS for the supplied visual scope**, with both material findings closed: separated Y-jaw/ruler labels and disclosure that the synthetic CT overview is not the BEV source volume.
+The historical local visual review and captures are not distributed with this public source. Their former paths are not public evidence or current validation.
 
 | Capture | Recorded coverage |
 |---|---|
-| [Dual-layer BEV](../.impeccable/review/bev-dual/bev.png) | 1600 × 1000, synthetic jawless/two-layer example |
-| [Single-layer BEV](../.impeccable/review/bev-single/bev.png) | 1600 × 1000, synthetic physical-jaw example |
-| [Compact BEV](../.impeccable/review/bev-compact/layout-bev.png) | 1180 × 720 window / 1164 × 681 client capture, inner scroll area and visible CP controls |
+| Dual-layer BEV (historical local capture) | 1600 × 1000, synthetic jawless/two-layer example |
+| Single-layer BEV (historical local capture) | 1600 × 1000, synthetic physical-jaw example |
+| Compact BEV (historical local capture) | 1180 × 720 window / 1164 × 681 client capture, inner scroll area and visible CP controls |
 
 These examples deliberately use synthetic phantoms and generic 20/21-pair fixtures, not commissioned machine geometry. The PDF overview uses a separate illustrative torso fixture, **not the source volume for the BEV DRRs**; the image sets do not demonstrate anatomical correspondence. Preserve the conspicuous simulation/not-for-clinical-use warning.
 

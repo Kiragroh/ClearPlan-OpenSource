@@ -1,5 +1,7 @@
 # RTPLAN adapter dependencies
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 `ClearPlan.Dicom` targets .NET Framework 4.8 and is independent of ESAPI. It uses
 the official [fo-dicom 5.2.6 NuGet package](https://www.nuget.org/packages/fo-dicom/5.2.6),
 not a custom DICOM binary parser. Native image codecs are not needed or bundled.

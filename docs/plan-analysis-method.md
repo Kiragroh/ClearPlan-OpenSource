@@ -1,5 +1,7 @@
 # Plan parameters and aperture analysis
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 This is read-only research software. Unit tests, a successful build, and the native-outline consistency guard are not clinical commissioning. No machine settings, patient structures, plans, or dose are modified.
 
 ## Quantities and units
@@ -20,7 +22,8 @@ The calculation uses physical leaf boundaries and both banks of every layer, in 
 
 A fixed jawless field boundary is represented separately as `FixedBoundingBox`; it clips the opening without becoming a physical jaw. Native profile modes distinguish `Physical`, `FixedLimits`, and `None`; fixed limits must remain invariant across control points. A missing layer, unknown leaf widths, or malformed boundaries never become an assumed single-layer model or synthetic jaws. The optional legacy DICOM adapter remains separate from the current native ESAPI workflow.
 
-The bundled ESAPI assembly is version 1.0.450.29. Its public MLC/control-point API does not expose the complete layer/physical-boundary metadata required here. The native adapter reads `ControlPoint.LeafPositions` and maps its indices using an explicit JSON profile with exact `Beam.MLC.Model`, physical leaf boundaries and a complete non-overlapping assignment to layers. Profile files are strict UTF-8, limited to 256 KiB and read off the owning dispatcher with a ten-second await limit. No leaf-count or model-name fallback guesses a layout. The current isolated preview includes an exact SX2 mapping: 28 distal and 29 proximal leaf pairs, 10 mm physical widths and a 5 mm stagger at isocenter. PAM uses the intersection of both physical layer openings, without invented jaws. Controlled read-only native exports exercise this mapping; that engineering verification is not clinical commissioning or a clinical release.
+The adapter was inspected against ESAPI assembly version 1.0.450.29; licensed
+assemblies are not redistributed. Its MLC/control-point API does not expose the complete layer/physical-boundary metadata required here. The native adapter reads `ControlPoint.LeafPositions` and maps its indices using an explicit JSON profile with exact `Beam.MLC.Model`, physical leaf boundaries and a complete non-overlapping assignment to layers. Profile files are strict UTF-8, limited to 256 KiB and read off the owning dispatcher with a ten-second await limit. No leaf-count or model-name fallback guesses a layout. The current isolated preview includes an exact SX2 mapping: 28 distal and 29 proximal leaf pairs, 10 mm physical widths and a 5 mm stagger at isocenter. PAM uses the intersection of both physical layer openings, without invented jaws. Controlled read-only native exports exercise this mapping; that engineering verification is not clinical commissioning or a clinical release.
 
 ## Target projection and runtime boundary
 
@@ -36,7 +39,7 @@ The inspected local PlanCheck implementation instead switches between 1.25 mm an
 
 The collimator-coordinate rotation is measured from corresponding native collimator-zero/beam-coordinate outline points, rather than guessing its sign. At beam start the projected silhouette must differ from the native silhouette by at most 3% of their union area (symmetric difference / union, equivalent to one minus IoU). This is a numerical consistency guard, not a clinical accuracy or acceptance claim. Failure leaves moving PAM unavailable.
 
-The current moving-projection envelope is HFS, zero fixed patient-support angle, fixed collimator, and fixed tabletop translation. Other orientations/motions are explicitly unavailable. The RTPLAN merge must reject nonzero pitch/roll/eccentric rotations not exposed by the bundled ESAPI. Limits are 250000 surface triangles, 4096 raster cells per dimension, four million triangle-row spans per control point, and a cancellable 30-second numeric-work budget. No control points are silently subsampled. A beam commits target projections only after all its control points complete.
+The current moving-projection envelope is HFS, a fixed patient-support angle within each field, fixed collimator, and fixed tabletop translation. Other orientations/motions are explicitly unavailable. The RTPLAN merge must reject nonzero pitch/roll/eccentric rotations not exposed by the inspected ESAPI version. Limits are 250000 surface triangles, 4096 raster cells per dimension, four million triangle-row spans per control point, and a cancellable 30-second numeric-work budget. No control points are silently subsampled. A beam commits target projections only after all its control points complete.
 
 ## Dose-rate provenance and privacy
 
@@ -57,8 +60,8 @@ attenuation proxy has no spectrum, scatter or beam-hardening model and is not
 calibrated electron density, dose, diagnostic imaging or registration-grade DRR.
 
 The native coordinate frame is calibrated from vendor source locations and
-paired native structure outlines. The current envelope is HFS, zero fixed
-couch, fixed collimator and fixed table translation. The 45-second budget is
+paired native structure outlines. The current input guards require HFS, a fixed couch angle within each field,
+fixed collimator and fixed table translation. Accepted coordinates still require local verification. The 45-second budget is
 cooperative and cannot interrupt an individual blocked vendor call. Report
 beam starts share one detached CT capture. An absent or unsupported source is
 explicitly unavailable; clinical mode never generates substitute anatomy.

@@ -1,5 +1,7 @@
 # Read-only RTPLAN enrichment
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 `ClearPlan.Dicom` reads an explicitly selected DICOM file into detached numerical
 geometry. It does not open a patient, write to a treatment-planning system,
 calculate dose, deliver radiation, or alter clinical constraints. A successful

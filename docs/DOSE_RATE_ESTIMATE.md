@@ -1,6 +1,8 @@
 # Estimated plan dose-rate trajectory
 
-This read-only development feature was explicitly selected by the user on September 11, 2026. It is a PlanCheck-style estimate, **not** a measured delivery trace or a time-resolved rate supplied by Eclipse. It does not change a plan, dose, field or machine setting.
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
+This read-only development feature is a PlanCheck-style estimate, **not** a measured delivery trace or a time-resolved rate supplied by Eclipse. It does not change a plan, dose, field or machine setting.
 
 For each consecutive control-point interval:
 
@@ -17,7 +19,7 @@ The model omits gantry acceleration, MLC and jaw dynamics (including both Halcyo
 
 ## Configuration and identity
 
-`settings.ini` contains `DoseRateProfilesJsonPath`, pointing to JSON. An explicitly blank path disables estimation. In Settings the same file is accessible as **Dosisrate · Schätzmodell**, with the existing validated import, change reason, author/time/hash history and restore-as-new-revision workflow. Loading is asynchronous, bounded to 64 KiB and ten seconds; optional profile failure does not erase other plan metrics. Refresh the active review after configuration changes.
+`settings.ini` contains `DoseRateProfilesJsonPath`, pointing to JSON. An explicitly blank path disables estimation. In Settings the same file is accessible as **Dose rate · Estimation model**, with the existing validated import, change reason, author/time/hash history and restore-as-new-revision workflow. Loading is asynchronous, bounded to 64 KiB and ten seconds; optional profile failure does not erase other plan metrics. Refresh the active review after configuration changes.
 
 Profiles match exact case-insensitive native identifiers, never fuzzy names. Native machine IDs, machine models and MLC models are retained without renaming. Explicit device-ID profiles can override a generic model profile. Multiple matches are unavailable. MLC alone cannot select a machine-speed model.
 
@@ -26,8 +28,8 @@ The example catalog maps the observed technical ESAPI labels together with the M
 ## Presentation and source separation
 
 - `EstimatedDoseRateMuPerMin` and `EstimatedSegmentDurationSeconds` are separate from `PlannedDoseRateMuPerMin`.
-- GUI: dashed **Geschätzt (Segment)** series; visible **Geschätzter Planverlauf · keine gemessene Abgabe**, profile/speed and detailed tooltip. The horizontal axis is control-point index, not measured time.
+- GUI: dashed **Estimated (segment)** series; visible **Estimated plan profile · Not measured delivery**, profile/speed and detailed tooltip. The horizontal axis is control-point index, not measured time.
 - PDF/HTML: same shared rate/aperture renderer; dashed estimate versus solid supplied values; profile ID, assumed speed, estimated duration and a local-verification caveat. HTML includes escaped detailed assumptions/availability with a bounded scrollable legacy-browser fallback. No nominal trajectory.
-- Native ESAPI input consists only of copied scalar machine metadata, gantry direction/angles, nominal rate and meterset weights. [ESAPI source audit](DOSE_RATE_SOURCE_AUDIT_20260911.md) documents why actual timing is not recovered from the public API.
+- Native ESAPI input consists only of copied scalar machine metadata, gantry direction/angles, nominal rate and meterset weights. The [review-controls source discussion](review-controls/README.md#dose-rate-presentation) links the native API definitions and explains why actual delivery timing is not recovered here.
 
-Analytic tests cover both speed profiles, MU conservation, CW/CCW wrap, zero/duplicate intervals, repeated invalidation, nonunit final weights, precision limits and strict profile matching. Engineering tests and the built-in consistency checks are not clinical commissioning. Public manuscript figures and supplements must remain purely synthetic.
+Analytic tests cover both speed profiles, MU conservation, CW/CCW wrap, zero/duplicate intervals, repeated invalidation, nonunit final weights, precision limits and strict profile matching. Engineering tests and the built-in consistency checks are not clinical commissioning. Public examples remain patient-free; clinical publication material requires separate institutional review.

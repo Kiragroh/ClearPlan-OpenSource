@@ -1,5 +1,7 @@
 # Review controls
 
+[Documentation](../index.md) · [Configuration guide](../configuration-guide.md)
+
 Source-level behavior as of 2026-09-11 for the existing native Clinical Blueprint
 workspace. This is a scoped operation guide, not a replacement for the root design
 system or a native acceptance/deployment record. All plan inspection remains
@@ -16,12 +18,12 @@ Use individual DVH or CT legend checkboxes to hide or show a structure. Targets
 are default-selected, not locked. This session-local visibility is shared by the
 DVH and CT views and survives tab changes and same-plan snapshot replacement; it
 does not change native Eclipse selections, cached measurements or mapping options.
-`DVH zurücksetzen` restores the captured initial selection. A different active
+**Reset DVH** restores the captured initial selection. A different active
 plan or synthetic/clinical mode does not inherit the previous plan's view state.
 
 HTML/PDF export follows the current DVH/CT structure visibility, including initially
 unselected structures and subsequent individual legend changes.
-`Nicht zugeordnete Kriterien ausblenden (GUI + Report)` is enabled by default in
+**Hide unmatched criteria (GUI + report)** is enabled by default in
 new workspaces and direct PDF/HTML exports. It hides unresolved goals and
 summary mappings, not matched rows whose measurement is unavailable. Hidden-row
 counts remain visible and are not counted as passed. The PQM mapping editor stays
@@ -41,7 +43,7 @@ larger of its angle/speed time and its MU/nominal-rate time. This is a model, no
 time-resolved information supplied by ESAPI or a measured delivery trace.
 
 `DoseRateProfilesJsonPath` in `settings.ini` selects the editable JSON profile
-catalog; **Dosisrate · Schätzmodell** in Settings exposes its validated,
+catalog; **Dose rate · Estimation model** in Settings exposes its validated,
 versioned configuration workflow. Matching requires the configured exact native
 identifiers; missing or ambiguous profiles leave the estimate unavailable. A
 blank configured path disables estimation. Verify the chosen speed assumption
@@ -71,7 +73,7 @@ Sources: [ESAPI Beam](https://docs.developer.varian.com/api/16.1/VMS.TPS.Common.
 
 ## Report and comparison options
 
-`BEV / DRR am Feldstart im Report` controls optional field-start panels in HTML and
+**Include beam-start BEV / DRR in report** controls optional field-start panels in HTML and
 PDF. Enabled panels use the same captured exact CP 0 image data; missing images
 remain labeled unavailable. A field-start aperture is not arc-integrated fluence, and a CT-derived
 DRR is an attenuation proxy, not a diagnostic image or independent dose check.
@@ -79,7 +81,7 @@ Goal tables use compact columns while retaining the comparator and units beside
 numeric values. PlanCheck leads with message and status rather than repeated
 observed/expected/unit columns.
 
-Under plan comparison, select a plan and use `Als Referenz laden`. The native host
+Under plan comparison, select a plan and use **Load as reference**. The native host
 loads a separate reference snapshot within the current patient while the active
 plan and its review state remain unchanged. This is distinct from opening another
 plan. HTML/PDF contain the current plan only; they do not export the comparison
@@ -115,7 +117,7 @@ is written back to the TPS.
 
 ## PlanCheck inclusion settings
 
-`Settings > PlanCheck-Auswahl` lists check families found in the current review or
+**Settings > PlanCheck selection** lists check families found in the current review or
 already present in the selected configuration; it is not a complete algorithm
 catalogue of the external engine. Repeated findings such as `74-2` belong to the
 base family `74`. Native warnings, reference-point summaries and generated per-run
@@ -136,8 +138,8 @@ This example excludes family `74` from review/report; it does **not** prevent th
 legacy calculator from executing. Unlisted families remain enabled. Only stable
 codes and enabled flags are saved; descriptions shown in Settings stay in memory.
 
-To persist a selection, use `Als versionierten Entwurf übernehmen`, supply a change
-reason under `Konfigurationen & Versionen`, save the version, then save Settings.
+To persist a selection, use **Apply as versioned draft**, supply a change
+reason under **Configurations & versions**, save the version, then save Settings.
 The policy applies at the next review build. A blank/missing file retains all
 findings without creating a file. Invalid, unreadable or unsupported JSON also
 retains all findings and adds a configuration warning. Native Eclipse warnings
@@ -159,5 +161,5 @@ approximations and unavailable states. Portable regression tests and synthetic
 examples do not establish native clinical validation or deployment. Local
 commissioning still requires controlled, read-only comparison with the treatment
 planning system. Keep native images, reports and clinical evidence on protected
-institutional storage; public manuscript figures and repository fixtures remain
-exclusively synthetic.
+institutional storage; public repository figures and fixtures remain patient-free (synthetic data or
+public-only configuration screens), not masked native patient captures.

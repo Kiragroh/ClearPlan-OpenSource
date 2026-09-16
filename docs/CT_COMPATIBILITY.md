@@ -1,13 +1,15 @@
 # CT compatibility approvals
 
+[Documentation](index.md) · [Configuration guide](configuration-guide.md)
+
 `CtCompatibilityJsonPath` in `settings.ini` selects a local configuration. The public
 `CtCompatibility.json` starter has no approvals and never produces a CT compatibility pass.
 
-Use **Settings → Konfigurationen & Versionen → CT · freigegebene Kombinationen** to
+Use **Settings → Configurations & versions**, selecting the CT approval document, to
 import an existing configuration, edit its JSON, save a revision with a reason, or restore
 an older version. Save the settings to activate the selected immutable revision. The
 current review is then rebuilt without reopening the patient; the same detached findings
-feed GUI and reports. A path can also be set under **Pfade & Quellen**.
+feed GUI and reports. A path can also be set under **Paths & sources**.
 
 Synthetic format example (not a clinically approved device):
 
