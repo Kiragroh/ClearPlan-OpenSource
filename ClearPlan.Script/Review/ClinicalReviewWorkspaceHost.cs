@@ -459,7 +459,9 @@ namespace ClearPlan.Review
             var plan = source.ActivePlanningItem.PlanningItemObject as PlanSetup;
             if (plan == null) return snapshot.PlanAnalysis;
             string expectedUid = plan.UID;
-            analysisCancellation = new CancellationTokenSource(TimeSpan.FromSeconds(45));
+            // The builder owns the bounded capture budget and marks timed-out optional images
+            // unavailable. This outer source is only for explicit/context cancellation.
+            analysisCancellation = new CancellationTokenSource();
             view.IsEnabled = false;
             try
             {

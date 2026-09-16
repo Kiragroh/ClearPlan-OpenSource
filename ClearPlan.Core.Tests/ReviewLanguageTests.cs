@@ -139,9 +139,30 @@ namespace ClearPlan.Core.Tests
                         new ClearPlan.Presentation.Views.PlanComparisonView(),
                         new ClearPlan.Presentation.Views.BeamEyeView(),
                         new ClearPlan.Presentation.Views.CollisionView() }) {
+                        var collision=view as ClearPlan.Presentation.Views.CollisionView;
+                        var collisionModel=collision==null ? null : new ClearPlan.Presentation.ViewModels.CollisionViewModel(new ReviewSnapshot());
+                        if(collision!=null) collision.DataContext=collisionModel;
                         view.Measure(new System.Windows.Size(1300,850));
                         view.Arrange(new System.Windows.Rect(0,0,1300,850));
                         view.UpdateLayout();
+                        if(collision!=null) {
+                            var pending=new System.Collections.Generic.Queue<System.Windows.DependencyObject>();
+                            var displayed=new System.Collections.Generic.List<string>();
+                            pending.Enqueue(collision);
+                            while(pending.Count>0) {
+                                var item=pending.Dequeue();
+                                var block=item as System.Windows.Controls.TextBlock;
+                                if(block!=null) displayed.Add(block.Text);
+                                for(int i=0;i<System.Windows.Media.VisualTreeHelper.GetChildrenCount(item);i++)
+                                    pending.Enqueue(System.Windows.Media.VisualTreeHelper.GetChild(item,i));
+                            }
+                            foreach(string label in new[]{collisionModel.MlcScope,collisionModel.ShortLimitations}) {
+                                string expected=ClearPlan.Core.Localization.ReviewLanguage.Text(label);
+                                if(code=="en") TestAssert.False(expected==label,"Collision explanatory labels need catalog translations.");
+                                TestAssert.True(displayed.Contains(expected),"Collision explanatory binding must use the selected display language: "+expected);
+                            }
+                            collision.DataContext=null;
+                        }
                     }
                 }
                 var row=new ClearPlan.Presentation.ViewModels.ReviewDvhSeriesViewModel(new ReviewDvhSeries {
@@ -188,6 +209,13 @@ namespace ClearPlan.Core.Tests
         }
         public static void EnglishGermanRoundTrip()
         {
+            using(var stream=typeof(ReviewSnapshot).Assembly.GetManifestResourceStream("ClearPlan.ReviewLanguage.en.json"))
+            using(var reader=new System.IO.StreamReader(stream,System.Text.Encoding.UTF8))
+            using(var json=new Newtonsoft.Json.JsonTextReader(reader)) {
+                var keys=new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+                while(json.Read()) if(json.TokenType==Newtonsoft.Json.JsonToken.PropertyName)
+                    TestAssert.True(keys.Add((string)json.Value),"The language catalog must not silently override duplicate keys: "+json.Value);
+            }
             var type = typeof(ReviewSnapshot).Assembly.GetType("ClearPlan.Core.Localization.ReviewLanguage");
             TestAssert.NotNull(type, "Review display language service is missing.");
             var language = type.GetProperty("Code");

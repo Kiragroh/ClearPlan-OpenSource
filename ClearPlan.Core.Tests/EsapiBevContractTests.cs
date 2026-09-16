@@ -11,6 +11,7 @@ namespace ClearPlan.Core.Tests
             NativeFrameAndFullSnapshotAreRequired();
             CtSamplingIsUniformBoundedAndReadOnly();
             ReportBeamStartsShareOneDetachedCtCapture();
+            ReportBeamStartTimeoutHasOneBudgetOwnerAndRetainsContextGuards();
             TreatmentBeamScopeMatchesPamAnalysis();
             StaticNativeIndicesRemainDistinctInTheSnapshot();
         }
@@ -89,6 +90,41 @@ namespace ClearPlan.Core.Tests
             Require(code,"MarkStartsUnavailable(copy");
         }
 
+        private static void ReportBeamStartTimeoutHasOneBudgetOwnerAndRetainsContextGuards()
+        {
+            string host=Source("ClinicalReviewWorkspaceHost.cs");
+            string prepare=Between(host,"internal async Task<ClearPlan.Core.PlanAnalysis.ReviewPlanAnalysis> PrepareReportBevsAsync", "public bool CanExportCurrentSnapshot");
+            Require(prepare,"analysisCancellation = new CancellationTokenSource();");
+            TestAssert.False(prepare.Contains("TimeSpan.FromSeconds") || prepare.Contains("CancelAfter("),
+                "The report host must not race the builder's cooperative timeout with a second timed cancellation source.");
+            Require(prepare,"await new EsapiBevBuilder().BuildStartsAsync(plan, snapshot.PlanAnalysis, analysisCancellation.Token)");
+            int awaited=prepare.IndexOf("await new EsapiBevBuilder().BuildStartsAsync",StringComparison.Ordinal);
+            string completed=prepare.Substring(awaited);
+            int cancellation=completed.IndexOf("analysisCancellation.Token.ThrowIfCancellationRequested();",StringComparison.Ordinal);
+            int currentContext=completed.IndexOf("if (!AnalysisContextIsCurrent(snapshot, expectedUid) || !CanExportCurrentSnapshot(snapshot))",StringComparison.Ordinal);
+            int reject=completed.IndexOf("throw new InvalidOperationException(\"Plan changed during report image capture.\");",StringComparison.Ordinal);
+            int publish=completed.IndexOf("foreach (var beam in result.Beams)",StringComparison.Ordinal);
+            TestAssert.True(cancellation>=0 && currentContext>cancellation && reject>currentContext && publish>reject,
+                "Successful or timeout-unavailable results must pass cancellation and current-context guards before publishing any BEV.");
+            Require(prepare,"finally { analysisCancellation.Dispose(); analysisCancellation = null;");
+            string current=Between(host,"private bool AnalysisContextIsCurrent", "private async void OnGenerateDrrRequested");
+            Require(current,"disposed || IsSyntheticDemo || !ReferenceEquals(controller.CurrentSnapshot, original)");
+            Require(current,"source.ActivePlanningItem.PlanningItemUID != expectedUid");
+            string export=Between(host,"public bool CanExportCurrentSnapshot", "public void RequestCurrentReport");
+            Require(export,"planContext.Matches(snapshot, source.ActivePlanningItem.PlanningItemUID, source.ActivePlanningItem.PlanningItemObject)");
+            string dispose=Between(host,"public void Dispose()", "private ClearPlan.Core.Review.ReviewSnapshot BuildSnapshot()");
+            Require(dispose,"if (analysisCancellation != null) analysisCancellation.Cancel();");
+            string refresh=Between(host,"private void QueueNativeAnalysis()", "private async Task StartNativeAnalysisAsync");
+            Require(refresh,"if (analysisCancellation != null) analysisCancellation.Cancel();");
+
+            string batch=Between(Source(),"public async Task<ReviewPlanAnalysis> BuildStartsAsync", "private static Dispatcher OwnerDispatcher");
+            Require(batch,"using(var bounded=CancellationTokenSource.CreateLinkedTokenSource(token))");
+            TestAssert.Equal(1,Occurrences(batch,"bounded.CancelAfter(TimeSpan.FromSeconds(45));"),
+                "The builder remains the single 45-second report BEV budget owner.");
+            Require(batch,"catch(OperationCanceledException)\n                {\n                    token.ThrowIfCancellationRequested();\n                    return MarkStartsUnavailable(copy,TimeoutReason);");
+            Require(Source(),"ESAPI_BEV_TIMEOUT: The cooperative 45-second operation budget expired; no partial image series is published.");
+        }
+
         private static void TreatmentBeamScopeMatchesPamAnalysis()
         {
             string code=Source();
@@ -124,7 +160,7 @@ namespace ClearPlan.Core.Tests
                 "Static ESAPI sentinel indices must not invalidate or merge collision poses.");
         }
 
-        private static string Source()
+        private static string Source(string filename="EsapiBevBuilder.cs")
         {
             var root=new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
             while(root!=null && !File.Exists(Path.Combine(root.FullName,"ClearPlan.sln"))) root=root.Parent;
@@ -134,7 +170,7 @@ namespace ClearPlan.Core.Tests
                 while(root!=null && !File.Exists(Path.Combine(root.FullName,"ClearPlan.sln"))) root=root.Parent;
             }
             TestAssert.NotNull(root,"Repository root is required for ESAPI source contract checks.");
-            string path=Path.Combine(root.FullName,"ClearPlan.Script","Review","EsapiBevBuilder.cs");
+            string path=Path.Combine(root.FullName,"ClearPlan.Script","Review",filename);
             TestAssert.True(File.Exists(path),"ESAPI DRR capture is not implemented.");
             return File.ReadAllText(path).Replace("\r\n","\n");
         }
