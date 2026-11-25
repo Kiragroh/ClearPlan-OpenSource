@@ -82,6 +82,19 @@ namespace ClearPlan
             SharedConstraintComboBox.SelectedItem =
                 _vm.ActiveConstraintPath;
 
+            // Display preferences (2026-11-20): global DisplayDefaults.json next to the other global
+            // files, per-user file under State\Benutzer. User overrides global; display only.
+            try
+            {
+                var displayStore = new ClearPlan.Core.Settings.DisplayPreferencesStore(
+                    _settings.ResolvePath("DisplayDefaults.json"),
+                    System.IO.Path.Combine(_settings.GetStateDirectory(), "Benutzer",
+                        ClearPlan.Core.Settings.DisplayPreferencesStore.UserFileName(Environment.UserName)));
+                ClearPlan.Core.Settings.DisplayPreferences.Store = displayStore;
+                ClearPlan.Core.Settings.DisplayPreferences.Current = displayStore.Load();
+            }
+            catch (Exception) { ClearPlan.Core.Settings.DisplayPreferences.Store = null; }
+
             _clinicalReviewHost = new ClinicalReviewWorkspaceHost(
                 this,
                 _vm,
@@ -241,6 +254,7 @@ namespace ClearPlan
             UpdateWindowTitleForSyntheticDemo(false);
             Loaded -= MainView_Loaded;
             Unloaded -= MainView_Unloaded;
+            WriteLiveReviewLogOnClose();
             if (_clinicalReviewHost != null)
             {
                 _clinicalReviewHost.Dispose();
@@ -675,6 +689,7 @@ namespace ClearPlan
             }
             try
             {
+                ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspace.Collision);
                 // Map/copy first; preview selection must never mutate the clinical snapshot.
                 var document = new ReviewSnapshotReportMapper().Map(snapshot);
                 ApplyReportOptions(document, workspace);
@@ -725,12 +740,15 @@ namespace ClearPlan
 
             try
             {
-                snapshot.PlanImages = ClearPlan.Core.Simulation.SyntheticPlanImageFactory.Create(snapshot.ActivePlanKey);
+                if (snapshot.PlanImages == null || snapshot.PlanImages.Count == 0 ||
+                    snapshot.ScenarioId != ClearPlan.Core.Simulation.SandboxSnapshotFile.ScenarioIdValue)
+                    snapshot.PlanImages = ClearPlan.Core.Simulation.SyntheticPlanImageFactory.Create(snapshot.ActivePlanKey);
                 foreach (var series in snapshot.DvhSeries)
                 {
                     var selection = workspace.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
                     if (selection != null) series.Selected = selection.IsSelected;
                 }
+                ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspace.Collision);
                 var document =
                     new ReviewSnapshotReportMapper().Map(snapshot);
                 ApplyReportOptions(document, workspace);
@@ -785,6 +803,7 @@ namespace ClearPlan
                     var selection = workspace.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
                     if (selection != null) series.Selected = selection.IsSelected;
                 }
+                ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspace.Collision);
                 var document = new ReviewSnapshotReportMapper().Map(snapshot);
                 document.PlanAnalysis = reportAnalysis;
                 ApplyReportOptions(document, workspace);
@@ -793,6 +812,7 @@ namespace ClearPlan
                     : (_vm.Patient == null ? "Name / ID unavailable" : _vm.Patient.LastName + ", " + _vm.Patient.FirstName + " | ID: " + _vm.Patient.Id);
                 new ReportPdf().Export(dialog.FileName, document);
                 ShowSavedReportStatus(dialog.FileName, document);
+                WriteLiveReviewLog(snapshot, dialog.FileName);
             }
             catch (Exception exception)
             {
@@ -813,6 +833,7 @@ namespace ClearPlan
             document.IncludeBeamEyeViews = workspace.IncludeBeamEyeViews;
             document.HideUnmatched = workspace.HideUnmatched;
             document.HiddenStructureIds = workspace.HiddenStructureIds.ToList();
+            document.PlanImages = workspace.PlanImages.ApplyToReport(document.PlanImages);
         }
 
         private void ShowSavedReportStatus(string pdfPath, ReviewReportDocument document)

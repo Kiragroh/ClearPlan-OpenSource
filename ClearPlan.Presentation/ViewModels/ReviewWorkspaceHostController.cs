@@ -135,6 +135,7 @@ namespace ClearPlan.Presentation.ViewModels
             viewModel.CalculateTargetRequested += bindings.CalculateTarget;
             viewModel.GenerateDrrRequested += bindings.GenerateDrr;
             viewModel.PlanImagesRequested += bindings.PlanImages;
+            viewModel.CollisionRequested += bindings.Collision;
             viewModel.ComparisonPlanRequested += bindings.SelectComparisonPlan;
             viewModel.ReportRequested += bindings.Report;
             viewModel.HtmlReportRequested += bindings.HtmlReport;
@@ -159,6 +160,7 @@ namespace ClearPlan.Presentation.ViewModels
             viewModel.CalculateTargetRequested -= bindings.CalculateTarget;
             viewModel.GenerateDrrRequested -= bindings.GenerateDrr;
             viewModel.PlanImagesRequested -= bindings.PlanImages;
+            viewModel.CollisionRequested -= bindings.Collision;
             viewModel.ComparisonPlanRequested -= bindings.SelectComparisonPlan;
             viewModel.ReportRequested -= bindings.Report;
             viewModel.HtmlReportRequested -= bindings.HtmlReport;
@@ -210,6 +212,7 @@ namespace ClearPlan.Presentation.ViewModels
             CalculateTarget = Ignore;
             GenerateDrr = Ignore;
             PlanImages = Ignore;
+            Collision = Ignore;
             SelectComparisonPlan = Ignore;
         }
 
@@ -220,6 +223,7 @@ namespace ClearPlan.Presentation.ViewModels
         public EventHandler<ReviewWorkspaceActionEventArgs> CalculateTarget { get; set; }
         public EventHandler<ReviewWorkspaceActionEventArgs> GenerateDrr { get; set; }
         public EventHandler<ReviewWorkspaceActionEventArgs> PlanImages { get; set; }
+        public EventHandler<ReviewWorkspaceActionEventArgs> Collision { get; set; }
         public EventHandler<ReviewWorkspaceActionEventArgs> SelectComparisonPlan { get; set; }
 
         public EventHandler<ReviewWorkspaceActionEventArgs> OpenPlan { get; set; }

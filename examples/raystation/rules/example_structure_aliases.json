@@ -1,0 +1,25 @@
+{
+  "schema": "ClearPlan.structure_aliases.v1",
+  "_comment": "Illustrative aliases. Aliases are exact normalised names, never regex or fuzzy rules.",
+  "structures": [
+    {
+      "canonical_name": "Rectum",
+      "aliases": [
+        "Rektum"
+      ]
+    },
+    {
+      "canonical_name": "Bladder",
+      "aliases": [
+        "Blase"
+      ]
+    },
+    {
+      "canonical_name": "External",
+      "aliases": [
+        "BODY",
+        "Outer_Contour"
+      ]
+    }
+  ]
+}

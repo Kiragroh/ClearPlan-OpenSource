@@ -1,0 +1,9 @@
+template_code,template_structure,aliases,objective,comparator,goal,variation,source_label,fractions,dose_per_fraction_gy
+PTV-D98,PTV,,D98%[Gy],>=,23.75,22.5,Example table (illustrative),5,5
+PTV-D2,PTV,,D2%[Gy],<=,26.75,27.5,Example table (illustrative),5,5
+PTV-V95,PTV,,V95%[%],>=,95,90,Example table (illustrative),5,5
+Rectum-D0.035cc,Rectum,Rektum,D0.035cc[Gy],<=,26,26.5,Example table (illustrative),5,5
+Rectum-V18,Rectum,Rektum,V18Gy[%],<=,15,25,Example table (illustrative),5,5
+Rectum-CV20,Rectum,Rektum,CV20Gy[cc],>=,35,,Example table (illustrative),5,5
+Rectum-Dmean,Rectum,Rektum,Dmean[Gy],<=,12,,Example table (illustrative),5,5
+Bladder-D0.035cc,Bladder,Blase,D0.035cc[Gy],<=,26,,Example table (illustrative),5,5

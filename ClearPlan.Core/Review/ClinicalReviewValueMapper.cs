@@ -155,6 +155,27 @@ namespace ClearPlan.Core.Review
             return true;
         }
 
+        /// <summary>
+        /// Captures an optional absolute-dose display value. Missing native values
+        /// remain null; this does not establish dose validity or goal conformance.
+        /// </summary>
+        public static double? ReadOptionalDoseInGray(Func<double> readDoseInGray)
+        {
+            if (readDoseInGray == null) throw new ArgumentNullException("readDoseInGray");
+            try
+            {
+                double value = readDoseInGray();
+                return double.IsNaN(value) || double.IsInfinity(value) || value < 0.0
+                    ? (double?)null : value;
+            }
+            catch (Exception)
+            {
+                // Optional ESAPI properties can be unavailable independently.
+                // Never substitute zero or infer total dose from prescription.
+                return null;
+            }
+        }
+
         public static double ConvertDoseToGray(double value, string doseUnit)
         {
             if (double.IsNaN(value) || double.IsInfinity(value))

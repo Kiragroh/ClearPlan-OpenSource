@@ -16,6 +16,7 @@ namespace ClearPlan.Core.Simulation
             var image=CtDrrProjector.Project(Phantom.Value,frame,224,220,CancellationToken.None);
             image.Synthetic=true; image.SourceStatus="synthetic"; image.ControlPointIndex=cp.Index;
             image.GantryAngleDegrees=cp.GantryAngleDegrees; image.CollimatorAngleDegrees=cp.CollimatorAngleDegrees;
+            image.BldToDisplayRotationDegrees=cp.CollimatorAngleDegrees % 360;
             image.PatientSupportAngleDegrees=cp.PatientSupportAngleDegrees;
             image.ProjectionDescription="Original deterministic head/torso ellipsoid phantom with bone, lungs and air; no patient data. " +
                 "Illustrative HFS, couch 0, SAD 1000 mm frame; positive collimator angle uses the declared synthetic beam-coordinate rotation. " +

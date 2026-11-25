@@ -23,7 +23,7 @@ namespace ClearPlan.Review
                 var points = beam.ControlPoints.ToList();
                 if (row.ControlPoints == null || points.Count == 0 || points.Count > 20000 ||
                     points.Count != row.ControlPoints.Count || !row.BeamNumber.HasValue || row.BeamNumber.Value != beam.BeamNumber ||
-                    points.Where((point, index) => point.Index != row.ControlPoints[index].Index).Any())
+                    points.Where((point, index) => point.Index != (row.ControlPoints[index].NativeIndex ?? row.ControlPoints[index].Index)).Any())
                 {
                     Invalidate(row, "snapshot_mismatch", "Native beam/control-point identity differs from the detached snapshot. Refresh the plan first.");
                     return;

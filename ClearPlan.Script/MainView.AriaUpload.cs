@@ -30,18 +30,26 @@ namespace ClearPlan
                 "Unter Einstellungen den Pfad zur lokalen ARIA-Verbindungskonfiguration hinterlegen.");
         }
 
-        private bool AriaContextIsCurrent(ReviewSnapshot snapshot,ReviewWorkspaceViewModel workspace,string patientId)
+        private bool AriaContextIsCurrent(ReviewSnapshot snapshot,ReviewWorkspaceViewModel workspace,string patientId,
+            string interactiveUserId,string activePlanName)
         {
             return _clinicalReviewHost!=null && _clinicalReviewHost.CanExportCurrentSnapshot(snapshot) &&
                 ReferenceEquals(workspace,_clinicalReviewHost.CurrentViewModel) && !snapshot.Synthetic &&
-                Anonymize_CheckBox.IsChecked!=true && _vm.Patient!=null && string.Equals(_vm.Patient.Id,patientId,StringComparison.Ordinal);
+                Anonymize_CheckBox.IsChecked!=true && _vm.Patient!=null && string.Equals(_vm.Patient.Id,patientId,StringComparison.Ordinal) &&
+                _vm.User!=null && string.Equals(_vm.User.Id,interactiveUserId,StringComparison.Ordinal) &&
+                _vm.ActivePlanningItem!=null && string.Equals(_vm.ActivePlanningItem.PlanningItemId,activePlanName,StringComparison.Ordinal);
         }
 
         internal async Task HandleSharedAriaUploadAsync(ReviewSnapshot snapshot,ReviewWorkspaceViewModel workspace)
         {
             if(ariaPreparation!=null || sharedReportExportRunning || snapshot==null || workspace==null || !workspace.CanUploadToAria) return;
             string patientId=_vm.Patient==null ? null : _vm.Patient.Id;
-            if(!AriaContextIsCurrent(snapshot,workspace,patientId)) return;
+            // _vm.User is the ScriptContext.CurrentUser captured by the native entry point, not the OAuth client.
+            string interactiveUserId=_vm.User==null ? null : _vm.User.Id;
+            string activePlanName=_vm.ActivePlanningItem==null ? null : _vm.ActivePlanningItem.PlanningItemId;
+            if(string.IsNullOrWhiteSpace(interactiveUserId))
+            {ShowAriaStatus("ARIA-Autor fehlt: ClearPlan mit dem persönlichen ARIA/ESAPI-Benutzer neu öffnen. Kein Bericht gesendet.",AnalysisStatusSeverity.Warning);return;}
+            if(!AriaContextIsCurrent(snapshot,workspace,patientId,interactiveUserId,activePlanName)) return;
             // Copy patient strings while on the ESAPI thread; all subsequent HTTP objects are detached.
             string patientLabel=_vm.Patient.LastName+", "+_vm.Patient.FirstName+" | ID: "+patientId;
             string configPath=_settings.ResolvePath(_settings.Paths.AriaUploadConfigJsonPath);
@@ -63,21 +71,23 @@ namespace ClearPlan
                     var attachmentReader=new AriaAttachmentReader(config.AttachmentReadbackRoots);
                     var client=new AriaFhirClient(fhirHttp,new Uri(config.BaseUrl),auth.GetTokenAsync,config.TimeoutSeconds,
                         config.AttachmentReadbackRoots.Length==0 ? null : new Func<string,CancellationToken,Task<byte[]>>(attachmentReader.ReadAsync));
+                    var author=await client.ResolveAuthorAsync(interactiveUserId,cancellation);
                     var provider=await client.ResolveProviderAsync(config.ProviderReference,cancellation);
                     var type=await client.ResolveDocumentTypeAsync(provider.Reference,config.DocumentTypeCode,config.DocumentTypeDisplay,cancellation);
-                    if(!AriaContextIsCurrent(snapshot,workspace,patientId)) throw new OperationCanceledException();
+                    if(!AriaContextIsCurrent(snapshot,workspace,patientId,interactiveUserId,activePlanName)) throw new OperationCanceledException();
                     var patient=await client.ResolvePatientAsync(patientId,config.PatientIdentifierSystem,cancellation);
-                    if(!AriaContextIsCurrent(snapshot,workspace,patientId)) throw new OperationCanceledException();
+                    if(!AriaContextIsCurrent(snapshot,workspace,patientId,interactiveUserId,activePlanName)) throw new OperationCanceledException();
                     ShowAriaStatus("ARIA: aktueller Planreport wird vorbereitet …",AnalysisStatusSeverity.Info);
                     var analysis=workspace.IncludeBeamEyeViews ? await _clinicalReviewHost.PrepareReportBevsAsync(snapshot) : snapshot.PlanAnalysis;
                     await _clinicalReviewHost.PreparePlanImagesAsync(snapshot);
                     cancellation.ThrowIfCancellationRequested();
-                    if(!AriaContextIsCurrent(snapshot,workspace,patientId)) throw new OperationCanceledException();
+                    if(!AriaContextIsCurrent(snapshot,workspace,patientId,interactiveUserId,activePlanName)) throw new OperationCanceledException();
                     foreach(var series in snapshot.DvhSeries)
                     {
                         var selection=workspace.DvhSeries.FirstOrDefault(row=>row.StableId==series.StableId);
                         if(selection!=null) series.Selected=selection.IsSelected;
                     }
+                    ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspace.Collision);
                     var document=new ReviewSnapshotReportMapper().Map(snapshot);
                     document.PlanAnalysis=analysis; document.PatientDisplayLabel=patientLabel;
                     ApplyReportOptions(document,workspace);
@@ -92,12 +102,13 @@ namespace ClearPlan
                     var documentDateUtc=AriaDocumentDatePolicy.Calculate(createdUtc,DateTimeOffset.UtcNow,config.DocumentDateSafetyMinutes);
                     var request=new AriaReportUploadRequest(patientId,patient.Identifier,patient.Reference,snapshot.ActivePlanKey,
                         provider.Reference,type.System,type.Code,type.Display,pdf,title,createdUtc,
-                        "ClearPlan plan review - preliminary",config.CategoryCode,config.CategoryCode,documentDateUtc);
+                        "ClearPlan plan review - preliminary",config.CategoryCode,config.CategoryCode,documentDateUtc)
+                        .WithClinicalMetadata(activePlanName,author.Reference,interactiveUserId);
                     var journal=await AriaFileWork.RunAsync(()=>new AriaUploadJournal(Path.Combine(outputRoot,"Receipts"),config.BaseUrl,patientId,snapshot.ActivePlanKey),cancellation,j=>j.Dispose());
                     try
                     {
                         cancellation.ThrowIfCancellationRequested();
-                        if(!AriaContextIsCurrent(snapshot,workspace,patientId)) throw new OperationCanceledException();
+                        if(!AriaContextIsCurrent(snapshot,workspace,patientId,interactiveUserId,activePlanName)) throw new OperationCanceledException();
                         string previous=journal.PreviousState=="Verified"
                             ? "\nFür diesen Plan wurde bereits ein Bericht gesendet. Hiermit wird bewusst ein neuer Bericht angelegt.\n" : "";
                         string dates=request.DocumentDateUtc != request.CreatedUtc
@@ -108,16 +119,17 @@ namespace ClearPlan
                         string confirmation="Diesen PDF-Bericht als vorläufiges Dokument in ARIA ablegen?\n\n"+
                             patientLabel+"\nPlan: "+snapshot.PlanDisplayLabel+"\nARIA: "+patient.Reference+
                             "\nEinrichtung: "+provider.Display+" ("+provider.Reference+")\nDokumenttyp: "+type.Display+
+                            "\nTemplateName: "+request.TemplateName+"\nAutor: "+interactiveUserId+" ("+author.Reference+")"+
                             "\nPDF: "+title+"\nSHA-256: "+request.PdfSha256+dates+previous+
                             "\n\nDiese Aktion schreibt ein Dokument in die Patientenakte. Bestrahlungsplan und Dosis bleiben unverändert.";
                         if(MessageBox.Show(Window.GetWindow(this),confirmation,"ClearPlan · ARIA-Versand bestätigen",MessageBoxButton.YesNo,
                             MessageBoxImage.Question,MessageBoxResult.No)!=MessageBoxResult.Yes)
                         {ShowAriaStatus("ARIA-Versand abgebrochen. Vorbereitete PDF bleibt im Reportordner.",AnalysisStatusSeverity.Info);return;}
                         cancellation.ThrowIfCancellationRequested();
-                        if(!AriaContextIsCurrent(snapshot,workspace,patientId)) throw new OperationCanceledException();
+                        if(!AriaContextIsCurrent(snapshot,workspace,patientId,interactiveUserId,activePlanName)) throw new OperationCanceledException();
                         // Persist intent before POST. A crash or uncertain response remains blocked across GUI/Runner restarts.
                         await AriaFileWork.RunAsync(()=>{journal.Record("Pending",request);return true;},CancellationToken.None);
-                        if(cancellation.IsCancellationRequested || !AriaContextIsCurrent(snapshot,workspace,patientId))
+                        if(cancellation.IsCancellationRequested || !AriaContextIsCurrent(snapshot,workspace,patientId,interactiveUserId,activePlanName))
                         {
                             // This branch has not entered UploadAsync: a known local cancellation is not an uncertain server write.
                             await AriaFileWork.RunAsync(()=>{journal.Record("Rejected",request);return true;},CancellationToken.None);
@@ -137,7 +149,7 @@ namespace ClearPlan
                         if(verification.State==AriaVerificationState.Verified)
                         {
                             await AriaFileWork.RunAsync(()=>{journal.Record("Verified",request,result.ResourceReference);return true;},CancellationToken.None);
-                            ShowAriaStatus("ARIA: Patient, Dokumentdatum und PDF-Fingerprint bestätigt."+
+                            ShowAriaStatus("ARIA: Patient, TemplateName, Autor, Dokumentdatum und PDF-Fingerprint bestätigt."+
                                 (verification.AttachmentCreationChecked ? " Erstellzeit bestätigt." : " Erstellzeit von ARIA nicht geliefert und nicht geprüft."),AnalysisStatusSeverity.Success);
                         }
                         else
@@ -148,6 +160,8 @@ namespace ClearPlan
             }
             catch(OperationCanceledException)
             {ShowAriaStatus(attempted ? "ARIA-Ergebnis nach Abbruch unklar. Gespeicherten Beleg und Patientenakte prüfen; nicht erneut senden." : "ARIA-Vorbereitung abgebrochen oder Plankontext geändert. Kein Bericht gesendet.",AnalysisStatusSeverity.Warning);}
+            catch(AriaAuthorResolutionException)
+            {ShowAriaStatus("ARIA-Autor nicht eindeutig auflösbar. ARIA-Administration: persönlichen ESAPI-Benutzer mit aktivem Practitioner/Staff verknüpfen und system/Practitioner.rs freigeben. Kein Bericht gesendet; kein Ersatz durch das Dienstkonto.",AnalysisStatusSeverity.Warning);}
             catch(Exception)
             {ShowAriaStatus(attempted ? "ARIA-Ergebnis nicht vollständig bestätigt. Beleg im Reportordner prüfen; nicht erneut senden." : "ARIA-Vorbereitung fehlgeschlagen oder ein früherer Versand ist ungeklärt. Verbindung, Zuordnung und Belege im Reportordner prüfen. Kein neuer Bericht gesendet.",AnalysisStatusSeverity.Warning);}
             finally

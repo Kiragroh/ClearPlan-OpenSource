@@ -24,6 +24,63 @@ namespace ClearPlan.Views
         {
             InitializeComponent();
             ReloadView();
+            RefreshDisplayPreferencesSummary();
+        }
+
+        // Display preferences (2026-11-20): user file overrides the global file; nothing else changes.
+        private void RefreshDisplayPreferencesSummary()
+        {
+            var store = ClearPlan.Core.Settings.DisplayPreferences.Store;
+            var current = ClearPlan.Core.Settings.DisplayPreferences.Current;
+            string mode = current.BevMode == "ptv" ? "PTV + MLC" : current.BevMode == "mlc" ? "Nur MLC" : "DRR + MLC";
+            string values = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                "Aktuell: Zoom auf {0:0.#} %-Isodose + {1:0} mm · BEV {2} · Kollision: MLC {3}.", current.ZoomIsodosePercent, current.ZoomMarginMillimeters, mode,
+                current.CollisionFollowMlc ? "mitführen" : "fest");
+            if (store == null)
+            {
+                DisplayPreferencesSummary.Text = values + " Kein Speicherort konfiguriert.";
+                ResetUserDisplayButton.IsEnabled = false;
+                return;
+            }
+            DisplayPreferencesSummary.Text = values + (store.HasUserPreferences
+                ? " Quelle: persönliche Einstellung (" + store.UserPath + ")."
+                : " Quelle: globaler Standard (" + store.GlobalPath + ").");
+            ResetUserDisplayButton.IsEnabled = store.HasUserPreferences;
+        }
+
+        private void ResetUserDisplayClicked(object sender, RoutedEventArgs e)
+        {
+            var store = ClearPlan.Core.Settings.DisplayPreferences.Store;
+            if (store == null) return;
+            try
+            {
+                store.ResetUser();
+                ClearPlan.Core.Settings.DisplayPreferences.Current = store.Load();
+            }
+            catch (Exception) { MessageBox.Show("Persönliche Anzeige-Einstellungen konnten nicht gelöscht werden.", "ClearPlan", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            RefreshDisplayPreferencesSummary();
+        }
+
+        private void SaveUserDisplayClicked(object sender, RoutedEventArgs e)
+        {
+            ClearPlan.Presentation.ViewModels.DisplayPreferenceActions.SaveForUser();
+            RefreshDisplayPreferencesSummary();
+        }
+
+        private void SaveGlobalDisplayClicked(object sender, RoutedEventArgs e)
+        {
+            var store = ClearPlan.Core.Settings.DisplayPreferences.Store;
+            if (store == null) return;
+            if (MessageBox.Show("Die aktuelle Anzeige wird globaler Standard für alle Benutzer ohne eigene Einstellung. Fortfahren?", "ClearPlan",
+                MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+            try
+            {
+                if (System.IO.File.Exists(store.GlobalPath))
+                    System.IO.File.Copy(store.GlobalPath, store.GlobalPath + ".bak-" + DateTime.Now.ToString("yyyyMMdd-HHmmss"), false);
+                store.SaveGlobal(ClearPlan.Core.Settings.DisplayPreferences.Current);
+            }
+            catch (Exception) { MessageBox.Show("Globaler Standard konnte nicht gespeichert werden. Schreibrecht im ClearPlan-Ordner prüfen.", "ClearPlan", MessageBoxButton.OK, MessageBoxImage.Warning); }
+            RefreshDisplayPreferencesSummary();
         }
 
         public event EventHandler SettingsChanged;
@@ -365,7 +422,7 @@ namespace ClearPlan.Views
             _viewModel.SetAliases(catalog == null ? null : catalog.Structures);
             _viewModel.InitializeCheckSelection(_checkSelectionRows);
             _aliasesDirty = false;
-            AliasStatusText.Text = "Angezeigt: aktive Strukturzuordnungen. Änderungen werden nur nach explizitem Speichern aktiviert.";
+            AliasStatusText.Text = ClearPlan.Core.Localization.ReviewLanguage.Text("Angezeigt: aktive Strukturzuordnungen. Änderungen werden nur nach explizitem Speichern aktiviert.");
             DataContext = _viewModel;
         }
 

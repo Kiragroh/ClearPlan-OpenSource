@@ -74,6 +74,13 @@
     <Compile Include="Integration\AriaFileWork.cs" />
     <Compile Include="Configuration\ConfigurationRevision.cs" />
     <Compile Include="Configuration\ConfigurationHistoryStore.cs" />
+    <Compile Include="ReviewLog\ReviewLogSchema.cs" />
+    <Compile Include="ReviewLog\ReviewLogCsv.cs" />
+    <Compile Include="ReviewLog\ReviewLogPseudonymizer.cs" />
+    <Compile Include="ReviewLog\ReviewLogContext.cs" />
+    <Compile Include="ReviewLog\ReviewLogRulesetResolver.cs" />
+    <Compile Include="ReviewLog\ReviewLogRecordBuilder.cs" />
+    <Compile Include="ReviewLog\ReviewLogWriter.cs" />
     <Compile Include="Constraints\CatalogValidationIssue.cs" />
     <Compile Include="Constraints\CatalogStatistics.cs" />
     <Compile Include="Constraints\ConstraintCatalog.cs" />
@@ -105,6 +112,16 @@
     <Compile Include="Fields\FieldNamingRules.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PlanAnalysis\ReviewPlanAnalysis.cs" />
+    <Compile Include="Collision\CollisionGeometry.cs" />
+    <Compile Include="Collision\CollisionSweep.cs" />
+    <Compile Include="Collision\CollisionSweepDistance.cs" />
+    <Compile Include="Collision\CollisionCtCoverage.cs" />
+    <Compile Include="Collision\SourceCollisionModel.cs" />
+    <Compile Include="Collision\SourceCollisionScreening.cs" />
+    <Compile Include="Collision\CollisionEvaluator.cs" />
+    <Compile Include="Collision\CollisionProfileCatalog.cs" />
+    <Compile Include="Collision\CollisionProfileFileSource.cs" />
+    <Compile Include="Collision\SyntheticCollisionFactory.cs" />
     <Compile Include="PlanAnalysis\DoseRateEstimator.cs" />
     <Compile Include="PlanAnalysis\DoseRateEstimationProfiles.cs" />
     <Compile Include="PlanAnalysis\DoseRateProfileFileSource.cs" />
@@ -119,11 +136,13 @@
     <Compile Include="PlanAnalysis\NativeMlcGeometryProfile.cs" />
     <Compile Include="PlanAnalysis\NativeMlcProfileFileSource.cs" />
     <Compile Include="Simulation\SyntheticDrrFactory.cs" />
+    <Compile Include="Simulation\SandboxSnapshotFile.cs" />
     <Compile Include="PlanAnalysis\SyntheticPlanAnalysisFactory.cs" />
     <Compile Include="Review\DvhSelectionPolicy.cs" />
     <Compile Include="Review\UserTargetCoverageRule.cs" />
     <Compile Include="Review\DefaultReviewRuleConfiguration.cs" />
     <Compile Include="Review\PlanCheckSelectionConfiguration.cs" />
+    <Compile Include="Review\CtCompatibilityConfiguration.cs" />
     <Compile Include="Review\ClinicalReviewValueMapper.cs" />
     <Compile Include="Review\PqmDefaultReviewPolicy.cs" />
     <Compile Include="Review\ReviewCheckRow.cs" />
@@ -136,8 +155,11 @@
     <Compile Include="Review\ReviewPlanRow.cs" />
     <Compile Include="Review\ReviewPqmRow.cs" />
     <Compile Include="Review\ReviewSnapshot.cs" />
+    <Compile Include="Review\CollisionReportBeam.cs" />
     <Compile Include="Review\ReviewComparison.cs" />
     <Compile Include="Review\ReviewPlanImage.cs" />
+    <Compile Include="Review\IsodoseDisplayConfiguration.cs" />
+    <EmbeddedResource Include="..\ClearPlan.Script\Distribution\IsodoseDisplay.json"><LogicalName>ClearPlan.Core.IsodoseDisplay.defaults.json</LogicalName></EmbeddedResource>
     <Compile Include="Review\OrthogonalImageGeometry.cs" />
     <Compile Include="Simulation\SyntheticPlanImageFactory.cs" />
     <Compile Include="Review\ReviewSnapshotJson.cs" />
@@ -151,12 +173,18 @@
     <Compile Include="Simulation\SyntheticScenarioFactory.cs" />
     <Compile Include="Simulation\SyntheticPublicationScenarioFactory.cs" />
     <Compile Include="Settings\ClearPlanSettingsModel.cs" />
+    <Compile Include="Settings\DisplayPreferences.cs" />
     <Compile Include="Settings\PathSettingsIni.cs" />
     <Compile Include="Settings\PathFailureClassifier.cs" />
     <Compile Include="Settings\SettingsPathResolver.cs" />
     <Compile Include="Settings\SettingsValidationResult.cs" />
     <Compile Include="Settings\SettingsValidator.cs" />
     <Compile Include="Settings\WritablePathFallback.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="PlanAnalysis\AngularMeterset.cs" />
+    <Compile Include="Localization\ReviewLanguage.cs" />
+    <EmbeddedResource Include="Localization\ReviewLanguage.en.json"><LogicalName>ClearPlan.ReviewLanguage.en.json</LogicalName><WithCulture>false</WithCulture></EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

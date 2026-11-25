@@ -102,7 +102,7 @@ namespace ClearPlan.Reporting.MigraDoc.Internal
 
         public static string ControlPointTraces(ReviewBeamAnalysis beam)
         {
-            using (var output = new Bitmap(1500, 360))
+            using (var output = new Bitmap(900, 1000))
             using (var g = Graphics.FromImage(output))
             {
                 g.Clear(Color.White); g.SmoothingMode = SmoothingMode.AntiAlias;
@@ -113,13 +113,13 @@ namespace ClearPlan.Reporting.MigraDoc.Internal
                 var indices = samples.Where(cp => cp != null).Select(cp => cp.Index).ToList();
                 double first = indices.Count == 0 ? 0 : indices.Min(), last = indices.Count == 0 ? 1 : indices.Max();
                 if (last <= first) last = first + 1;
-                PlotTrace(g, new RectangleF(80, 55, 610, 215), first, last,
+                PlotTrace(g, new RectangleF(100, 65, 770, 300), first, last,
                     new[] { planned, estimated }, new[] { Color.FromArgb(22, 50, 74), Color.FromArgb(5, 148, 135) },
                     new[] { DashStyle.Solid, DashStyle.Dash },
                     estimated.Count > 0 ? "Estimated dose rate [MU/min]" : "Planned dose rate [MU/min]",
                     estimated.Count > 0 ? (planned.Count > 0 ? "Solid: supplied; dashed: estimated. Not measured." : "Dashed: estimated segment average, not measured") : "Supplied plan values only; not measured delivery",
                     "No valid rate estimate or supplied rate data");
-                PlotTrace(g, new RectangleF(835, 55, 610, 215), first, last,
+                PlotTrace(g, new RectangleF(100, 565, 770, 300), first, last,
                     new[] { area }, new[] { Color.FromArgb(198, 130, 34) }, new[] { DashStyle.Solid },
                     "Effective aperture area [cm2]", "MLC layer intersection; jaws when present");
                 return Encode(output);
@@ -133,15 +133,15 @@ namespace ClearPlan.Reporting.MigraDoc.Internal
             double maximum = Math.Max(1, series.SelectMany(runs => runs).SelectMany(run => run).Select(point => point.Item2).DefaultIfEmpty(0).Max() * 1.1);
             Func<double, float> x = value => box.Left + (float)((value - first) / (last - first) * box.Width);
             Func<double, float> y = value => box.Bottom - (float)(value / maximum * box.Height);
-            using (var font = new Font("Segoe UI", 16))
+            using (var font = new Font("Segoe UI", 19))
             using (var brush = new SolidBrush(Color.FromArgb(38, 55, 71)))
             using (var grid = new Pen(Color.FromArgb(221, 230, 238)))
             {
-                g.DrawString(title, font, brush, box.Left, 5);
+                g.DrawString(title, font, brush, box.Left, box.Top - 52);
                 if (!series.Any(runs => runs.Count > 0))
                 {
                     Text(g, unavailableText, font, brush, box.Left + box.Width / 2, box.Top + box.Height / 2);
-                    using (var small = new Font("Segoe UI", 13)) Text(g, legend, small, brush, box.Left + box.Width / 2, 343);
+                    using (var small = new Font("Segoe UI", 15)) Text(g, legend, small, brush, box.Left + box.Width / 2, box.Bottom + 88);
                     return;
                 }
                 for (int tick = 0; tick <= 4; tick++)
@@ -153,8 +153,8 @@ namespace ClearPlan.Reporting.MigraDoc.Internal
                     g.DrawLine(grid, x(abscissa), box.Top, x(abscissa), box.Bottom);
                     Text(g, abscissa.ToString("0", CultureInfo.InvariantCulture), font, brush, x(abscissa), box.Bottom + 20);
                 }
-                Text(g, "Control-point index (not time)", font, brush, box.Left + box.Width / 2, 318);
-                using (var small = new Font("Segoe UI", 13)) Text(g, legend, small, brush, box.Left + box.Width / 2, 343);
+                Text(g, "Control-point index (not time)", font, brush, box.Left + box.Width / 2, box.Bottom + 50);
+                using (var small = new Font("Segoe UI", 15)) Text(g, legend, small, brush, box.Left + box.Width / 2, box.Bottom + 88);
                 for (int i = 0; i < series.Count; i++)
                     using (var pen = new Pen(colors[i], 3) { DashStyle = styles[i] })
                     using (var fill = new SolidBrush(colors[i]))
@@ -293,42 +293,83 @@ namespace ClearPlan.Reporting.MigraDoc.Internal
 
         public static string Dvh(ReviewReportDocument report)
         {
-            using (var output = new Bitmap(1400, 610))
-            using (var g = Graphics.FromImage(output))
-            using (var font = new Font("Segoe UI", 17))
-            using (var brush = new SolidBrush(Color.FromArgb(38, 55, 71)))
+            var series = report.VisibleDvhSeries().Where(row => (row.Selected || row.RequiredForTargetReview) && row.Points != null && row.Points.Count > 1).ToList();
+            using (var legendFont = new Font("Segoe UI", 14))
+            using (var measurement = new Bitmap(1, 1))
+            using (var measure = Graphics.FromImage(measurement))
             {
-                g.Clear(Color.White); g.SmoothingMode = SmoothingMode.AntiAlias;
-                var series = report.VisibleDvhSeries().Where(row => (row.Selected || row.RequiredForTargetReview) && row.Points != null && row.Points.Count > 1).ToList();
-                double max = Math.Max(1, series.SelectMany(row => row.Points).Select(p => p.DoseGy).DefaultIfEmpty(1).Max());
-                Func<double, float> x = value => (float)(100 + 920 * value / max);
-                Func<double, float> y = value => (float)(510 - 430 * value / 100);
-                using (var grid = new Pen(Color.FromArgb(221, 230, 238)))
+                var legend = DvhLegendLayout(measure, legendFont, series);
+                int height = (int)Math.Ceiling(legend.Select(entry => entry.LabelBounds.Bottom).DefaultIfEmpty(480).Max() + 24);
+                using (var output = new Bitmap(1400, height))
+                using (var g = Graphics.FromImage(output))
+                using (var font = new Font("Segoe UI", 17))
+                using (var brush = new SolidBrush(Color.FromArgb(38, 55, 71)))
                 {
-                    for (int v = 0; v <= 100; v += 20)
-                    { g.DrawLine(grid, 100, y(v), 1020, y(v)); Text(g, v.ToString(), font, brush, 65, y(v)); }
-                    for (int d = 0; d <= 5; d++)
-                    { g.DrawLine(grid, x(max * d / 5), 80, x(max * d / 5), 510); Text(g, (max * d / 5).ToString("0.#", CultureInfo.InvariantCulture), font, brush, x(max * d / 5), 535); }
-                }
-                Text(g, "Dose [Gy]", font, brush, 550, 575);
-                g.DrawString("Cumulative volume [%]", font, brush, 90, 20);
-                int legend = 0;
-                foreach (var row in series)
-                {
-                    Color color;
-                    try { color = ColorTranslator.FromHtml(row.ColorHex); } catch { color = Teal; }
-                    using (var pen = new Pen(color, 3))
+                    g.Clear(Color.White); g.SmoothingMode = SmoothingMode.AntiAlias;
+                    double max = Math.Max(1, series.SelectMany(row => row.Points).Select(p => p.DoseGy).DefaultIfEmpty(1).Max());
+                    Func<double, float> x = value => (float)(100 + 1240 * value / max);
+                    Func<double, float> y = value => (float)(400 - 320 * value / 100);
+                    using (var grid = new Pen(Color.FromArgb(221, 230, 238)))
                     {
-                        if (row.LineStyle == "dash") pen.DashStyle = DashStyle.Dash;
-                        if (row.LineStyle == "dot") pen.DashStyle = DashStyle.Dot;
-                        g.DrawLines(pen, row.Points.Select(p => new PointF(x(p.DoseGy), y(p.VolumePercent))).ToArray());
-                        if (legend < 13) { g.DrawLine(pen, 1060, 85 + legend * 34, 1100, 85 + legend * 34); g.DrawString(row.DisplayName, font, brush, 1110, 70 + legend * 34); }
+                        for (int v = 0; v <= 100; v += 20)
+                        { g.DrawLine(grid, 100, y(v), 1340, y(v)); Text(g, v.ToString(), font, brush, 65, y(v)); }
+                        for (int d = 0; d <= 5; d++)
+                        { g.DrawLine(grid, x(max * d / 5), 80, x(max * d / 5), 400); Text(g, (max * d / 5).ToString("0.#", CultureInfo.InvariantCulture), font, brush, x(max * d / 5), 425); }
                     }
-                    legend++;
+                    Text(g, "Dose [Gy]", font, brush, 720, 465);
+                    g.DrawString("Cumulative volume [%]", font, brush, 90, 20);
+                    foreach (var entry in legend)
+                    {
+                        var row = entry.Series;
+                        Color color;
+                        try { color = ColorTranslator.FromHtml(row.ColorHex); } catch { color = Teal; }
+                        using (var pen = new Pen(color, 3))
+                        {
+                            if (row.LineStyle == "dash") pen.DashStyle = DashStyle.Dash;
+                            if (row.LineStyle == "dot") pen.DashStyle = DashStyle.Dot;
+                            g.DrawLines(pen, row.Points.Select(p => new PointF(x(p.DoseGy), y(p.VolumePercent))).ToArray());
+                            float swatchY = entry.LabelBounds.Top + legendFont.GetHeight(g) / 2;
+                            g.DrawLine(pen, entry.LabelBounds.Left - 50, swatchY, entry.LabelBounds.Left - 12, swatchY);
+                            g.DrawString(entry.Label, legendFont, brush, entry.LabelBounds);
+                        }
+                    }
+                    if (series.Count == 0) Text(g, "No selected DVH series", font, brush, 720, 290);
+                    return Encode(output);
                 }
-                if (series.Count == 0) Text(g, "No selected DVH series", font, brush, 550, 290);
-                return Encode(output);
             }
+        }
+
+        private sealed class DvhLegendEntry
+        {
+            public ReviewReportDvhSeries Series;
+            public string Label;
+            public RectangleF LabelBounds;
+        }
+
+        private static List<DvhLegendEntry> DvhLegendLayout(Graphics graphics, Font font, IList<ReviewReportDvhSeries> series)
+        {
+            // Flow entries into compact rows; long IDs wrap inside their own entry.
+            // Measure and draw with the same GDI text layout, without shortening IDs.
+            var result = new List<DvhLegendEntry>();
+            float left = 40, top = 500, rowHeight = 0;
+            foreach (var row in series)
+            {
+                string label = row.DisplayName ?? row.StructureId ?? "";
+                float labelWidth = Math.Min(350, graphics.MeasureString(label, font).Width + 4);
+                var measured = graphics.MeasureString(label, font, new SizeF(Math.Max(1, labelWidth), 10000));
+                float entryWidth = labelWidth + 74;
+                if (left > 40 && left + entryWidth > 1360)
+                {
+                    left = 40;
+                    top += rowHeight + 10;
+                    rowHeight = 0;
+                }
+                var bounds = new RectangleF(left + 50, top, Math.Max(1, labelWidth), measured.Height + 2);
+                result.Add(new DvhLegendEntry { Series = row, Label = label, LabelBounds = bounds });
+                left += entryWidth;
+                rowHeight = Math.Max(rowHeight, bounds.Height);
+            }
+            return result;
         }
 
         private static void DrawRect(Graphics g, Func<double, float> x, Func<double, float> y, ApertureRectangle r, Pen pen, Brush fill)

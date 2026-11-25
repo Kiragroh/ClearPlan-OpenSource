@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 
 namespace ClearPlan.Core.Review
 {
@@ -12,6 +13,8 @@ namespace ClearPlan.Core.Review
         public double CenterPixelY { get; private set; }
         public double HalfExtentMillimeters { get; private set; }
         public string Description { get; private set; }
+        /// <summary>Isodose level the GUI frame follows; null for other frames.</summary>
+        public double? ZoomIsodosePercent { get; private set; }
         private double spacingX, spacingY;
 
         public double MapX(double pixelCenter) { return 0.5 + (pixelCenter - CenterPixelX) * spacingX / (2 * HalfExtentMillimeters); }
@@ -49,6 +52,65 @@ namespace ClearPlan.Core.Review
                 string.Format(CultureInfo.InvariantCulture, "Field of view {0:0} x {0:0} mm. ", result.HalfExtentMillimeters * 2) +
                 (result.UsesDoseRegion && region.CoverageLimited ? "Dose-region extent may be truncated at source coverage. " : "") +
                 "Outside CT coverage stays unfilled; no extrapolation.";
+            return result;
+        }
+
+        /// <summary>GUI-only tight frame (2026-11-20): square viewport around the shown isodose paths
+        /// plus a margin. The isocentre stays inside the frame. Returns null when no isodose path is
+        /// available, so callers keep the default frame. Reports keep <see cref="Calculate"/>; this
+        /// changes no dose value.</summary>
+        public static PlanImageViewport CalculateIsodoseFit(ReviewPlanImage image, double marginMillimeters)
+        { return CalculateIsodoseFit(image, marginMillimeters, null); }
+
+        /// <summary>With a reference level (percent of prescription) the frame follows the lowest shown
+        /// isodose at or above it, e.g. 20 % instead of a displayed 2 % line. Without such a level all
+        /// shown isodoses are used.</summary>
+        public static PlanImageViewport CalculateIsodoseFit(ReviewPlanImage image, double marginMillimeters, double? referencePercent)
+        {
+            if (image == null || image.WidthPixels < 2 || image.HeightPixels < 2 ||
+                !Positive(image.PixelSpacingXMillimeters) || !Positive(image.PixelSpacingYMillimeters) ||
+                !Finite(marginMillimeters) || marginMillimeters < 0 || image.Overlays == null) return null;
+            var isodoses = image.Overlays.Where(o => o != null && o.Kind == "isodose" && o.SourceStatus == ReviewStatusCodes.Available && o.Paths != null).ToList();
+            double? chosenPercent = null;
+            if (referencePercent.HasValue && Finite(referencePercent.Value))
+            {
+                var levels = isodoses.Where(o => o.PrescriptionPercent.HasValue && o.PrescriptionPercent.Value >= referencePercent.Value - 1e-6 &&
+                    o.Paths.Any(p => p != null && p.Points != null && p.Points.Count >= 2)).Select(o => o.PrescriptionPercent.Value).ToList();
+                if (levels.Count > 0) chosenPercent = levels.Min();
+            }
+            double minX = double.MaxValue, maxX = double.MinValue, minY = double.MaxValue, maxY = double.MinValue;
+            foreach (var overlay in isodoses)
+            {
+                if (chosenPercent.HasValue && (!overlay.PrescriptionPercent.HasValue || Math.Abs(overlay.PrescriptionPercent.Value - chosenPercent.Value) > 1e-6)) continue;
+                foreach (var path in overlay.Paths)
+                {
+                    if (path == null || path.Points == null || path.Points.Count < 2) continue;
+                    foreach (var point in path.Points)
+                    {
+                        if (point == null || !Finite(point.X) || !Finite(point.Y)) continue;
+                        minX = Math.Min(minX, point.X); maxX = Math.Max(maxX, point.X);
+                        minY = Math.Min(minY, point.Y); maxY = Math.Max(maxY, point.Y);
+                    }
+                }
+            }
+            if (maxX < minX || maxY < minY) return null;
+            bool hasIso = image.IsocenterPixelX.HasValue && image.IsocenterPixelY.HasValue &&
+                Finite(image.IsocenterPixelX.Value) && Finite(image.IsocenterPixelY.Value);
+            if (hasIso)
+            {
+                minX = Math.Min(minX, image.IsocenterPixelX.Value); maxX = Math.Max(maxX, image.IsocenterPixelX.Value);
+                minY = Math.Min(minY, image.IsocenterPixelY.Value); maxY = Math.Max(maxY, image.IsocenterPixelY.Value);
+            }
+            var result = new PlanImageViewport { HasIsocenter = hasIso, UsesDoseRegion = true,
+                CenterPixelX = (minX + maxX) / 2, CenterPixelY = (minY + maxY) / 2,
+                spacingX = image.PixelSpacingXMillimeters, spacingY = image.PixelSpacingYMillimeters };
+            result.HalfExtentMillimeters = Math.Max(Math.Max((maxX - minX) / 2 * result.spacingX, (maxY - minY) / 2 * result.spacingY)
+                + marginMillimeters, 15);
+            result.Description = string.Format(CultureInfo.InvariantCulture,
+                "Zoom: {0} isodose + {1:0} mm. Field of view {2:0} x {2:0} mm. Outside CT coverage stays unfilled; no extrapolation.",
+                chosenPercent.HasValue ? chosenPercent.Value.ToString("0.#", CultureInfo.InvariantCulture) + " %" : "outermost shown",
+                marginMillimeters, result.HalfExtentMillimeters * 2);
+            result.ZoomIsodosePercent = chosenPercent;
             return result;
         }
 

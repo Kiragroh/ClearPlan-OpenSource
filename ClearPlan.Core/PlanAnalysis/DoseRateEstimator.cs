@@ -17,8 +17,8 @@ namespace ClearPlan.Core.PlanAnalysis
             if (profileError != null) { Unavailable(beam, profileError); return; }
             if (!DoseRateEstimationProfileCatalog.Matches(profile, beam))
             { Unavailable(beam, "The selected profile does not match the exact machine metadata."); return; }
-            if (!Is(beam.Technique, "ARC") && !Is(beam.Technique, "VMAT") && !Is(beam.Technique, "RapidArc"))
-            { Unavailable(beam, "Only explicitly identified ARC, VMAT or RapidArc beams are supported."); return; }
+            if (!Is(beam.Technique, "ARC") && !Is(beam.Technique, "SRS ARC") && !Is(beam.Technique, "VMAT") && !Is(beam.Technique, "RapidArc"))
+            { Unavailable(beam, "Only explicitly identified ARC, SRS ARC, VMAT or RapidArc beams are supported."); return; }
             bool clockwise = Is(beam.GantryDirection, "Clockwise");
             if (!clockwise && !Is(beam.GantryDirection, "CounterClockwise"))
             { Unavailable(beam, "A known Clockwise or CounterClockwise gantry direction is required."); return; }

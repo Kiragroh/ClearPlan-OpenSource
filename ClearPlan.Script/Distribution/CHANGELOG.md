@@ -1,5 +1,36 @@
 # Changelog
 
+## [3.2.0-dev.20260914.8] Open-bore captured radial clearance
+- Added a distinct captured-surface radial result for the stationary Halcyon bore. It uses the configured inner radius and warning margin, with no axial end wall. Green "Frei (erfasst)" / "Clear*" is not a clinical or outside-CT clearance claim. Original assurance status and unknown anatomy are not overwritten.
+- Body/arm and support distances share the same radial result in GUI and PDF/HTML. The open ring is framed more closely without the former axial-limit disk. Smallest-distance navigation follows the displayed radial numbers.
+- Radial results tolerate redundant zero-area seam triangles only when every point is represented by a proper triangle within the same surface at exactly equal XYZ. Unsupported primitives and wholly degenerate surfaces remain unassessed. No contour edits, mesh repair, coordinate rounding, or TPS writes are performed.
+- Native image captures have an opaque background for readable local screenshots. Full-regression and native GUI/report evidence is documented separately; local commissioning and nonzero couch yaw remain out of scope.
+
+## [3.2.0-dev.20260914.6] Native sweep repair and larger collision workspace
+- A stationary Halcyon source bore now reuses the unchanged body/table distance bounds at each identical isocenter. All planned 10-degree states remain selectable; no surface decimation or relaxed safety limits are used.
+- Fixed the native Halcyon empty-angle report caused by counting identical stationary geometry repeatedly against the workload budget. Failed sweeps can no longer export misleading pose-less overviews.
+- Enlarged the collision viewport by moving manual coordinate assurance into the model-details expander and reducing persistent explanatory text. Full limitations remain available by tooltip and in model evidence.
+- Added native GUI verification for cached playback, stepping, report capture, static-field dose-rate handling, and report diagnostic frame/surface counts. The native Halcyon run verified 42 states and two beam reports; CT-edge anatomy remains explicitly uncertain.
+- 450 executable regression groups passed. This is a read-only development build, not clinical collision commissioning. Nonzero couch yaw, treatment-day 6D corrections, and continuous between-field motion remain outside the supported native clearance scope.
+
+## [3.2.0-dev.20260914.3] Status-colored 10-degree collision review
+- Added planned-arc 10-degree samples plus exact endpoints, cached play/pause and stepping, colored ghost envelopes and an opaque active state. Static fields do not acquire an invented rotation. Coincident Halcyon bore positions remain stationary; the body-only leading boundary is shown separately.
+- Added per-beam PDF/HTML overviews with pass/uncertain/hit and separate no-fly-zone body/table distance bounds. Negative lower bounds alone never prove collision. Finite-bore radial values do not claim exact rim clearance or pass.
+- Native CT-boundary contact (including artificially capped External meshes), missing anatomy and unsupported model/coordinate evidence prevent pass. Data access remains read-only; 10-degree sampling is not continuous collision clearance or clinical commissioning.
+- New native patient captures are required for these sweep images and CT-coverage metadata. Older saved report PNGs cannot be used to reconstruct geometry.
+
+## [3.2.0-dev.20260914.2] Three-axis BEV orientation
+- Added a separate collimator orientation inset beside the gantry and couch schematics in the shared GUI/PDF/HTML BEV renderer. When calibrated, its BLD axes follow the actual aperture screen transform; otherwise an explicitly nominal view remains available without a DRR. Numeric captions retain machine angles, not inferred display angles. No collision clearance is implied.
+- Collision pose identity now uses per-field control-point ordinals, including static ESAPI endpoints with repeated native index -1. This does not supply missing pitch/roll data or commission a geometry model.
+- Refreshed the retained native TrueBeam/Halcyon examples locally using their verified protected sidecars; no new DICOM export or TPS write is involved.
+
+## [3.2.0-dev.20260914.1] Native report and BEV review candidate
+- Fixed duplicate native -1 endpoint indices in static TrueBeam fields by separating internal ordinal identity from the original ESAPI index. Rechecked all five field-start DRRs in a native read-only case.
+- Standardized PDF/HTML title to Plan Quality Report and repeating footer to ClearPlan plus software version. Removed decorative red warning stamps; preserved result statuses and unavailable-data disclosures.
+- Single/distal MLC outlines are green; proximal outlines blue. SX2 reference profile explicitly defines a detached nominal 28 x 28 cm maximum opening, independent of physical jaws, with aperture clipping/validation tests.
+- BEV fits its viewport by default with optional enlarged detail mode. Compact report DVH avoids orphaned table notes; unavailable rate trajectories no longer reserve empty PDF pages.
+- New genuine TrueBeam and Halcyon native captures contain shared patient-specific 3D illustrations. No commissioned collision result is asserted: the profiles and unsupported pitch/roll inputs retain explicit limits.
+
 ## [3.2.0.0] Integrated plan analysis and publication fixtures (unreleased candidate)
 - Expanded the read-only review with target-specific PAM, physical single-/jawless dual-layer MLC geometry, Paddick CI and reciprocal, GI/HI, total MU and distinctly labeled estimated dose-rate trajectories. Automatic PAM compares eligible PTVs without changing TPS assignments.
 - Added three-plane CT dose/structure overlays, optional field-start BEV/DRR report panels, compact single-plan PDF and offline HTML quicklook, separate comparison-plan selection and shared structure visibility.

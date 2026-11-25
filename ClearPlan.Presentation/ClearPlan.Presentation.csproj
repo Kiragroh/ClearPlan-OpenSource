@@ -67,8 +67,10 @@
     <Compile Include="Plot\ReviewPlotFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ResourceAssemblyAnchor.cs" />
+    <Compile Include="Localization\DisplayLanguage.cs" />
     <Compile Include="Views\HtmlReportPreviewWindow.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
+    <Compile Include="ViewModels\DisplayPreferenceActions.cs" />
     <Compile Include="ViewModels\ReviewDvhSeriesViewModel.cs" />
     <Compile Include="ViewModels\ReviewPqmRowViewModel.cs" />
     <Compile Include="ViewModels\ReviewWorkspaceHostController.cs" />
@@ -76,6 +78,10 @@
     <Compile Include="ViewModels\PlanAnalysisViewModel.cs" />
     <Compile Include="ViewModels\BeamEyeViewViewModel.cs" />
     <Compile Include="ViewModels\PlanImagesViewModel.cs" />
+    <Compile Include="ViewModels\PlanImagesViewModel.Isodoses.cs" />
+    <Compile Include="ViewModels\CollisionViewModel.cs" />
+    <Compile Include="Views\DioramaDisplayModel.cs" />
+    <Compile Include="Views\CollisionView.xaml.cs"><DependentUpon>CollisionView.xaml</DependentUpon></Compile>
     <Compile Include="Views\PlanImagesView.xaml.cs"><DependentUpon>PlanImagesView.xaml</DependentUpon></Compile>
     <Compile Include="Views\BeamEyeView.xaml.cs"><DependentUpon>BeamEyeView.xaml</DependentUpon></Compile>
     <Compile Include="ViewModels\PlanComparisonViewModel.cs" />
@@ -93,6 +99,7 @@
     <Page Include="Views\PlanParametersView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
     <Page Include="Views\BeamEyeView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
     <Page Include="Views\PlanImagesView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
+    <Page Include="Views\CollisionView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
     <Page Include="Views\PlanComparisonView.xaml"><SubType>Designer</SubType><Generator>MSBuild:Compile</Generator></Page>
     <Page Include="Views\ReviewWorkspaceView.xaml">
       <SubType>Designer</SubType>

@@ -28,6 +28,7 @@ namespace ClearPlan.Simulator
                 { "fields", "FieldsTab" },
                 { "dvh", "DvhTab" },
                 { "images", "PlanImagesTab" },
+                { "collision", "CollisionTab" },
                 { "parameters", "PlanParametersTab" },
                 { "comparison", "ComparisonTab" },
                 { "bev", "BevTab" },

@@ -266,6 +266,7 @@ namespace ClearPlan.Simulator
                         "clearplan-synthetic-report.pdf")
                     : arguments.ReportPath;
             SynchronizeSnapshotDvhSelections();
+            ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspaceViewModel.Collision);
             reportService.Export(snapshot, reportPath, ApplyReportOptions);
         }
 
@@ -310,6 +311,7 @@ namespace ClearPlan.Simulator
             if (!ReferenceEquals(sender, workspaceViewModel) || snapshot == null || !snapshot.Synthetic) return;
             try
             {
+                ClearPlan.Presentation.Views.CollisionView.CaptureReportSweep(workspaceViewModel.Collision);
                 var document = new ClearPlan.Reporting.ReviewSnapshotReportMapper().Map(snapshot);
                 ApplyReportOptions(document);
                 foreach (var series in document.DvhSeries)

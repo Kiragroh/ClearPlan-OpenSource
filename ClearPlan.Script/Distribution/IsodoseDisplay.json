@@ -1,0 +1,15 @@
+{
+  "SchemaVersion": 1,
+  "Levels": [
+    { "Percent": 2, "ColorHex": "#AAB8E0", "Enabled": true },
+    { "Percent": 20, "ColorHex": "#377EF5", "Enabled": true },
+    { "Percent": 50, "ColorHex": "#21C9DC", "Enabled": true },
+    { "Percent": 80, "ColorHex": "#4EDE70", "Enabled": true },
+    { "Percent": 95, "ColorHex": "#38D46A", "Enabled": true },
+    { "Percent": 100, "ColorHex": "#8DE4C1", "Enabled": true },
+    { "Percent": 105, "ColorHex": "#FFD84A", "Enabled": true },
+    { "Percent": 107, "ColorHex": "#F58AB6", "Enabled": true },
+    { "Percent": 110, "ColorHex": "#F44336", "Enabled": true },
+    { "Percent": 125, "ColorHex": "#B56CFF", "Enabled": true }
+  ]
+}

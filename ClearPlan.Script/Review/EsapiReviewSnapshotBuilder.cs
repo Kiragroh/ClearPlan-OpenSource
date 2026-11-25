@@ -67,12 +67,16 @@ namespace ClearPlan.Review
                     {
                         "Dose is expressed in Gy.",
                         "Cumulative DVH volume is expressed as relative volume in percent.",
-                        "PlanCheck rows are projected from existing results and are not recalculated."
+                        "PlanCheck rows are projected from existing results. The legacy CT fallback tuple is evaluated against explicit local approvals; other legacy checks are not recalculated."
                     }
                 }
             };
 
             snapshot.Sources = BuildSources(source, settings);
+            string isodoseMessage;
+            snapshot.IsodoseDisplay = IsodoseDisplayConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.IsodoseDisplayJsonPath)
+                ? null : settings.ResolvePath(settings.Paths.IsodoseDisplayJsonPath), out isodoseMessage);
+            snapshot.IsodoseDisplayMessage = isodoseMessage;
             var targetBuilder = new EsapiTargetReviewBuilder();
             TargetReviewCapture targetReview = targetBuilder.BuildSelection(source.ActivePlanningItem.PlanningItemObject);
 
@@ -89,13 +93,22 @@ namespace ClearPlan.Review
             snapshot.PqmRows.AddRange(userTargetRows);
             snapshot.Sources.Add(userTargetSource);
             snapshot.Report.Notes.Add(userTargetSource.Message);
+            var ctCompatibility = CtCompatibilityConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.CtCompatibilityJsonPath)
+                ? null : settings.ResolvePath(settings.Paths.CtCompatibilityJsonPath));
+            snapshot.Sources.Add(new ReviewSourceStatus { StableId = "source-ct-compatibility", SourceCode = "ct-compatibility",
+                SourceType = "exact-local-approval", Status = ctCompatibility.Status, Optional = false, UsedFallback = false,
+                PathDisplayLabel = "CT compatibility approvals", Message = ctCompatibility.Message });
             snapshot.PlanCheckRows = BuildPlanCheckRows(
                 source,
-                usedCheckIds);
+                usedCheckIds,
+                ctCompatibility);
             var checkSelection = PlanCheckSelectionConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.PlanCheckSelectionJsonPath)
                 ? null : settings.ResolvePath(settings.Paths.PlanCheckSelectionJsonPath));
             int disabledChecks;
+            List<ReviewCheckRow> unfilteredCheckRows = snapshot.PlanCheckRows;
             snapshot.PlanCheckRows = checkSelection.Filter(snapshot.PlanCheckRows, out disabledChecks);
+            // Review log only: keep excluded rows so check_finding can record included = 0 denominators.
+            snapshot.ExcludedPlanCheckRows = unfilteredCheckRows.Where(row => !snapshot.PlanCheckRows.Contains(row)).ToList();
             snapshot.DisabledCheckCount = disabledChecks;
             snapshot.Sources.Add(new ReviewSourceStatus { StableId = "source-plancheck-selection", SourceCode = "plancheck-selection",
                 SourceType = "review-inclusion-policy", Status = checkSelection.Status, Optional = true, UsedFallback = false,
@@ -349,7 +362,8 @@ namespace ClearPlan.Review
 
         private static List<ReviewCheckRow> BuildPlanCheckRows(
             MainViewModel source,
-            ISet<string> usedIds)
+            ISet<string> usedIds,
+            CtCompatibilityConfiguration ctCompatibility)
         {
             var rows = new List<ReviewCheckRow>();
             int index = 0;
@@ -364,6 +378,15 @@ namespace ClearPlan.Review
 
                 ReviewStatusAndSeverity mapped =
                     ClinicalReviewValueMapper.MapPlanCheckStatus(item.Status);
+                var ctFinding = ctCompatibility.EvaluateLegacy(item.Severity, item.Description);
+                if (ctFinding != null)
+                {
+                    ctFinding.CheckCode = ClinicalReviewValueMapper.CreateUniqueStableId(item.Severity, "ct-compatibility-" + index, usedIds);
+                    // Keep the existing inclusion-policy family while only replacing this detached result.
+                    ctFinding.Category = "Default";
+                    rows.Add(ctFinding);
+                    continue;
+                }
                 rows.Add(new ReviewCheckRow
                 {
                     CheckCode =
@@ -623,18 +646,8 @@ namespace ClearPlan.Review
 
         private static double? GetDvhDoseOrNull(Func<DoseValue> readDose)
         {
-            try
-            {
-                double doseGy = ConvertDoseToGray(readDose());
-                return double.IsNaN(doseGy) || double.IsInfinity(doseGy) || doseGy < 0.0
-                    ? (double?)null : doseGy;
-            }
-            catch (Exception)
-            {
-                // A missing native statistic must not erase an otherwise valid
-                // curve, nor be replaced by a misleading zero or a sampled extreme.
-                return null;
-            }
+            // Shared nullable boundary for native DVH statistics and plan metadata.
+            return ClinicalReviewValueMapper.ReadOptionalDoseInGray(() => ConvertDoseToGray(readDose()));
         }
 
         private static List<ReviewDvhPoint> BuildDvhPoints(DVHData data)
@@ -846,9 +859,10 @@ namespace ClearPlan.Review
                 PlanSetup planSetup = item.PlanningItemObject as PlanSetup;
                 if (planSetup != null)
                 {
-                    dosePerFraction =
-                        ConvertDoseToGray(planSetup.DosePerFraction);
-                    totalDose = ConvertDoseToGray(planSetup.TotalDose);
+                    // A sibling plan without dose must not prevent the active plan
+                    // opening. Preserve each independently readable native value.
+                    dosePerFraction = GetDvhDoseOrNull(() => planSetup.DosePerFraction);
+                    totalDose = GetDvhDoseOrNull(() => planSetup.TotalDose);
                     fractions = planSetup.NumberOfFractions;
                 }
             }

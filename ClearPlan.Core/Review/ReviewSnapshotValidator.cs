@@ -607,6 +607,8 @@ namespace ClearPlan.Core.Review
             foreach (var image in snapshot.PlanImages ?? new List<ReviewPlanImage>())
             {
                 if (image == null) continue;
+                if (image.DosePlane != null && !image.DosePlane.IsValid)
+                    Add(issues, "image.doseplane.invalid", "$.planImages", "Detached dose samples require a bounded grid, finite nonnegative Gy or unavailable NaN, and positive prescription Gy.");
                 if (snapshot.Synthetic && !image.Synthetic)
                     Add(issues, "image.synthetic.required", "$.planImages", "A synthetic snapshot cannot contain a clinical image.");
                 if (image.GrayscalePixels == null) continue;
@@ -615,6 +617,11 @@ namespace ClearPlan.Core.Review
                     !ReviewComparison.Finite(image.PixelSpacingXMillimeters) || image.PixelSpacingXMillimeters <= 0 ||
                     !ReviewComparison.Finite(image.PixelSpacingYMillimeters) || image.PixelSpacingYMillimeters <= 0)
                     Add(issues, "image.geometry.invalid", "$.planImages", "Overview pixels require a bounded complete grid and positive physical spacing.");
+            }
+            if (snapshot.IsodoseDisplay != null)
+            {
+                try { snapshot.IsodoseDisplay.Validate(); }
+                catch (FormatException) { Add(issues, "image.palette.invalid", "$.isodoseDisplay", "Invalid isodose display configuration."); }
             }
         }
 

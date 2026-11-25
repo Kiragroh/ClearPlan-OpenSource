@@ -14,6 +14,96 @@ namespace ClearPlan.Core.Tests
 {
     internal static class AriaFhirClientTests
     {
+        public static void InteractiveAuthorExactLookup()
+        {
+            const string usernameSystem = "http://varian.com/fhir/identifier/Practitioner/UserName";
+            const string idSystem = "http://varian.com/fhir/identifier/Practitioner/Id";
+            foreach (string id in new[] { "DOMAIN\\physicist", "physicist" })
+            {
+                string system = id.Contains("\\") ? usernameSystem : idSystem;
+                using (var harness = new Harness(Bundle(Practitioner("a1", id, system))))
+                {
+                    object author = ResolveAuthor(harness.Client, id);
+                    TestAssert.Equal("Practitioner/a1", (string)author.GetType().GetProperty("Reference").GetValue(author));
+                    TestAssert.Equal("?identifier=" + Uri.EscapeDataString(system + "|" + id.Replace("\\", "\\\\")), harness.Handler.Uris[0].Query);
+                }
+            }
+            foreach (var response in new[] { Bundle(), Bundle(Practitioner("a1", "OTHER\\physicist", usernameSystem)),
+                Bundle(Practitioner("a1", "DOMAIN\\physicist", "urn:wrong")),
+                Bundle(Practitioner("a1", "DOMAIN\\physicist", usernameSystem, false)),
+                Bundle(Practitioner("a1", "DOMAIN\\physicist", usernameSystem), Practitioner("a2", "DOMAIN\\physicist", usernameSystem)) })
+                using (var harness = new Harness(response))
+                {
+                    var error = TestAssert.Throws<Exception>(() => ResolveAuthor(harness.Client, "DOMAIN\\physicist"));
+                    TestAssert.True(error.GetType().Name == "AriaAuthorResolutionException", "Missing/ambiguous identities require an actionable author-specific failure.");
+                    TestAssert.False(error.Message.Contains("physicist"));
+                    TestAssert.Equal(1, harness.Handler.Uris.Count, "No fuzzy name or service-account fallback is allowed.");
+                }
+            using (var harness = new Harness())
+                foreach (string invalid in new[] { null, "", " physicist", "domain\\", "domain\\user\\other", "user|other", "user,other", "user\n" })
+                {
+                    TestAssert.Throws<Exception>(() => ResolveAuthor(harness.Client, invalid));
+                    TestAssert.Equal(0, harness.Handler.Uris.Count);
+                }
+            var first = Bundle(Practitioner("a1", "domain\\PHYSICIST", usernameSystem));
+            first["link"] = new JArray(new JObject { ["relation"] = "next", ["url"] = "Practitioner?cursor=2" });
+            using (var harness = new Harness(first, Bundle()))
+            {
+                ResolveAuthor(harness.Client, "DOMAIN\\physicist");
+                TestAssert.Equal(2, harness.Handler.Uris.Count);
+            }
+            using (var harness = new Harness(first, Bundle(Practitioner("a2", "DOMAIN\\physicist", usernameSystem))))
+                TestAssert.Throws<Exception>(() => ResolveAuthor(harness.Client, "DOMAIN\\physicist"));
+            using (var harness = new Harness(first, Bundle(Practitioner("a1", "OTHER\\physicist", usernameSystem))))
+                TestAssert.Throws<Exception>(() => ResolveAuthor(harness.Client, "DOMAIN\\physicist"));
+        }
+
+        public static void ClinicalMetadataReadbackCannotAcceptServiceAuthor()
+        {
+            var request = AriaReportUploadTests.BindClinicalMetadata(Request());
+            var document = AriaReportDocumentBuilder.Build(request); document["id"] = "doc1";
+            using (var harness = new Harness(document))
+                TestAssert.Equal(AriaVerificationState.Verified, harness.Client.VerifyAsync("DocumentReference/doc1", request, CancellationToken.None).GetAwaiter().GetResult().State);
+            foreach (Action<JObject> mutate in new Action<JObject>[] {
+                d => d.Remove("author"), d => d["author"][0]["reference"] = "Practitioner/service-account",
+                d => ((JArray)d["author"]).Add(new JObject { ["reference"] = "Practitioner/service-account" }),
+                d => ((JArray)d["extension"]).RemoveAt(1), d => d["extension"][1]["valueString"] = "PQM_Other plan",
+                d => ((JArray)d["extension"]).Add(d["extension"][1].DeepClone()) })
+            {
+                var altered = (JObject)document.DeepClone(); mutate(altered);
+                using (var harness = new Harness(altered))
+                    TestAssert.Equal(AriaVerificationState.Mismatch, harness.Client.VerifyAsync("DocumentReference/doc1", request, CancellationToken.None).GetAwaiter().GetResult().State);
+            }
+        }
+
+        public static void UnboundLegacyRequestCannotBeUploaded()
+        {
+            using (var harness = new Harness())
+            {
+                var result = harness.Client.UploadAsync(Request(false), CancellationToken.None).GetAwaiter().GetResult();
+                TestAssert.Equal(AriaUploadState.Rejected, result.State);
+                TestAssert.Equal(0, harness.TokenCalls, "An unbound author must fail before OAuth and before any POST.");
+                TestAssert.Equal(0, harness.Handler.Uris.Count);
+            }
+        }
+
+        private static object ResolveAuthor(AriaFhirClient client, string userId)
+        {
+            var method = typeof(AriaFhirClient).GetMethod("ResolveAuthorAsync");
+            TestAssert.NotNull(method, "An exact interactive-user to Practitioner resolver is required.");
+            try
+            {
+                var task = (Task)method.Invoke(client, new object[] { userId, CancellationToken.None });
+                task.GetAwaiter().GetResult();
+                return task.GetType().GetProperty("Result").GetValue(task);
+            }
+            catch (System.Reflection.TargetInvocationException error) { throw error.InnerException; }
+        }
+
+        private static JObject Practitioner(string id, string userId, string system, bool active = true)
+        { return new JObject { ["resourceType"] = "Practitioner", ["id"] = id, ["active"] = active,
+            ["identifier"] = new JArray(new JObject { ["system"] = system, ["value"] = userId }) }; }
+
         public static void Contract()
         {
             var type = typeof(AriaReportDocumentBuilder).Assembly.GetType("ClearPlan.Core.Integration.AriaFhirClient");
@@ -460,9 +550,9 @@ namespace ClearPlan.Core.Tests
         }
 
         private static AriaReportUploadRequest DescribedRequest()
-        { var r = Request(); return new AriaReportUploadRequest(r.ReportPatientId, r.ResolvedPatientId, r.PatientReference, r.ActivePlanKey,
+        { var r = Request(); return AriaReportUploadTests.BindClinicalMetadata(new AriaReportUploadRequest(r.ReportPatientId, r.ResolvedPatientId, r.PatientReference, r.ActivePlanKey,
             r.OrganizationReference, r.DocumentTypeSystem, r.DocumentTypeCode, r.DocumentTypeDisplay, r.PdfBytes, r.Title, r.CreatedUtc,
-            "Synthetic readback description", "TIF", "TIF"); }
+            "Synthetic readback description", "TIF", "TIF")); }
         private static JObject SparseDocument(AriaReportUploadRequest request)
         { var document = AriaReportDocumentBuilder.Build(request); document["id"] = "doc1";
             document["content"] = new JArray(new JObject { ["attachment"] = new JObject { ["id"] = "synthetic-attachment", ["contentType"] = "application/pdf", ["url"] = "\\\\synthetic.invalid\\documents\\test.pdf" } });
@@ -543,9 +633,10 @@ namespace ClearPlan.Core.Tests
         }
 
         private const string TypeSystem = "http://varian.com/fhir/CodeSystem/DocumentReference/documentreference-type";
-        private static AriaReportUploadRequest Request()
-        { return new AriaReportUploadRequest("SYNTHETIC", "SYNTHETIC", "Patient/p1", "synthetic-plan", "Organization/p1", TypeSystem,
-            "REPORT", "Plan report", Encoding.ASCII.GetBytes("%PDF-synthetic-only"), "Synthetic review.pdf", new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero)); }
+        private static AriaReportUploadRequest Request(bool bind = true)
+        { var request = new AriaReportUploadRequest("SYNTHETIC", "SYNTHETIC", "Patient/p1", "synthetic-plan", "Organization/p1", TypeSystem,
+            "REPORT", "Plan report", Encoding.ASCII.GetBytes("%PDF-synthetic-only"), "Synthetic review.pdf", new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero));
+            return bind ? AriaReportUploadTests.BindClinicalMetadata(request) : request; }
         private static JObject Patient(string id, string value, string system = null)
         { return new JObject { ["resourceType"] = "Patient", ["id"] = id, ["identifier"] = new JArray(new JObject { ["system"] = system, ["value"] = value }) }; }
         private static JObject Organization(string id, bool active = true)

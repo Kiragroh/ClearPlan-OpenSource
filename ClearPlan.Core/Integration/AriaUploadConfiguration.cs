@@ -16,7 +16,7 @@ namespace ClearPlan.Core.Integration
         public string BaseUrl { get; set; }
         public string TokenUrl { get; set; }
         public string ClientId { get; set; }
-        public string Scope { get; set; } = "system/DocumentReference.cruds system/Patient.rs system/Organization.rs system/ValueSet.rs";
+        public string Scope { get; set; } = "system/DocumentReference.cruds system/Patient.rs system/Organization.rs system/ValueSet.rs system/Practitioner.rs";
         public string CredentialEnvironmentVariable { get; set; } = "ARIA_FHIR_CLIENT_SECRET";
         public string CredentialEnvFilePath { get; set; }
         public string ProviderReference { get; set; }

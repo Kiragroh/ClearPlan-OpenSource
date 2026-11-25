@@ -49,7 +49,7 @@ namespace ClearPlan.Core.Tests
             vm.SelectedBeam = new ReviewBeamAnalysis { NominalDoseRateMuPerMin = 800 };
             TestAssert.True(changed.Contains("NominalDoseRateText"), "Changing beam must refresh the visible nominal setting.");
             string xaml = File.ReadAllText(Path.Combine("ClearPlan.Presentation", "Views", "PlanParametersView.xaml"));
-            TestAssert.True(xaml.Contains("{Binding NominalDoseRateText}"), "Bind the nominal readout beside the dose-rate plot.");
+            TestAssert.True(xaml.Contains("{lang:Translate Path=NominalDoseRateText}"), "Bind the nominal readout beside the dose-rate plot.");
             TestAssert.True(xaml.Contains("Click=\"ShowParameterPlots\""), "Keep below-fold plots directly reachable from the section header.");
         }
 
@@ -98,7 +98,7 @@ namespace ClearPlan.Core.Tests
         public static void ReciprocalConformityUsesPaddickNaming()
         {
             string xaml = File.ReadAllText(Path.Combine("ClearPlan.Presentation", "Views", "PlanParametersView.xaml"));
-            TestAssert.True(xaml.Contains("Header=\"1 / Paddick CI\""), "Name reciprocal conformity explicitly in the GUI.");
+            TestAssert.True(xaml.Contains("Header=\"{lang:Translate Value='1 / Paddick CI'}\""), "Name reciprocal conformity explicitly in the GUI.");
             TestAssert.False(xaml.Contains("CI (PlanCheck)"));
             TestAssert.False(TargetQualityCalculator.Definition.Contains("CI (PlanCheck)"));
             TestAssert.True(TargetQualityCalculator.Definition.Contains("1 / Paddick CI = (TV × V_Rx) / TV_Rx²"));
@@ -149,7 +149,7 @@ namespace ClearPlan.Core.Tests
         {
             string xaml = File.ReadAllText(Path.Combine("ClearPlan.Script", "MainView.xaml"));
             TestAssert.True(xaml.Contains("x:Name=\"SwitchPlanButton\"") &&
-                xaml.Contains("Content=\"Plan wechseln\"") && xaml.Contains("Click=\"SwitchPlanClicked\""),
+                xaml.Contains("Content=\"{lang:Translate Value='Plan wechseln'}\"") && xaml.Contains("Click=\"SwitchPlanClicked\""),
                 "Expose a native plan-switch action without requiring a hidden table action.");
             string source = File.ReadAllText(Path.Combine("ClearPlan.Script", "MainView.xaml.cs"));
             int start = source.IndexOf("private void SwitchPlanClicked(", StringComparison.Ordinal);

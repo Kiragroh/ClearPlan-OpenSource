@@ -5,6 +5,7 @@ using ClearPlan.Presentation.ViewModels;
 using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
+using ClearPlan.Core.Localization;
 
 namespace ClearPlan.Presentation.Plot
 {
@@ -51,7 +52,9 @@ namespace ClearPlan.Presentation.Plot
                 new LinearAxis
                 {
                     Position = AxisPosition.Bottom,
-                    Title = "Dosis [Gy]",
+                    Title = ReviewLanguage.Text("Dosis [Gy]"),
+                    IsZoomEnabled = false,
+                    IsPanEnabled = false,
                     Minimum = 0,
                     Maximum = Math.Max(1.0, maximumDose * 1.05),
                     MajorGridlineStyle = LineStyle.Solid,
@@ -63,7 +66,9 @@ namespace ClearPlan.Presentation.Plot
                 new LinearAxis
                 {
                     Position = AxisPosition.Left,
-                    Title = "Relatives Volumen [%]",
+                    Title = ReviewLanguage.Text("Relatives Volumen [%]"),
+                    IsZoomEnabled = false,
+                    IsPanEnabled = false,
                     Minimum = 0,
                     Maximum = 100,
                     AbsoluteMinimum = 0,
@@ -76,8 +81,9 @@ namespace ClearPlan.Presentation.Plot
 
             foreach (ReviewDvhSeriesViewModel row in seriesRows)
             {
-                var line = new LineSeries
+                var line = new DvhLineSeries
                 {
+                    StatisticsSuffix = row.HoverStatisticsText,
                     Tag = row.StableId,
                     Title = row.DisplayName,
                     Color = ParseColor(row.ColorHex),
@@ -85,9 +91,8 @@ namespace ClearPlan.Presentation.Plot
                     StrokeThickness = 2.2,
                     IsVisible = row.IsSelected,
                     CanTrackerInterpolatePoints = true,
-                    TrackerFormatString =
-                        "{0}\nDosis: {2:0.00} Gy\nVolumen: {4:0.00} %"
                 };
+                line.TrackerFormatString = TrackerFormat(line);
                 foreach (Core.Review.ReviewDvhPoint point in row.Points)
                 {
                     line.Points.Add(
@@ -98,6 +103,31 @@ namespace ClearPlan.Presentation.Plot
             }
 
             return model;
+        }
+
+        /// <summary>DVH line that carries its structure statistics for the hover text.</summary>
+        private sealed class DvhLineSeries : LineSeries
+        {
+            public string StatisticsSuffix { get; set; }
+        }
+
+        private static string TrackerFormat(LineSeries line)
+        {
+            string format = ReviewLanguage.Text("{0}\nDosis: {2:0.00} Gy\nVolumen: {4:0.00} %");
+            var dvh = line as DvhLineSeries;
+            if (dvh == null || string.IsNullOrWhiteSpace(dvh.StatisticsSuffix)) return format;
+            // Braces would break the tracker format string; statistics never contain them.
+            return format + "\n" + dvh.StatisticsSuffix.Replace("{", "(").Replace("}", ")");
+        }
+
+        public static void RefreshLanguage(PlotModel model)
+        {
+            if (model == null) return;
+            foreach (var axis in model.Axes)
+                axis.Title = ReviewLanguage.Text(axis.Position == AxisPosition.Bottom ? "Dosis [Gy]" : "Relatives Volumen [%]");
+            foreach (var line in model.Series.OfType<LineSeries>())
+                line.TrackerFormatString = TrackerFormat(line);
+            model.InvalidatePlot(false);
         }
 
         public static void SetSeriesVisibility(

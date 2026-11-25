@@ -1,0 +1,37 @@
+{
+  "SchemaVersion": 1,
+  "Units": "mm",
+  "MachineBindings": [],
+  "Models": [
+    {
+      "ModelId": "RS03-TrueBeam-source-20260730",
+      "Kind": "TrueBeamHeadSource",
+      "SourcePath": "RayStation/03_Plannachbereitung/03_Plannachbereitung.py:2362-2403",
+      "SourceSha256": "275455209B204D82B86D35947983379A8B5446430F4F663C8FA954ABBD5C1652",
+      "SourceSnapshotDate": "2026-09-13",
+      "EvidenceLevel": "source-recorded-measurement",
+      "MeasurementDate": "2026-07-30",
+      "Evidence": "Source comments and build-3 changelog document device measurements: cover face 42 cm/radius 37 cm; pins face 40 cm/radius 20 cm. The measured machine, uncertainty and approval record were not found. Reach and margins are source constants, not independently verified measurements. No commissioning is granted.",
+      "HeadObstacles": [
+        { "FrontFaceFromIsoMm": 420.0, "RadiusMm": 370.0 },
+        { "FrontFaceFromIsoMm": 400.0, "RadiusMm": 200.0 }
+      ],
+      "ReachRadiusMm": 700.0,
+      "WarningMarginMm": 30.0,
+      "SourceAngularMarginDegrees": 5.0
+    },
+    {
+      "ModelId": "RS03-Halcyon-source-20260913",
+      "Kind": "HalcyonBoreSource",
+      "SourcePath": "RayStation/03_Plannachbereitung/03_Plannachbereitung.py:2405-2425",
+      "SourceSha256": "275455209B204D82B86D35947983379A8B5446430F4F663C8FA954ABBD5C1652",
+      "SourceSnapshotDate": "2026-09-13",
+      "EvidenceLevel": "source-constants",
+      "Evidence": "Source defines radial warning/limit radii 48/50 cm and leading longitudinal warning/limit 85/90 cm from isocenter. Measurement and approval evidence were not found. This point-threshold screen is not the source RayStation ROI Boolean-volume algorithm. No Ethos model or commissioning is inferred.",
+      "BoreWarningRadiusMm": 480.0,
+      "BoreLimitRadiusMm": 500.0,
+      "LeadingWarningFromIsoMm": 850.0,
+      "LeadingLimitFromIsoMm": 900.0
+    }
+  ]
+}

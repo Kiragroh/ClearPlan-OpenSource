@@ -4,7 +4,7 @@
   "BaseUrl": "",
   "TokenUrl": "",
   "ClientId": "",
-  "Scope": "system/DocumentReference.cruds system/Patient.rs system/Organization.rs system/ValueSet.rs",
+  "Scope": "system/DocumentReference.cruds system/Patient.rs system/Organization.rs system/ValueSet.rs system/Practitioner.rs",
   "CredentialEnvironmentVariable": "ARIA_FHIR_CLIENT_SECRET",
   "CredentialEnvFilePath": "",
   "ProviderReference": "",

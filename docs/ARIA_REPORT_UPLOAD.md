@@ -8,12 +8,45 @@ ESAPI plan access stays read-only. Creating a DocumentReference is a separate,
 explicitly confirmed write to the ARIA patient record. It does not approve the
 plan or change dose, structures, treatment fields, or clinical-goal settings.
 
+## First-time setup: choose and commission a document route
+
+FHIR/VAIS is not installed or enabled by ClearPlan. If the clinic does not yet
+have it, the TPS/ARIA administrator should open a **Varian support ticket via
+[MyVarian](https://www.myvarian.com/login)** requesting installation/configuration
+of the ARIA API/FHIR service for PDF DocumentReference create and readback. Ask
+Varian to confirm compatibility with the installed ARIA version, local entitlement,
+server prerequisites, the current ARIA API Reference Guide/Implementation Guide,
+VAIS client registration, and the required permissions. MyVarian product documents
+may require an account and the appropriate product entitlement; this is not an
+automatic ClearPlan installation step.
+
+Create a **local document-upload profile** with your ARIA administrator. Choose
+one route explicitly:
+
+| Route | What the clinic configures |
+|---|---|
+| ClearPlan's **An ARIA senden** action | The FHIR connection JSON below, personal-user Practitioner mapping, document type/category and a separately authorized test upload/readback |
+| Existing **Webservice / direct upload** workflow | A locally commissioned ARIA Oncology Services/Gateway document profile, its authentication, patient association, TemplateName and personal AuthoredBy mapping; use the exported PDF with that workflow |
+| **eDocPrinter** | A local printer/import profile for the ClearPlan report, including unambiguous patient-ID extraction, document type, template/author mapping and destination; verify the resulting patient document after an authorized test |
+
+Webservice/Gateway and eDocPrinter are alternatives managed by the clinic, not
+fallback transports implemented by ClearPlan's FHIR button. Do not put Gateway
+endpoints into the FHIR JSON. An exported PDF alone does not establish correct
+patient, template or author routing. Keep upload disabled until the selected
+profile has been commissioned; do not use direct SQL for document writes.
+
 ## Site configuration
 
 `Paths.AriaUploadConfigJsonPath` in `settings.ini` points to external JSON. An empty
 path disables the action. The path is editable in Settings; the JSON can be
 imported, validated, versioned and restored in the configuration workspace.
 Start with `AriaUpload.example.json`, which is disabled and contains no site data.
+
+Request and configure `system/DocumentReference.cruds`, `system/Patient.rs`,
+`system/Organization.rs`, `system/ValueSet.rs` and **`system/Practitioner.rs`**.
+Existing local JSON profiles must add the Practitioner scope and the VAIS client
+must actually be granted it; editing a scope string alone grants no permission.
+Never share a client secret in a support-ticket body or commit it to the project.
 
 Configure HTTPS FHIR and token endpoints, OAuth client ID and scope, the exact
 provider reference and document type. If no provider is configured, exactly one
@@ -48,11 +81,43 @@ revocation errors. It permits only the exact valid leaf certificate with an
 otherwise untrusted private root. There is no automatic pin renewal or blanket
 TLS-disable switch. Connections use TLS 1.2 and do not follow redirects.
 
+## TemplateName and personal AuthoredBy
+
+The independent ARIA TemplateName is **`PQM_<active plan name>`**, using the exact
+Eclipse plan ID shown as the active plan name (without the course label or PDF
+filename). It is sent in
+`http://varian.com/fhir/v1/StructureDefinition/documentreference-templateName`
+as `valueString`; it is not inferred from the attachment title. Unicode and
+punctuation are retained. Missing, unsafe or overlong names block preparation
+instead of being silently truncated or replaced.
+
+`DocumentReference.author[0].reference` is a resolved **Practitioner** for
+`ScriptContext.CurrentUser.Id`, captured on the ESAPI owner thread. For a
+domain-qualified identity, lookup and exact case-insensitive verification use
+`http://varian.com/fhir/identifier/Practitioner/UserName`; an unqualified ARIA
+identity uses the exact, case-sensitive `.../Practitioner/Id` system. The installed
+IG's Practitioner search and example resource document these identifiers. No
+Windows domain is invented or stripped. `CurrentUser.Name` is display text, not
+an identity ([official ESAPI User reference](https://docs.developer.varian.com/api/17.0/VMS.TPS.Common.Model.API.User.html)).
+
+Zero, inactive, conflicting or multiple matching Practitioners block sending
+with an actionable message. Ask the ARIA administrator to check the personal
+user-to-staff/Practitioner association and read/search permission. There is no
+fuzzy name search, hard-coded author, or fallback to the OAuth service account.
+The service account still authenticates the HTTP request and may appear in ARIA
+technical/audit fields; this is distinct from the document's **AuthoredBy**.
+No approval/signature/authenticator is added.
+
+The confirmation lists TemplateName and the interactive author/reference. A plan,
+patient or user-context change invalidates preparation. Legacy request constructor
+signatures remain available for inspection, but the client refuses to send a
+request without explicit plan/author binding, before OAuth or POST.
+
 ## Send and verify
 
 The action is unavailable in synthetic/sandbox or privacy mode. It resolves the
 active patient by exact identifier, prepares immutable PDF bytes, then displays
-patient, plan, provider, document type and SHA-256 for confirmation. Changing
+patient, plan, TemplateName, personal author, provider, document type and SHA-256 for confirmation. Changing
 context while preparing invalidates the request. A second click cannot start a
 parallel upload.
 
@@ -64,7 +129,10 @@ business-rule code `FUTURE_DATE_TIME` with a fixed actionable message. Raw serve
 diagnostics, unknown codes and clinical response text are not displayed or logged.
 
 A successful POST is followed by a separate readback of patient, provider,
-document type, category, current/preliminary status and PDF content type. The
+document type, category, current/preliminary status and PDF content type. Exactly
+one matching TemplateName extension and exactly one matching Practitioner author
+are required: missing, different, duplicated or additional authors/templates do
+not count as verified, even when the PDF bytes match. The
 document date must match within 3 ms, allowing database timestamp rounding.
 Attachment creation, if returned, must match the captured report creation within
 the same tolerance. If ARIA omits it, the result and GUI explicitly say that it
@@ -125,7 +193,8 @@ no ESAPI object is passed to the background filesystem or HTTP workers.
 
 ## Verification scope
 
-Synthetic unit tests cover payload identity, exact lookup, pagination boundaries,
+Synthetic unit tests cover payload identity, exact interactive-author lookup,
+TemplateName and author readback, legacy unbound-write rejection, pagination boundaries,
 single-write behavior, certificates, credentials, sparse readback metadata,
 timestamp integrity, constrained attachment paths and durable receipts. File
 reader tests use a disposable local synthetic PDF, never an institutional share.

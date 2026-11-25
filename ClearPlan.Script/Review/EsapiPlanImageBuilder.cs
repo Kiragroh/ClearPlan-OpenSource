@@ -19,7 +19,6 @@ namespace ClearPlan.Review
         private static readonly string[] Titles = { "Transversal", "Coronal (orthogonal)", "Sagittal" };
         private const int MaxStructures = 24;
         private const int MaxDoseSamples = 192;
-        private const int MaxDoseSegments = 12000;
         private const int MaximumCaptureMilliseconds = 45000;
         private const int NativeRowChunkSize = 4;
 
@@ -266,8 +265,6 @@ namespace ClearPlan.Review
                 });
                 if (dose == null) { AddDoseUnavailable(images, "No native total plan dose is available."); return; }
                 if (prescriptionGy <= 0) { AddDoseUnavailable(images, "No positive absolute prescription is available for isodose display levels."); return; }
-                double[] percentages = { 2, 20, 50, 80, 95, 100, 107 };
-                string[] colors = { "#AAB8E0", "#377EF5", "#21C9DC", "#4EDE70", "#FFE04A", "#FF953B", "#F94F6A" };
                 for (int view = 0; view < images.Count; view++)
                 {
                     await context.YieldAsync();
@@ -317,22 +314,12 @@ namespace ClearPlan.Review
                         if (!samples.Any(v => !double.IsNaN(v))) throw new ArgumentException("No finite native dose in this CT plane.");
                         image.DoseFocusRegion = PlanImageViewport.CaptureDoseRegion(samples, columns, rows,
                             prescriptionGy * 0.02, image.WidthPixels, image.HeightPixels);
-                        var completed = new List<ReviewImageOverlay>();
                         captureStep = "isodose tracing";
-                        for (int level = 0; level < percentages.Length; level++)
-                        {
-                            await context.YieldAsync();
-                            context.RequireCurrent();
-                            RequireTime(clock, 20000);
-                            double gy = prescriptionGy * percentages[level] / 100;
-                            string label = string.Format(CultureInfo.InvariantCulture, "{0:0}% Rx / {1:0.##} Gy", percentages[level], gy);
-                            var overlay = AvailableOverlay("isodose", label, colors[level],
-                                "ESAPI total-plan Dose.GetDoseProfile; native unit explicitly converted to Gy; " + columns + " x " + rows +
-                                " native interpolated samples; marching squares; display levels relative to prescribed total dose, not clinical constraints.",
-                                PlanImageOverlayGeometry.TraceIsodose(samples, columns, rows, gy, image.WidthPixels, image.HeightPixels, MaxDoseSegments));
-                            overlay.DoseGy = gy; completed.Add(overlay);
-                        }
-                        image.Overlays.AddRange(completed);
+                        image.DosePlane = new ReviewImageDosePlane { Columns = columns, Rows = rows, PrescriptionGy = prescriptionGy,
+                            SamplesGy = samples, Source = "ESAPI total-plan Dose.GetDoseProfile; native unit explicitly converted to Gy; " + columns + " x " + rows +
+                            " native interpolated samples; marching squares; display levels relative to prescribed total dose, not clinical constraints." };
+                        await context.YieldAsync(); context.RequireCurrent();
+                        image.Overlays = IsodoseDisplayConfiguration.CreateDefault().Apply(image).Overlays;
                     }
                     catch (OperationCanceledException) { throw; }
                     catch (Exception)

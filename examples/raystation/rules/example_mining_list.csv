@@ -1,0 +1,3 @@
+# Explicit, authorised plan list. One row per beam set. Synthetic identifiers only.
+patient_id,case_name,plan_name,beam_set
+RS-PHANTOM-001,Case 1,1AA_PCA_CP,1AA_PCA_CP

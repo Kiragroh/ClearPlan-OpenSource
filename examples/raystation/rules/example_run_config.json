@@ -1,0 +1,13 @@
+{
+  "schema": "ClearPlan.raystation_run.v1",
+  "goal_table": "example_goal_table.json",
+  "structure_aliases": "example_structure_aliases.json",
+  "review_checks": "example_review_checks.json",
+  "log_dir": "C:/ClearPlanLocal/review_log",
+  "key_file": "C:/ClearPlanLocalState/review-log.key",
+  "log_clear_identifiers": false,
+  "log_plan_label": false,
+  "log_messages": true,
+  "html_summary_dir": null,
+  "mining_list": "example_mining_list.csv"
+}

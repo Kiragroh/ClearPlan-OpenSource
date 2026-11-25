@@ -5,6 +5,7 @@
       "Model": "SX2",
       "NativeLeafCount": 57,
       "JawMode": "None",
+      "MaximumFieldOpeningMm": { "X1": -140, "Y1": -140, "X2": 140, "Y2": 140 },
       "Evidence": "Exact ESAPI SX2 mapping: zero-based native indices 0-27 are distal (-140 to 140 mm), 28-56 proximal (-145 to 145 mm), both X-travel. Independent ESAPI implementation: https://github.com/brjdenis/VarianESAPI-FieldEditor/blob/8c8e0966ca6f8a5b4afedcbe7f158c1c80ba7c75/MainWindow.xaml.cs (MLCHalcyon, DetectMLC, AddMLCToPlot, CollectControlPointsData). Physical 28 distal/29 proximal pairs, 10 mm isocenter width, 5 mm stagger and jawless hardware: Lim et al. 2019, https://doi.org/10.1002/acm2.12568. Development/reference geometry; native all-control-point checks and local Eclipse commissioning remain required. Native JawPositions are not treated as physical jaws or unverified fixed clipping limits.",
       "Layers": [
         {

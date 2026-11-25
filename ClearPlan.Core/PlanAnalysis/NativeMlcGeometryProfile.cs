@@ -45,6 +45,11 @@ namespace ClearPlan.Core.PlanAnalysis
                 profile.Model != profile.Model.Trim() || profile.NativeLeafCount < 1 || profile.NativeLeafCount > 2000 ||
                 !(profile.JawMode == "Physical" || profile.JawMode == "FixedLimits" || profile.JawMode == "None") ||
                 profile.Layers == null || profile.Layers.Count == 0 || profile.Layers.Count > 8) Invalid();
+            var field = profile.MaximumFieldOpeningMm;
+            if (field != null && (profile.JawMode != "None" || string.IsNullOrWhiteSpace(profile.Evidence) ||
+                !Finite(field.X1) || !Finite(field.X2) || !Finite(field.Y1) || !Finite(field.Y2) ||
+                field.X1 >= field.X2 || field.Y1 >= field.Y2 ||
+                new[] { field.X1, field.X2, field.Y1, field.Y2 }.Any(v => Math.Abs(v) > 2000))) Invalid();
             var usedIndices = new HashSet<int>();
             foreach (var layer in profile.Layers)
             {
@@ -72,6 +77,8 @@ namespace ClearPlan.Core.PlanAnalysis
         public int NativeLeafCount { get; set; }
         public string JawMode { get; set; }
         public string Evidence { get; set; }
+        // Explicit nominal geometric limit at isocenter, not a movable jaw or transmission model.
+        public ApertureRectangle MaximumFieldOpeningMm { get; set; }
         public List<NativeMlcGeometryLayer> Layers { get; set; }
     }
     public sealed class NativeMlcGeometryLayer
@@ -127,6 +134,11 @@ namespace ClearPlan.Core.PlanAnalysis
                     return Unavailable(result, "native_positions", "Native leaf-bank positions are non-finite or reversed; no partial geometry is used.");
             }
             var geometry = new ApertureGeometry();
+            if (profile.MaximumFieldOpeningMm != null)
+            {
+                var limit = profile.MaximumFieldOpeningMm;
+                geometry.FixedBoundingBox = new ApertureRectangle(limit.X1, limit.Y1, limit.X2, limit.Y2);
+            }
             if (profile.JawMode != "None")
             {
                 if (!ValidRectangle(nativeJawPositions))

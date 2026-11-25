@@ -82,6 +82,31 @@ components:
 
 **Creative North Star: "Clinical Blueprint"**
 
+September 14 three-axis follow-up: the BEV information rail retains a separate
+gantry front view, couch top view and collimator beam-axis schematic. Each has its
+own angle and fixed reference; asymmetric BLD axes make collimator rotation
+readable even without usable CT pixels. With validated upright display calibration,
+the collimator inset follows the same screen rotation as the aperture and is labelled
+BLD/screen (fixed screen-up reference). Otherwise it is explicitly BLD/nominal with
+a zero-angle reference. The numeric caption retains the native machine angle.
+This schematic is not a collision clearance result; gantry/couch remain separately
+labelled nominal room/top views. No image calibration is inferred from a number.
+
+September 14 native finish review: report title is always "Plan Quality Report";
+software/version and identity remain in the footer. Decorative red warnings are
+removed, while named clinical result states and missing-input disclosures remain.
+Physical MLC layers use green (single/distal) and blue (proximal), reinforced by
+solid/dashed line styles. The fixed nominal Halcyon field envelope is dashed white,
+distinct from movable jaws. BEV fits the whole panel by default; a native checkbox
+enables enlarged scrollable details. The collision view shows actual captured
+External/Support surfaces and explicitly uncommissioned source geometry, without
+converting a nominal illustration into a clear/passed collision finding.
+
+Native Citrix/ESAPI observations covered Halcyon 3D and BEV activation at the
+available desktop window size; native TrueBeam PDF capture verified five field-start
+DRRs. Local PDF review covered private/masked 14-page TrueBeam and 12-page Halcyon
+reports. This is a scoped desktop review, not mobile or accessibility certification.
+
 September 2026 review refinement: the native header measures two automatic-height rows; plan switching is visible next to the sandbox action. PTV quality precedes delivery traces, with explicit plan-Rx/body scope and no pass/fail decoration. DVH legends remain outside the right edge of the plot area.
 
 Interaction follow-up: DVH hover reads structure/dose/volume without clicking; reset only restores detached selection and axes. Parameter charts have aligned headers, a direct jump action and an explicitly nominal MU/min readout. Native geometry/PAM populates after initial rendering, with current selections preserved; loaded BEV panels reactivate on snapshot replacement. Both CI forms are labeled Paddick CI and 1 / Paddick CI.
@@ -190,6 +215,25 @@ available. Hidden counts remain disclosed, not counted as passed.
 OxyPlot views occupy wide white surfaces. Titles, legends, axes and units identify the measurement; dashed/solid line semantics supplement color. Planned and nominal dose-rate data must not be presented as measured delivery data. Complexity metrics and signed deltas are descriptive, not standalone quality verdicts.
 
 ## Do's and Don'ts
+
+### Isodose and collision display extension (2026-09-15)
+
+The CT image keeps its physical framing. A separate dark scale strip below each
+plane labels only present contours in % Rx and Gy; it never overlays anatomy.
+The GUI has one deduplicated native-text legend beneath all three planes, so
+fitting cannot shrink labels into unreadable raster lettering. Per-page export
+scales remain embedded for portability. Explicit add/remove actions and the
+per-level visibility checkbox are committed together with Apply.
+Preserve 2/20/50/80% context levels. The default high-dose sequence is green 95%,
+mint 100%, yellow 105%, pink 107%, red 110%, purple 125%. The native collapsible
+editor uses explicit Apply and keeps session changes separate from versioned
+defaults. A reload preserves the current display; Loaded defaults is deliberate.
+For report collision geometry, the minimum-pose overview is unobscured; a separate
+strip underneath holds the miniature room reference and two independent angle
+circles. Dashed zero references and numeric angle labels supplement position.
+The GUI reserves a separate right-hand orientation column, not an overlay on the
+patient. The heading, angle labels and geometry advance together on each rendered
+frame; playback controls may already request the next frame.
 
 ### Do:
 

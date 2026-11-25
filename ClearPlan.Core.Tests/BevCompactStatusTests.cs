@@ -57,10 +57,10 @@ namespace ClearPlan.Core.Tests
             string xaml = Source("ClearPlan.Presentation", "Views", "BeamEyeView.xaml");
             TestAssert.True(xaml.Contains("x:Name=\"BevStatusIndicator\"") && xaml.Contains("Width=\"32\"") && xaml.Contains("Height=\"32\""),
                 "The GUI needs a small, keyboard-reachable status control.");
-            TestAssert.True(xaml.Contains("AutomationProperties.HelpText=\"{Binding BevStatusText}\"") &&
-                xaml.Contains("AutomationProperties.Name=\"{Binding BevStatusSummary}\"") && xaml.Contains("Click=\"OnStatusDetailsClick\""),
+            TestAssert.True(xaml.Contains("AutomationProperties.HelpText=\"{lang:Translate Path=BevStatusText}\"") &&
+                xaml.Contains("AutomationProperties.Name=\"{lang:Translate Path=BevStatusSummary}\"") && xaml.Contains("Click=\"OnStatusDetailsClick\""),
                 "The status detail must be available to assistive technology and Enter/Space, not hover alone.");
-            TestAssert.True(xaml.Contains("<Button.ToolTip>") && xaml.Contains("Content=\"DRR laden\""));
+            TestAssert.True(xaml.Contains("<Button.ToolTip>") && xaml.Contains("Content=\"{lang:Translate Value='DRR laden'}\""));
             string tooltip = xaml.Substring(xaml.IndexOf("<Button.ToolTip>", StringComparison.Ordinal));
             tooltip = tooltip.Substring(0, tooltip.IndexOf("</Button.ToolTip>", StringComparison.Ordinal));
             TestAssert.True(tooltip.Contains("Background=\"{StaticResource ClinicalBlueprintSurface}\"") &&
