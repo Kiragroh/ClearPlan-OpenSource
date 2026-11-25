@@ -1,0 +1,7 @@
+{
+  "OutputDirectory": "<PROTECTED_RESULTS_DIR>\\k1-reference",
+  "Targets": [
+    { "Label": "single", "PatientId": "<PHANTOM_PATIENT_ID>", "CourseId": "<COURSE_ID>", "PlanId": "<PLAN_ID_SINGLE_LAYER>", "Fractions": 5, "TotalDoseGy": 25.0 },
+    { "Label": "double", "PatientId": "<PHANTOM_PATIENT_ID>", "CourseId": "<COURSE_ID>", "PlanId": "<PLAN_ID_DOUBLE_LAYER>", "Fractions": 40, "TotalDoseGy": 80.0 }
+  ]
+}

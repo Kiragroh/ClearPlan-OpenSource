@@ -1,0 +1,15 @@
+category,resolved_major,resolved_minor,plans_resolved,open_major,open_minor,plans_open,plans_any_run,plans_any_run_major,codes
+Dose maximum level,0,99,90,0,266,266,297,0,"27,30"
+MLC and delivery settings,6,20,26,47,236,268,273,50,"55,57,71,83,84,90"
+Dose calculation grid,17,17,28,33,164,179,199,27,"106,115,123"
+Target structure,0,4,4,0,91,91,94,0,24
+Dose maximum outside target,23,0,23,72,0,72,92,92,23
+Couch and collision geometry,1,30,31,32,18,50,80,32,"51,113,114"
+Field naming and setup fields,62,0,30,50,0,45,71,71,"54,60,62,64,66,68,91,93"
+Cardiac implant,4,6,8,8,63,63,68,12,"121,122"
+Prescription and reference points,27,4,30,11,25,36,63,35,"96,108,109"
+Treatment unit vs. scheduled appointment,33,0,33,25,0,25,53,53,"2,4"
+"Isocentre, origin and laterality",7,4,10,22,12,33,43,28,"25,79,81,88,98,100,102"
+Course and plan identity,0,1,1,5,13,18,19,5,"41,116"
+Motion management (gating),13,0,13,1,0,1,14,14,7
+CT calibration,2,0,2,2,0,2,4,4,20

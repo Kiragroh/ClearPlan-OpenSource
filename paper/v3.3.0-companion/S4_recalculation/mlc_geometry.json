@@ -1,0 +1,37 @@
+{
+  "note": "Leaf boundaries in mm at the isocenter plane, ascending with native leaf index. Device data from published specifications, checked against the native leaf positions (see the per-model notes), not against commissioning data. Shared with ClearPlan as physical facts only; the aperture code is independent.",
+  "models": {
+    "Varian High Definition 120": {
+      "jaws": "physical",
+      "source": "HD120: 60 pairs, 14 outer pairs of 5 mm on each side, 32 central pairs of 2.5 mm, 220 mm total. Checked 3 Nov 2026 against the native leaf positions and Y jaws (python/k1_mlc_check.py): boundaries and index direction unique; not checked against commissioning data.",
+      "layers": [
+        {
+          "label": "single",
+          "leaf_indices": [0, 60],
+          "boundaries_mm": [-110, -105, -100, -95, -90, -85, -80, -75, -70, -65, -60, -55, -50, -45, -40,
+            -37.5, -35, -32.5, -30, -27.5, -25, -22.5, -20, -17.5, -15, -12.5, -10, -7.5, -5, -2.5, 0,
+            2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, 32.5, 35, 37.5, 40,
+            45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110]
+        }
+      ]
+    },
+    "SX2": {
+      "jaws": "none",
+      "source": "Halcyon SX2: jawless; distal 28 and proximal 29 leaves of 10 mm, staggered by 5 mm (Lim et al. 2019, doi:10.1002/acm2.12568). ESAPI index order 0-27 distal, 28-56 proximal. Checked 3 Nov 2026 against the native leaf positions (python/k1_mlc_check.py): layer order and distal position supported, index direction and proximal half-leaf position supported by aperture fit only (symmetric phantom target).",
+      "layers": [
+        {
+          "label": "distal",
+          "leaf_indices": [0, 28],
+          "boundaries_mm": [-140, -130, -120, -110, -100, -90, -80, -70, -60, -50, -40, -30, -20, -10, 0,
+            10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140]
+        },
+        {
+          "label": "proximal",
+          "leaf_indices": [28, 57],
+          "boundaries_mm": [-145, -135, -125, -115, -105, -95, -85, -75, -65, -55, -45, -35, -25, -15, -5,
+            5, 15, 25, 35, 45, 55, 65, 75, 85, 95, 105, 115, 125, 135, 145]
+        }
+      ]
+    }
+  }
+}

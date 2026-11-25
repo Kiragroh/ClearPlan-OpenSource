@@ -1,0 +1,30 @@
+{
+  "note": "Fixed on 2026-11-03 before any reference value exists. Do not widen after seeing results; a change needs a dated entry in PROTOKOLL.md.",
+  "independent": {
+    "dose_mean_d98_d2": {"abs_fraction_of_rx": 0.01},
+    "dose_max": {"abs_fraction_of_rx": 0.02},
+    "volume": {"rel": 0.03, "abs_cm3": 0.5},
+    "paddick_ci": {"rel": 0.05},
+    "gradient_index": {"rel": 0.05},
+    "homogeneity_index": {"abs": 0.01},
+    "mu": {"abs": 0.01},
+    "mu_per_gy": {"rel": 1e-6},
+    "mean_aperture_cm2": {"rel": 0.01},
+    "small_aperture_fraction": {"abs": 0.01},
+    "pam": {"abs": 0.02}
+  },
+  "esapi_direct": {
+    "note": "ClearPlan and the direct ESAPI call read the same vendor DVH; goal values are logged rounded to 0.01.",
+    "dose": {"abs_gy": 0.006},
+    "volume": {"abs_cm3": 0.006, "rel": 1e-4},
+    "index": {"rel": 1e-4}
+  },
+  "eclipse_gui": {
+    "note": "Values read by hand from Eclipse; bounds cover display rounding only.",
+    "dose": {"abs_gy": 0.011},
+    "volume": {"abs_cm3": 0.011, "rel": 1e-3},
+    "mu": {"abs": 0.11}
+  },
+  "orientation_guard": {"max_symmetric_difference_fraction": 0.03},
+  "sampling": {"target_inplane_mm": 0.5, "body_inplane_mm": 1.0, "z_sublevels": 3, "body_min_dose_fraction_of_rx": 0.45}
+}

@@ -1,0 +1,43 @@
+code,category,class,resolved,open_at_last,first_resolved_month,message_template
+2,Treatment unit vs. scheduled appointment,major,32,25,2023-08,_Next found NE-Appointment (#- #_#. Linac#. Neueinstellung). TreatmentUnits dismatch ('…' is planned
+4,Treatment unit vs. scheduled appointment,major,1,0,2023-11,Multiple Linacs found in '…'.
+7,Motion management (gating),major,13,1,2023-07,StructureSet-ID ('…') suggests using Gating but it is not activated.
+20,CT calibration,major,2,2,2023-08,HU-Table ('…') don'…'BWS_LWS # Br#  KF '…'Sd'.
+23,Dose maximum outside target,major,23,72,2023-07,Dmax # % is not in target '…'.
+24,Target structure,minor,4,91,2024-01,Plan target in '…' has # separate #D-pieces. Is this correct_
+25,"Isocentre, origin and laterality",major,6,4,2023-12,The Plan '…' has no UserOrigin yet.
+27,Dose maximum level,minor,44,261,2023-07,Dmax # % is less than # % in '…'.
+30,Dose maximum level,minor,55,5,2023-07,Dmax # % is less than # % in '…'.
+41,Course and plan identity,major,0,5,,No clinical patient-Id '…'
+51,Couch and collision geometry,minor,30,18,2023-07,Plan '…' (VMAT-Plan) has no couch inserted.
+54,Field naming and setup fields,major,4,0,2023-12,At least one Beam does not have a DRR.
+55,MLC and delivery settings,minor,2,45,2024-08,You used multiple MLCPlanTypes (Count=#) in '…'. Is that wanted_
+57,MLC and delivery settings,minor,0,16,,"JawTracking is activated for VMAT-Plan '…', but no PD possible (FieldSize _ #cm)."
+60,Field naming and setup fields,major,12,9,2023-08,Field '…' does not match name format '…' in plan '…'.
+62,Field naming and setup fields,major,14,5,2023-07,Field '…' does not match name format '…' in plan '…'.
+64,Field naming and setup fields,major,7,6,2023-08,Field '…' does not match name format '…' in plan '…'.
+66,Field naming and setup fields,major,0,2,,Field '…' does not match name format '…' in plan '…'.
+68,Field naming and setup fields,major,2,1,2023-10,Field '…' does not match name format '…' in plan '…'.
+71,MLC and delivery settings,major,2,6,2023-12,Field '…' has less than # MU.
+79,"Isocentre, origin and laterality",minor,3,4,2023-09,Isocenter is shifted to A-Laser and Extended is not activated for Field '…'. Is this right_.
+81,"Isocentre, origin and laterality",minor,1,4,2024-01,Isocenter is shifted to A-Laser and Extended is not activated for Field '…'. Is this right_.
+83,MLC and delivery settings,minor,17,143,2023-07,MLC shows in # LeafPositions risk for unwanted MLC-Overtravel for VMAT-Plan '…'.
+84,MLC and delivery settings,major,4,41,2023-07,MLC shows in # LeafPositions risk for unwanted MLC-Overtravel for VMAT-Plan '…'.
+88,"Isocentre, origin and laterality",minor,0,4,,Isocenter is not consistent for all Beams in '…'. Is this correct_
+90,MLC and delivery settings,minor,1,32,2024-02,"No JawTracking is activated in VMAT-Plan '…', but would be feasible."
+91,Field naming and setup fields,major,12,24,2023-08,Setup field '…' not found in '…'.
+93,Field naming and setup fields,major,11,3,2023-08,Setup field '…' not found in '…'.
+96,Prescription and reference points,major,12,7,2023-10,DosePerFraction of PrimaryReferencePoint '…' and plan '…' are not consistent.
+98,"Isocentre, origin and laterality",major,1,0,2024-05,Plan '…' has a x-shift of # mm and should be labeled left.
+100,"Isocentre, origin and laterality",major,0,1,,Plan '…' has a x-shift of # mm and should be labeled left.
+102,"Isocentre, origin and laterality",major,0,17,,Plan '…' has a x-shift of -# mm and should be labeled right.
+106,Dose calculation grid,minor,23,165,2023-10,Plan '…' has DoseGrid-ResZ (#mm) _ Image-ResZ (#mm).
+108,Prescription and reference points,minor,4,25,2023-11,Plan '…' has more than one virtual RefPoint and # with location.
+109,Prescription and reference points,major,15,4,2023-08,"Plan '…' has # RefPoints with location, but the D#[%] from #% suggests a SIB."
+113,Couch and collision geometry,major,1,31,2024-06,"Isocenter-Couch-Distance of #cm should be checked in plan '…', because gantry region #°-_#° is invol"
+114,Couch and collision geometry,major,0,1,,Field '…' in '…' uses table angle #. Because of TSEI this can be problematic at Linac#.
+115,Dose calculation grid,major,6,13,2023-10,"Plan '…' has absolute Fx dose _ #Gy, but ImageResZ is _#mm. #mm is used."
+116,Course and plan identity,minor,1,13,2023-07,Course# '…' from Plan '…' is used multiple times.
+121,Cardiac implant,major,4,8,2023-09,"The patient seems to have a pacemaker, but energies above #X or FFF were used in plan '…'."
+122,Cardiac implant,minor,6,63,2023-08,"The patient seems to have a pacemaker, but no structure with name '…' is found in '…'."
+123,Dose calculation grid,major,5,19,2023-10,"Plan '…' has absolute Fx dose _= #Gy, DoseGrid-ResZ is _=#mm. #mm is used."

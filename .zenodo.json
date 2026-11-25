@@ -1,0 +1,52 @@
+{
+  "upload_type": "software",
+  "title": "ClearPlan v3.3.0: configurable plan review and reporting through treatment planning system scripting",
+  "version": "3.3.0",
+  "publication_date": "2026-11-25",
+  "license": "MIT",
+  "access_right": "open",
+  "creators": [
+    {
+      "name": "Grohmann, Maximilian",
+      "orcid": "0000-0002-6909-811X",
+      "affiliation": "University Medical Center Hamburg-Eppendorf; University Hospital Leipzig"
+    },
+    {
+      "name": "Jäckel, Maria",
+      "affiliation": "University Medical Center Hamburg-Eppendorf"
+    },
+    {
+      "name": "Schäfer, Sebastian",
+      "affiliation": "University Hospital Leipzig"
+    },
+    {
+      "name": "Todorovic, Manuel",
+      "affiliation": "University Medical Center Hamburg-Eppendorf"
+    },
+    {
+      "name": "Petersen, Cordula",
+      "affiliation": "University Medical Center Hamburg-Eppendorf"
+    },
+    {
+      "name": "Baehr, Andrea",
+      "affiliation": "University Medical Center Hamburg-Eppendorf"
+    }
+  ],
+  "description": "Source code of ClearPlan v3.3.0 and the companion material of the Short Communication 'Configurable plan review and reporting through treatment planning system scripting'. The release combines the phantom-verified review-log line (structured review log, SQLite importer, retrospective evaluation, RayStation example) with the revised review interface shown in the manuscript figures. The companion archive contains the verification goal configurations and comparison procedure (Supplement S4), the independent recalculation scripts (S4) and the aggregation script for the routine logs (S6). Not a clinical installer; local commissioning is required.",
+  "keywords": [
+    "radiotherapy",
+    "plan review",
+    "quality management",
+    "treatment planning system scripting",
+    "ESAPI",
+    "clinical goals",
+    "audit"
+  ],
+  "related_identifiers": [
+    {
+      "relation": "isNewVersionOf",
+      "identifier": "https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.2.0",
+      "resource_type": "software"
+    }
+  ]
+}

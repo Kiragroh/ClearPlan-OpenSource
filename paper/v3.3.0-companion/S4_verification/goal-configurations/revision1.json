@@ -1,0 +1,241 @@
+{
+  "schema": "RSAlign.local_refdb_constraints.v1",
+  "structures": [
+    {
+      "id": 1,
+      "canonical_name": "PTV",
+      "status": "active",
+      "aliases": []
+    },
+    {
+      "id": 2,
+      "canonical_name": "Rektum Position 1",
+      "status": "active",
+      "aliases": []
+    },
+    {
+      "id": 3,
+      "canonical_name": "PTV_High",
+      "status": "active",
+      "aliases": []
+    },
+    {
+      "id": 4,
+      "canonical_name": "Rectum",
+      "status": "active",
+      "aliases": []
+    }
+  ],
+  "tables": [
+    {
+      "id": 901,
+      "name": "Phantom validation single layer",
+      "status": "active",
+      "fx_min": 5,
+      "fx_max": 5,
+      "td_min": 25,
+      "td_max": 25,
+      "dpf_min": 5.0,
+      "dpf_max": 5.0,
+      "source_note": "Illustrative software test thresholds, not clinical goals"
+    },
+    {
+      "id": 902,
+      "name": "Phantom validation double layer",
+      "status": "active",
+      "fx_min": 40,
+      "fx_max": 40,
+      "td_min": 80,
+      "td_max": 80,
+      "dpf_min": 2.0,
+      "dpf_max": 2.0,
+      "source_note": "Illustrative software test thresholds, not clinical goals"
+    }
+  ],
+  "details": {
+    "901": {
+      "id": 901,
+      "name": "Phantom validation single layer",
+      "status": "active",
+      "fx_min": 5,
+      "fx_max": 5,
+      "td_min": 25,
+      "td_max": 25,
+      "dpf_min": 5.0,
+      "dpf_max": 5.0,
+      "source_note": "Illustrative software test thresholds, not clinical goals",
+      "constraints": [
+        {
+          "id": 9011,
+          "constraint_table_id": 901,
+          "structure_id": 1,
+          "structure_name": "PTV",
+          "metric": "D98%",
+          "unit": "Gy",
+          "comparator": ">=",
+          "limit_optimal": 23.75,
+          "limit_maximal": 23.0,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9012,
+          "constraint_table_id": 901,
+          "structure_id": 2,
+          "structure_name": "Rektum Position 1",
+          "metric": "Dmean",
+          "unit": "Gy",
+          "comparator": "<=",
+          "limit_optimal": 1,
+          "limit_maximal": 100,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9013,
+          "constraint_table_id": 901,
+          "structure_id": 2,
+          "structure_name": "Rektum Position 1",
+          "metric": "Dmax",
+          "unit": "Gy",
+          "comparator": "<=",
+          "limit_optimal": 0.01,
+          "limit_maximal": 0.02,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9014,
+          "constraint_table_id": 901,
+          "structure_id": 2,
+          "structure_name": "Rektum Position 1",
+          "metric": "CV20Gy",
+          "unit": "cc",
+          "comparator": ">=",
+          "limit_optimal": 0,
+          "limit_maximal": 0,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9015,
+          "constraint_table_id": 901,
+          "structure_id": null,
+          "structure_name": "PHANTOM_MISSING",
+          "metric": "Dmean",
+          "unit": "Gy",
+          "comparator": "<=",
+          "limit_optimal": 100,
+          "limit_maximal": 110,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9016,
+          "constraint_table_id": 901,
+          "structure_id": 1,
+          "structure_name": "PTV",
+          "metric": "Dmax",
+          "unit": "Gy",
+          "comparator": "<=",
+          "limit_optimal": 1000,
+          "limit_maximal": 1100,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        }
+      ]
+    },
+    "902": {
+      "id": 902,
+      "name": "Phantom validation double layer",
+      "status": "active",
+      "fx_min": 40,
+      "fx_max": 40,
+      "td_min": 80,
+      "td_max": 80,
+      "dpf_min": 2.0,
+      "dpf_max": 2.0,
+      "source_note": "Illustrative software test thresholds, not clinical goals",
+      "constraints": [
+        {
+          "id": 9021,
+          "constraint_table_id": 902,
+          "structure_id": 3,
+          "structure_name": "PTV_High",
+          "metric": "D98%",
+          "unit": "Gy",
+          "comparator": ">=",
+          "limit_optimal": 76.0,
+          "limit_maximal": 73.60000000000001,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9022,
+          "constraint_table_id": 902,
+          "structure_id": 4,
+          "structure_name": "Rectum",
+          "metric": "Dmean",
+          "unit": "Gy",
+          "comparator": "<=",
+          "limit_optimal": 1,
+          "limit_maximal": 100,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9023,
+          "constraint_table_id": 902,
+          "structure_id": 4,
+          "structure_name": "Rectum",
+          "metric": "Dmax",
+          "unit": "Gy",
+          "comparator": "<=",
+          "limit_optimal": 0.01,
+          "limit_maximal": 0.02,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9024,
+          "constraint_table_id": 902,
+          "structure_id": 4,
+          "structure_name": "Rectum",
+          "metric": "CV20Gy",
+          "unit": "cc",
+          "comparator": ">=",
+          "limit_optimal": 0,
+          "limit_maximal": 0,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9025,
+          "constraint_table_id": 902,
+          "structure_id": null,
+          "structure_name": "PHANTOM_MISSING",
+          "metric": "Dmean",
+          "unit": "Gy",
+          "comparator": "<=",
+          "limit_optimal": 100,
+          "limit_maximal": 110,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        },
+        {
+          "id": 9026,
+          "constraint_table_id": 902,
+          "structure_id": 3,
+          "structure_name": "PTV_High",
+          "metric": "Dmax",
+          "unit": "Gy",
+          "comparator": "<=",
+          "limit_optimal": 1000,
+          "limit_maximal": 1100,
+          "source": "Phantom demonstration",
+          "comment": "Not a clinical acceptance limit"
+        }
+      ]
+    }
+  }
+}
