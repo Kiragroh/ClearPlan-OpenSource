@@ -346,6 +346,21 @@
         </StackPanel>
     </ScrollViewer>
             </TabItem>
+            <TabItem Header="{lang:Translate Value='Anzeige'}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16" MaxWidth="760" HorizontalAlignment="Left">
+                        <TextBlock Text="{lang:Translate Value='Anzeige-Einstellungen'}" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                        <TextBlock TextWrapping="Wrap" Margin="0,0,0,12"
+                                   Text="{lang:Translate Value='Zoom der Schnittbilder (Isodose und Rand) und BEV-Anzeige. Es gilt die persönliche Einstellung, falls vorhanden, sonst der globale Standard. Nur Darstellung; Prüfung, Report und Log bleiben unverändert.'}"/>
+                        <TextBlock x:Name="DisplayPreferencesSummary" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                        <WrapPanel>
+                            <Button x:Name="ResetUserDisplayButton" Content="{lang:Translate Value='Meine Einstellungen löschen (globalen Standard nutzen)'}" Click="ResetUserDisplayClicked" Padding="12,6" Margin="0,0,8,6"/>
+                            <Button Content="{lang:Translate Value='Aktuelle Anzeige für mich speichern'}" Click="SaveUserDisplayClicked" Padding="12,6" Margin="0,0,8,6"/>
+                            <Button Content="{lang:Translate Value='Aktuelle Anzeige als globalen Standard speichern'}" Click="SaveGlobalDisplayClicked" Padding="12,6" Margin="0,0,8,6"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
             <TabItem Header="{lang:Translate Value='PlanCheck-Auswahl'}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="24">

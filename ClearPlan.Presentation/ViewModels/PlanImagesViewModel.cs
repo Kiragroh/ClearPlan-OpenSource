@@ -67,7 +67,22 @@ namespace ClearPlan.Presentation.ViewModels
         public bool IsLoading { get; private set; }
         public string StatusText { get; private set; }
         public string AvailabilityText { get { return Planes.Count(p => p.IsAvailable) + " / 3 Ebenen verfügbar"; } }
-        public string ViewportModeText { get { return FocusIsocenter ? "Iso-Fokus · 2%-Rx-Bereich, falls verfügbar" : "Gesamte CT-Ausdehnung"; } }
+        public string ViewportModeText { get { return FocusIsocenter ? "Dosis-Fokus · " + ZoomIsodosePercent.ToString("0.#", CultureInfo.InvariantCulture) + " % Isodose + " + (ClearPlan.Core.Settings.DisplayPreferences.Current.ZoomMarginMillimeters / 10).ToString("0.#", CultureInfo.InvariantCulture) + " cm" : "Gesamte CT-Ausdehnung"; } }
+
+        /// <summary>Selectable reference levels for the CT zoom (percent of prescription).</summary>
+        public double[] ZoomIsodoseOptions { get { return new[] { 10.0, 20, 30, 50, 80, 95 }; } }
+
+        /// <summary>CT zoom reference isodose for this window; saving is explicit (display preferences).</summary>
+        public double ZoomIsodosePercent
+        {
+            get { return ClearPlan.Core.Settings.DisplayPreferences.Current.ZoomIsodosePercent; }
+            set
+            {
+                if (Math.Abs(value - ZoomIsodosePercent) < 1e-9) return;
+                ClearPlan.Core.Settings.DisplayPreferences.Update(p => p.ZoomIsodosePercent = value);
+                RebuildPlanes(); Changed("ZoomIsodosePercent"); Changed("ViewportModeText");
+            }
+        }
         public string LegendSummary { get { return LegendItems.Count == 0 ? "Keine eingeblendeten Konturen verfügbar" : LegendItems.Count + " Konturen / Dosislinien · Legende und Quellen"; } }
         public string WindowLevelDescription { get { return "Festes CT-Fenster: Breite 400 HU / Lage 40 HU. Die Vorschau enthält bereits gefensterte 8-Bit-Pixel; Fenster und Lage sind hier nicht nachträglich einstellbar. Bei Simulation: HU-äquivalentes mathematisches Phantom."; } }
         public bool ShowStructures { get { return showStructures; } set { if (showStructures == value) return; showStructures = value; RebuildPlanes(); Changed("ShowStructures"); } }
@@ -162,7 +177,7 @@ namespace ClearPlan.Presentation.ViewModels
             try
             {
                 var hidden = new HashSet<string>(hiddenIds, StringComparer.OrdinalIgnoreCase);
-                using (var stream = new MemoryStream(PlanImageRenderer.RenderFiltered(image, showStructures, showDose, focusIsocenter, hidden, false), false))
+                using (var stream = new MemoryStream(PlanImageRenderer.RenderFiltered(image, showStructures, showDose, focusIsocenter, hidden, false, true), false))
                 {
                     var bitmap = new BitmapImage(); bitmap.BeginInit(); bitmap.CacheOption = BitmapCacheOption.OnLoad;
                     bitmap.StreamSource = stream; bitmap.EndInit(); bitmap.Freeze(); ImageSource = bitmap;
@@ -177,11 +192,11 @@ namespace ClearPlan.Presentation.ViewModels
                 AvailabilityText = (image.Synthetic ? "Simulation" : "CT verfügbar") + " · " + structures + " Konturen · " + dose + " Isodosen";
                 int unavailable = overlays.Count(overlay => overlay.SourceStatus != ReviewStatusCodes.Available);
                 if (unavailable > 0) AvailabilityText += unavailable == 1 ? " · 1 Quelle fehlt" : " · " + unavailable + " Quellen fehlen";
-                var viewport = PlanImageRenderer.CalculateViewport(image, focusIsocenter);
+                var viewport = PlanImageRenderer.CalculateGuiViewport(image, focusIsocenter);
                 ViewportText = string.Format(CultureInfo.CurrentCulture, "Sichtfeld {0:0} × {0:0} mm", viewport.HalfExtentMillimeters * 2);
                 if (focusIsocenter && !viewport.HasIsocenter) ViewportText += " · Iso fehlt";
                 if (focusIsocenter && !viewport.UsesDoseRegion) ViewportText += " · ohne Dosiszoom";
-                if (viewport.UsesDoseRegion && image.DoseFocusRegion.CoverageLimited) ViewportText += " · Dosisbereich begrenzt";
+                if (viewport.UsesDoseRegion && image.DoseFocusRegion != null && image.DoseFocusRegion.CoverageLimited) ViewportText += " · Dosisbereich begrenzt";
                 DetailsText = (image.Caption ?? "") + "\n" + (image.OverlaySummary ?? "") + "\n" +
                     (focusIsocenter ? viewport.Description : "Full CT extent, image-centered; physical pixel spacing is preserved. Outside CT coverage stays unfilled.") +
                     "\n" + string.Join("\n", overlays.Where(overlay => overlay.SourceStatus != ReviewStatusCodes.Available)

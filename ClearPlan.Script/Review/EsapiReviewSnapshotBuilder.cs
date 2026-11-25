@@ -105,7 +105,10 @@ namespace ClearPlan.Review
             var checkSelection = PlanCheckSelectionConfiguration.Load(string.IsNullOrWhiteSpace(settings.Paths.PlanCheckSelectionJsonPath)
                 ? null : settings.ResolvePath(settings.Paths.PlanCheckSelectionJsonPath));
             int disabledChecks;
+            List<ReviewCheckRow> unfilteredCheckRows = snapshot.PlanCheckRows;
             snapshot.PlanCheckRows = checkSelection.Filter(snapshot.PlanCheckRows, out disabledChecks);
+            // Review log only: keep excluded rows so check_finding can record included = 0 denominators.
+            snapshot.ExcludedPlanCheckRows = unfilteredCheckRows.Where(row => !snapshot.PlanCheckRows.Contains(row)).ToList();
             snapshot.DisabledCheckCount = disabledChecks;
             snapshot.Sources.Add(new ReviewSourceStatus { StableId = "source-plancheck-selection", SourceCode = "plancheck-selection",
                 SourceType = "review-inclusion-policy", Status = checkSelection.Status, Optional = true, UsedFallback = false,

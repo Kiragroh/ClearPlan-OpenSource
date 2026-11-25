@@ -83,6 +83,7 @@
     <Compile Include="AriaAttachmentReaderTests.cs" />
     <Compile Include="AriaOAuthTests.cs" />
     <Compile Include="ConfigurationHistoryTests.cs" />
+    <Compile Include="ReviewLogTests.cs" />
     <Compile Include="ReviewControlTests.cs" />
     <Compile Include="PlanCheckSelectionTests.cs" />
     <Compile Include="CtCompatibilityTests.cs" />
@@ -144,6 +145,8 @@
     <Compile Include="PlanImageTests.cs" />
     <Compile Include="IsodoseDisplayTests.cs" />
     <Compile Include="PlanImageViewportTests.cs" />
+    <Compile Include="GuiTightFrameTests.cs" />
+    <Compile Include="SandboxSnapshotTests.cs" />
     <Compile Include="ReportPresentationTests.cs" />
     <Compile Include="HtmlReportTests.cs" />
     <Compile Include="ReviewDvhStatisticsTests.cs" />

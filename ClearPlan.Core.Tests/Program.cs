@@ -26,6 +26,12 @@ namespace ClearPlan.Core.Tests
                     args.Length >= 2 ? args[1] : null);
             }
 
+            if (args.Length >= 1 &&
+                args[0].Equals("ExportReviewLogExample", StringComparison.OrdinalIgnoreCase))
+            {
+                return ReviewLogTests.ExportExample(args.Length >= 2 ? args[1] : null);
+            }
+
             if (args.Length >= 2 &&
                 args[0].Equals(
                     "ValidateSnapshot",
@@ -37,6 +43,19 @@ namespace ClearPlan.Core.Tests
             string filter = args.FirstOrDefault() ?? string.Empty;
             var tests = new List<TestCase>
             {
+                new TestCase("ReviewLog.SchemaHeadersAreStable", ReviewLogTests.SchemaHeadersAreStable),
+                new TestCase("ReviewLog.CsvEscapingRoundTrips", ReviewLogTests.CsvEscapingRoundTrips),
+                new TestCase("ReviewLog.NotEvaluatedIsNeverWrittenAsPassed", ReviewLogTests.NotEvaluatedIsNeverWrittenAsPassed),
+                new TestCase("ReviewLog.UnavailableValuesStayEmpty", ReviewLogTests.UnavailableValuesStayEmpty),
+                new TestCase("ReviewLog.PseudonymisationIsKeyedAndDeterministic", ReviewLogTests.PseudonymisationIsKeyedAndDeterministic),
+                new TestCase("ReviewLog.OkChecksAreLoggedForDenominators", ReviewLogTests.OkChecksAreLoggedForDenominators),
+                new TestCase("ReviewLog.FreeTextIsScrubbedAndLabelsOmitted", ReviewLogTests.FreeTextIsScrubbedAndLabelsOmitted),
+                new TestCase("ReviewLog.WriterAppendsAndGuardsHeaders", ReviewLogTests.WriterAppendsAndGuardsHeaders),
+                new TestCase("ReviewLog.ConcurrentAppendsAreSafe", ReviewLogTests.ConcurrentAppendsAreSafe),
+                new TestCase("ReviewLog.RulesetResolverHashesAndPinsRevisions", ReviewLogTests.RulesetResolverHashesAndPinsRevisions),
+                new TestCase("ReviewLog.SettingsRoundTripReviewLogPaths", ReviewLogTests.SettingsRoundTripReviewLogPaths),
+                new TestCase("ReviewLog.NativeEntriesStayReadOnly", ReviewLogTests.NativeEntriesStayReadOnly),
+                new TestCase("ReviewLog.ExampleExportMatchesExpectations", ReviewLogTests.ExampleExportMatchesExpectations),
                 new TestCase("ReviewLanguage.EnglishGermanRoundTrip", ReviewLanguageTests.EnglishGermanRoundTrip),
                 new TestCase("ReviewLanguage.SettingsDisplayBindingsKeepConfigurationContentRaw", ReviewLanguageTests.SettingsDisplayBindingsKeepConfigurationContentRaw),
                 new TestCase("ReviewLanguage.LiveBindingsAndReportScope", ReviewLanguageTests.LiveBindingsAndReportScope),
@@ -58,6 +77,9 @@ namespace ClearPlan.Core.Tests
                 new TestCase("IsodoseDisplay.Settings", IsodoseDisplayTests.SettingsPathAndValidation),
                 new TestCase("IsodoseDisplay.RenderScale", IsodoseDisplayTests.RenderedScaleShowsOnlyPresentLevels),
                 new TestCase("ReportPresentation.StableTitleVersion", ReportPresentationTests.StableTitleAndVersionReplaceDecorativeWarningBanners),
+                new TestCase("ReportPresentation.CompactCtPlate", ReportPresentationTests.CompactCtPlateUsesOnePageAndSharedLegend),
+                new TestCase("AngularMeterset.UnitsAndBoundaries", BevCollimatorDisplayTests.AngularMetersetIsNotDoseRate),
+                new TestCase("Collision.DioramaHeadFirstTransparentRing", CollisionSweepInteractionTests.DioramaHeadFirstAndTransparentRing),
                 new TestCase("BevCollimatorDisplay.LayerColorsMaximumField", BevCollimatorDisplayTests.PhysicalLayersUseGreenAndBlueWithExplicitMaximumField),
                 new TestCase("AriaMetadata.Detached", AriaReportUploadTests.ClinicalMetadataIsDetachedAndExact),
                 new TestCase("AriaMetadata.Native", AriaReportUploadTests.NativeAuthorComesFromEsapiAndIsDisclosed),
@@ -375,6 +397,12 @@ namespace ClearPlan.Core.Tests
                 new TestCase("ReviewExtended.Privacy", ReviewComparisonTests.ValidatesExtendedPrivacyAndNumbers),
                 new TestCase("PlanImages.Contract", PlanImageTests.ImageContractExists),
                 new TestCase("PlanImages.IsocenterDoseViewport", PlanImageViewportTests.RunAll),
+                new TestCase("GuiTightFrame.IsodoseFit", GuiTightFrameTests.IsodoseFit),
+                new TestCase("GuiTightFrame.ApertureFit", GuiTightFrameTests.ApertureFit),
+                new TestCase("GuiTightFrame.ReferenceIsodoseFit", GuiTightFrameTests.ReferenceIsodoseFit),
+                new TestCase("DisplayPreferences.Precedence", GuiTightFrameTests.PreferencePrecedence),
+                new TestCase("GuiTightFrame.CollimatorRotationSource", GuiTightFrameTests.CollimatorRotationSource),
+                new TestCase("Sandbox.SanitizeAndRoundTrip", SandboxSnapshotTests.SanitizeAndRoundTrip),
                 new TestCase("PlanImages.CenteredLargerRendering", ReportPresentationTests.CtImageIsLargerAndItsIsocenterIsCentered),
                 new TestCase("PlanImages.MaximumLegend", ReportPresentationTests.CtMaximumSupportedLegendRetainsOnePagePerPlane),
                 new TestCase("ReportPresentation.TargetsFirst", ReportPresentationTests.DvhTableLeadsWithRequiredTargetsAndRetainsManualChoices),

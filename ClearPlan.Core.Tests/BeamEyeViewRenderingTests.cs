@@ -440,10 +440,10 @@ namespace ClearPlan.Core.Tests
                     for (int x = 60; x < 940; x += 2)
                     {
                         Color color = bitmap.GetPixel(x, y);
-                        if (color.G - color.R > 35 && color.G - color.B > 25 && color.R < 130) green++;
-                        if (color.G - color.R > 25 && color.G - color.B > 40 && color.R >= 130) lightGreen++;
+                        if (color.G - color.R > 50 && color.B - color.G > 30 && color.B - color.G < 80) green++;
+                        if (color.B - color.G > 80 && color.B - color.R > 70) lightGreen++;
                     }
-                TestAssert.True(green > 100 && lightGreen > 100, "Both physical MLC layers need visible distinct green outlines, beyond legend labels.");
+                TestAssert.True(green > 100 && lightGreen > 100, "Physical MLC layers need distinct sky-blue and blue outlines, beyond legend labels.");
             }
             // A closed field-start aperture is valid; it must not be replaced by another CP.
             cp = beam.ControlPoints[0];

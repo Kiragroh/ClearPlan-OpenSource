@@ -2,6 +2,7 @@
  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
  xmlns:lang="clr-namespace:ClearPlan.Presentation.Localization"
+ xmlns:vm="clr-namespace:ClearPlan.Presentation.ViewModels"
  FontFamily="Segoe UI" Foreground="{DynamicResource ClinicalBlueprintText}" Loaded="OnLoaded">
  <!-- THESIS: Anatomy and the actual MLC opening share one measured coordinate frame.
  OWN-WORLD: The established Clinical Blueprint rail frames a dark image viewport and quiet field-information panel.
@@ -10,10 +11,19 @@
  FORM: User-specified scoped native extension; no new visual world or concept seed.
  FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md -->
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../Styles/ClinicalBlueprint.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary></UserControl.Resources>
- <Grid Margin="24,22">
+ <Grid Margin="24">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <DockPanel Margin="0,0,0,8">
    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+    <TextBlock Text="{lang:Translate Value='Anzeige'}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+    <RadioButton GroupName="BevMode" Content="{lang:Translate Value='DRR + MLC'}" IsChecked="{Binding BevModeDrr, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,12,0"
+                 ToolTip="{lang:Translate Value='CT-Projektion (DRR) mit MLC und Blenden.'}"/>
+    <RadioButton GroupName="BevMode" Content="{lang:Translate Value='PTV + MLC'}" IsChecked="{Binding BevModePtv, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,12,0"
+                 ToolTip="{lang:Translate Value='Projektion des Zielvolumens mit MLC und Blenden; ohne DRR.'}"/>
+    <RadioButton GroupName="BevMode" Content="{lang:Translate Value='Nur MLC'}" IsChecked="{Binding BevModeMlc, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,24,0"
+                 ToolTip="{lang:Translate Value='Nur MLC und Blenden, ohne DRR und ohne Zielvolumen.'}"/>
+    <Button Content="{lang:Translate Value='Für mich speichern'}" Command="{x:Static vm:DisplayPreferenceActions.SaveForUserCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Padding="10,4" Margin="0,0,18,0"
+            ToolTip="{lang:Translate Value='Zoom-Isodose und BEV-Anzeige als persönliche Einstellung speichern. Löschen unter Einstellungen › Anzeige.'}"/>
     <CheckBox x:Name="BevDetailZoom" Content="{lang:Translate Value='Details vergrößern'}" VerticalAlignment="Center" Margin="0,0,18,0" ToolTip="{lang:Translate Value='Standard: gesamte Feldöffnung sichtbar. Detailansicht: vergrößert und scrollbar.'}"/>
     <TextBlock Text="{lang:Translate Value='Feld'}" VerticalAlignment="Center" Margin="0,0,10,0"/>
     <ComboBox ItemsSource="{Binding Beams}" SelectedItem="{Binding SelectedBeam}" DisplayMemberPath="BeamId" MinWidth="150" MaxWidth="260" Padding="8,5" AutomationProperties.Name="{lang:Translate Value='Feld für Beam’s-eye View'}"/>

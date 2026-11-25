@@ -258,7 +258,7 @@
     <Compile Include="MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
     </Compile>
-    <Content Include="Distribution\MachineGeometry\SourceCollisionModels.example.json">
+    <Content Include="..\ClearPlan.Core\Collision\Models\SourceCollisionModels.raystation-20260913.json">
       <Link>MachineGeometry\SourceCollisionModels.example.json</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -275,6 +275,9 @@
       <DependentUpon>PlanSelectView.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainView.AriaUpload.cs" />
+    <Compile Include="MainView.ReviewLog.cs" />
+    <Compile Include="Review\EsapiReviewLog.cs" />
+    <Compile Include="Review\ClinicalReviewWorkspaceHost.ReviewLog.cs" />
     <Compile Include="Views\SettingsView.xaml.cs">
       <DependentUpon>SettingsView.xaml</DependentUpon>
     </Compile>

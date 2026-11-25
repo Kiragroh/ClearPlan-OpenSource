@@ -28,6 +28,8 @@ namespace ClearPlan.Rendering
         public string[] JawCoordinateLabels { get; internal set; }
         public bool UprightDisplay { get; internal set; }
         public double DisplayRotationDegrees { get; internal set; }
+        /// <summary>GUI only: rotated by the nominal collimator angle because no native calibration exists.</summary>
+        public bool NominalRotation { get; internal set; }
         public double DisplayExtentMm { get; internal set; }
         public string FrameDescription { get; internal set; }
     }
@@ -48,9 +50,9 @@ namespace ClearPlan.Rendering
         private static readonly Color Muted = Color.FromArgb(86, 103, 121);
         private static readonly Color Border = Color.FromArgb(214, 221, 228);
         private static readonly Color Canvas = Color.FromArgb(23, 33, 43);
-        private static readonly Color Teal = Color.FromArgb(15, 118, 110);
+        private static readonly Color Teal = Color.FromArgb(25, 104, 151);
         private static readonly Color Amber = Color.FromArgb(255, 196, 93);
-        private static readonly Color ApertureGreen = Color.FromArgb(75, 245, 105);
+        private static readonly Color ApertureGreen = Color.FromArgb(110, 205, 255);
         private static readonly Color JawColor = Color.FromArgb(255, 230, 96);
         private static readonly Color SimulationRed = Color.FromArgb(180, 35, 24);
         private const float LogicalWidth = 1500;
@@ -59,10 +61,21 @@ namespace ClearPlan.Rendering
 
         /// <summary>Captured aperture in BLD coordinates only. No DRR, patient orientation
         /// or interpolation is implied; the host supplies the CP and collimator labels.</summary>
+        /// <summary>Display rotation for GUI views: native beam calibration, else the nominal collimator angle.</summary>
+        public static double? GuiCollimatorRotation(ReviewBeamAnalysis beam, ReviewControlPointSample cp)
+        {
+            if (beam != null && beam.BldToDisplayRotationDegrees.HasValue && Finite(beam.BldToDisplayRotationDegrees.Value))
+                return Math.IEEERemainder(beam.BldToDisplayRotationDegrees.Value, 360);
+            if (cp != null && Finite(cp.CollimatorAngleDegrees)) return Math.IEEERemainder(cp.CollimatorAngleDegrees, 360);
+            return null;
+        }
+
         public static byte[] RenderApertureInset(ReviewBeamAnalysis beam, ReviewControlPointSample cp, int size = 360)
         {
             if (size < 160 || size > 1024) throw new ArgumentOutOfRangeException(nameof(size));
             bool available = GeometryProblem(beam, cp) == null;
+            double rotation = (available ? GuiCollimatorRotation(beam, cp) : null) ?? 0;
+            bool nominal = available && !(beam != null && beam.BldToDisplayRotationDegrees.HasValue && Finite(beam.BldToDisplayRotationDegrees.Value));
             using (var bitmap = new Bitmap(size, size, PixelFormat.Format24bppRgb))
             using (var g = Graphics.FromImage(bitmap))
             {
@@ -71,25 +84,91 @@ namespace ClearPlan.Rendering
                 g.ScaleTransform(size / 940f, size / 940f);
                 g.TranslateTransform(20 - Viewport.Left, 20 - Viewport.Top);
                 g.SetClip(Viewport);
-                if (available) DrawAperture(g, cp.Aperture, GeometryExtent(cp, true), true);
-                else Text(g, "MLC unavailable", new RectangleF(70,400,860,100), 44, Color.White, false, StringAlignment.Center);
+                // 2026-11-20: the inset shows the real collimator angle (Max: otherwise one assumes 0 degrees).
+                var rotated = g.Save();
+                RotateAboutIso(g, rotation);
+                // 2026-11-20: frame on the outermost opening or jaw of the beam + 1 cm (as in the GUI BEV),
+                // enlarged for the rotation so the rotated aperture stays fully visible.
+                double insetExtent = available ? GeometryExtent(cp, true) : 200;
+                if (available)
+                {
+                    double? fit = ApertureFitExtentMm(beam, cp, GuiApertureMarginMillimeters);
+                    double radians = rotation * Math.PI / 180;
+                    if (fit.HasValue) insetExtent = fit.Value * (Math.Abs(Math.Cos(radians)) + Math.Abs(Math.Sin(radians)));
+                }
+                if (available) DrawAperture(g, cp.Aperture, insetExtent, true);
+                // BLD axis labels turn with the collimator.
+                Text(g,"+Y",new RectangleF(470,65,80,44),32,Color.White);
+                Text(g,"+X",new RectangleF(852,465,88,44),32,Color.White);
+                g.Restore(rotated);
+                if (!available) Text(g, "MLC unavailable", new RectangleF(70,400,860,100), 44, Color.White, false, StringAlignment.Center);
+                if (available)
+                    Text(g, "C " + Value(cp.CollimatorAngleDegrees, "0.#", "°") + (nominal ? " (nominal)" : ""),
+                        new RectangleF(70, 860, 860, 60), 36, Color.White, true, StringAlignment.Near);
                 var center = Map(0,0,1);
                 using(var pen = new Pen(Color.White,3))
                 {
                     g.DrawLine(pen,center.X-16,center.Y,center.X+16,center.Y);
                     g.DrawLine(pen,center.X,center.Y-16,center.X,center.Y+16);
                 }
-                Text(g,"+Y",new RectangleF(470,65,80,44),32,Color.White);
-                Text(g,"+X",new RectangleF(852,465,88,44),32,Color.White);
                 using(var stream = new MemoryStream()) { bitmap.Save(stream,ImageFormat.Png); return stream.ToArray(); }
             }
         }
 
-        public static byte[] Render(ReviewBeamAnalysis beam, ReviewControlPointSample cp, BeamEyeViewImage image, bool synthetic, int width = 1500, int height = 1000, bool compactStatus = false)
+        /// <summary>Margin beyond the outermost opening or jaw for the GUI's tight BEV frame.</summary>
+        public const double GuiApertureMarginMillimeters = 10;
+
+        /// <summary>GUI-only tight frame (2026-11-20): half-width around the isocentre that reaches the
+        /// outermost effective opening or physical jaw over all control points of the beam, plus a margin.
+        /// Using every control point keeps the frame stable while stepping through a VMAT arc. The fixed
+        /// maximum-field envelope is ignored. Returns null when no opening or jaw is known.</summary>
+        public static double? ApertureFitExtentMm(ReviewBeamAnalysis beam, ReviewControlPointSample cp, double marginMillimeters)
         {
+            var samples = beam != null && beam.ControlPoints != null && beam.ControlPoints.Count > 0
+                ? (IEnumerable<ReviewControlPointSample>)beam.ControlPoints : new[] { cp };
+            double reach = -1;
+            foreach (var sample in samples)
+            {
+                if (sample == null || sample.Aperture == null) continue;
+                var rectangles = new List<ApertureRectangle>();
+                if (sample.Aperture.EffectiveOpenings != null) rectangles.AddRange(sample.Aperture.EffectiveOpenings);
+                if (sample.Aperture.Jaws != null) rectangles.Add(sample.Aperture.Jaws);
+                foreach (var r in rectangles)
+                {
+                    if (r == null || !Physical(r.X1) || !Physical(r.X2) || !Physical(r.Y1) || !Physical(r.Y2)) continue;
+                    reach = Math.Max(reach, Math.Max(Math.Max(Math.Abs(r.X1), Math.Abs(r.X2)), Math.Max(Math.Abs(r.Y1), Math.Abs(r.Y2))));
+                }
+            }
+            if (reach < 0) return null;
+            return Math.Max(30, Math.Ceiling((reach + marginMillimeters) / 5) * 5);
+        }
+
+        public static byte[] Render(ReviewBeamAnalysis beam, ReviewControlPointSample cp, BeamEyeViewImage image, bool synthetic, int width = 1500, int height = 1000, bool compactStatus = false)
+        { return RenderCore(beam, cp, image, synthetic, width, height, compactStatus, false); }
+
+        /// <summary>Native GUI BEV: compact status and the tight opening/jaw frame. Reports use Render.</summary>
+        /// <param name="displayMode">GUI layer mode: "drr" (DRR + MLC, default), "ptv" (PTV projection + MLC) or "mlc" (MLC only).</param>
+        public static byte[] RenderGui(ReviewBeamAnalysis beam, ReviewControlPointSample cp, BeamEyeViewImage image, bool synthetic, bool compactStatus, string displayMode = "drr")
+        { return RenderCore(beam, cp, image, synthetic, 1500, 1000, compactStatus, true, displayMode); }
+
+        private static readonly Color TargetProjectionColor = Color.FromArgb(206, 168, 232);
+
+        private static byte[] RenderCore(ReviewBeamAnalysis beam, ReviewControlPointSample cp, BeamEyeViewImage image, bool synthetic, int width, int height, bool compactStatus, bool fitToAperture, string displayMode = "drr")
+        {
+            bool drawImage = displayMode == null || displayMode == "drr";
+            bool drawTarget = displayMode == "ptv";
             if (width < 640 || height < 400 || width > 6000 || height > 4000 || (long)width * height > 18000000)
                 throw new ArgumentOutOfRangeException("width", "BEV output must be 640..6000 by 400..4000 pixels, at most 18 megapixels.");
-            var state = InspectState(beam, cp, image, synthetic);
+            var state = InspectStateCore(beam, cp, image, synthetic, fitToAperture);
+            if (fitToAperture && state.GeometryAvailable)
+            {
+                double? fit = ApertureFitExtentMm(beam, cp, GuiApertureMarginMillimeters);
+                if (fit.HasValue)
+                {
+                    double radians = state.DisplayRotationDegrees * Math.PI / 180;
+                    state.DisplayExtentMm = fit.Value * (Math.Abs(Math.Cos(radians)) + Math.Abs(Math.Sin(radians)));
+                }
+            }
             using (var bitmap = new Bitmap(width, height, PixelFormat.Format24bppRgb))
             using (var graphics = Graphics.FromImage(bitmap))
             {
@@ -111,7 +190,7 @@ namespace ClearPlan.Rendering
                 graphics.SetClip(Viewport);
                 var bldTransform = graphics.Save();
                 RotateAboutIso(graphics, state.DisplayRotationDegrees);
-                if (state.ImageAvailable)
+                if (state.ImageAvailable && drawImage)
                 {
                     using (var pixels = GrayscaleBitmap(image))
                     {
@@ -121,7 +200,11 @@ namespace ClearPlan.Rendering
                     }
                 }
                 if (state.GeometryAvailable) DrawAperture(graphics, cp.Aperture, extent);
+                bool targetDrawn = drawTarget && DrawTargetProjection(graphics, cp, extent);
                 graphics.Restore(bldTransform);
+                if (drawTarget)
+                    OverlayLabel(graphics, targetDrawn ? "Lilac: PTV projection (display only)" : "PTV projection unavailable for this control point",
+                        new RectangleF(436, 73, 500, 34), TargetProjectionColor, 21);
                 DrawRuler(graphics, extent);
                 graphics.Restore(clipping);
                 using (var pen = new Pen(Color.FromArgb(104, 121, 136), 1)) graphics.DrawRectangle(pen, Viewport.X, Viewport.Y, Viewport.Width, Viewport.Height);
@@ -130,7 +213,7 @@ namespace ClearPlan.Rendering
                 // Reports keep the full in-image notice by default.
                 if (!state.ImageAvailable && !compactStatus) DrawUnavailable(graphics, state.ImageMessage);
                 if (state.GeometryAvailable) DrawApertureLegend(graphics, cp.Aperture, state);
-                if (state.PhysicalJawsVisible) DrawJawLabels(graphics, cp.Aperture.Jaws, extent, state.DisplayRotationDegrees);
+                if (state.PhysicalJawsVisible) DrawJawLabelsWithReserve(graphics, cp.Aperture.Jaws, extent, state.DisplayRotationDegrees, fitToAperture ? 182f : 80f);
                 if (!state.GeometryAvailable)
                     OverlayLabel(graphics, "MLC / jaw geometry unavailable", new RectangleF(68, 73, 420, 40), Amber, 23);
 
@@ -150,6 +233,12 @@ namespace ClearPlan.Rendering
         }
 
         public static BeamEyeViewRenderState InspectState(ReviewBeamAnalysis beam, ReviewControlPointSample cp, BeamEyeViewImage image, bool synthetic)
+        { return InspectStateCore(beam, cp, image, synthetic, false); }
+
+        /// <summary>guiRotation (2026-11-20, GUI only): without a calibrated DRR the view still shows the real
+        /// collimator angle, first from the beam's native outline calibration, otherwise nominally (labelled).
+        /// Reports keep the validated behaviour of InspectState.</summary>
+        public static BeamEyeViewRenderState InspectStateCore(ReviewBeamAnalysis beam, ReviewControlPointSample cp, BeamEyeViewImage image, bool synthetic, bool guiRotation)
         {
             var state = new BeamEyeViewRenderState
             {
@@ -176,6 +265,20 @@ namespace ClearPlan.Rendering
             state.UprightDisplay = state.ImageAvailable && image.BldToDisplayRotationDegrees.HasValue && Finite(image.BldToDisplayRotationDegrees.Value);
             state.DisplayRotationDegrees = state.UprightDisplay ? Math.IEEERemainder(image.BldToDisplayRotationDegrees.Value, 360) : 0;
             state.FrameDescription = state.UprightDisplay ? "Upright gantry (C0) · collimator " + Value(cp.CollimatorAngleDegrees, "0.#", "°") : "BLD frame · upright calibration unavailable";
+            if (!state.UprightDisplay && guiRotation && cp != null)
+            {
+                double? rotation = GuiCollimatorRotation(beam, cp);
+                if (rotation.HasValue)
+                {
+                    bool native = beam != null && beam.BldToDisplayRotationDegrees.HasValue && Finite(beam.BldToDisplayRotationDegrees.Value);
+                    state.UprightDisplay = native;
+                    state.NominalRotation = !native;
+                    state.DisplayRotationDegrees = rotation.Value;
+                    state.FrameDescription = native
+                        ? "Upright gantry (C0) · collimator " + Value(cp.CollimatorAngleDegrees, "0.#", "°")
+                        : "Collimator " + Value(cp.CollimatorAngleDegrees, "0.#", "°") + " · nominal (no native calibration)";
+                }
+            }
             double extent = state.ImageAvailable ? image.ExtentMm : GeometryExtent(cp, state.GeometryAvailable);
             if (state.GeometryAvailable) extent = Math.Max(extent, GeometryExtent(cp, true));
             double radians = state.DisplayRotationDegrees * Math.PI / 180;
@@ -380,6 +483,9 @@ namespace ClearPlan.Rendering
         }
 
         private static void DrawJawLabels(Graphics g, ApertureRectangle jaws, double extent, double rotationDegrees)
+        { DrawJawLabelsWithReserve(g, jaws, extent, rotationDegrees, 80f); }
+
+        private static void DrawJawLabelsWithReserve(Graphics g, ApertureRectangle jaws, double extent, double rotationDegrees, float bottomReserve)
         {
             double midX = (jaws.X1 + jaws.X2) / 2, midY = (jaws.Y1 + jaws.Y2) / 2;
             var midpoints = new[] { Map(jaws.X1, midY, extent), Map(jaws.X2, midY, extent), Map(midX, jaws.Y1, extent), Map(midX, jaws.Y2, extent) };
@@ -393,7 +499,8 @@ namespace ClearPlan.Rendering
                 float nx = (float)(normals[i].X * Math.Cos(radians) - normals[i].Y * Math.Sin(radians));
                 float ny = (float)(normals[i].X * Math.Sin(radians) + normals[i].Y * Math.Cos(radians));
                 float x = Clamp(point.X - 80 + nx * 92, Viewport.Left + 8, Viewport.Right - 168);
-                float y = Clamp(point.Y - 17 + ny * 32, Viewport.Top + 140, Viewport.Bottom - 80);
+                // The tight GUI frame keeps labels above the three legend lines at the bottom of the viewport.
+                float y = Clamp(point.Y - 17 + ny * 32, Viewport.Top + 140, Viewport.Bottom - bottomReserve);
                 OverlayLabel(g, labels[i], new RectangleF(x, y, 160, 34), JawColor, 22);
             }
         }
@@ -413,7 +520,7 @@ namespace ClearPlan.Rendering
                 OverlayLabel(g, LeafWidthLabel(aperture.Layers[i]),new RectangleF(68,y+33,438,30),LayerColor(i),20);
                 y += 68;
             }
-            OverlayLabel(g, "Bright green: effective aperture", new RectangleF(68, 836, 680, 32), ApertureGreen, 21);
+            OverlayLabel(g, "Sky blue: effective aperture", new RectangleF(68, 836, 680, 32), ApertureGreen, 21);
             string boundary = state.PhysicalJawsVisible ? "Solid yellow: physical jaws" : (state.FixedBoundsVisible ? "Dashed white: maximum field " + FieldSize(aperture.FixedBoundingBox) + " · fixed" : "Jawless · maximum field not supplied");
             OverlayLabel(g, boundary, new RectangleF(68, 874, 680, 34), state.PhysicalJawsVisible ? JawColor : Color.White, 22);
             OverlayLabel(g, "CT proxy, not diagnostic. Leaf bodies extend to viewport edge.", new RectangleF(68, 913, 864, 29), Color.FromArgb(213, 222, 230), 20);
@@ -590,6 +697,36 @@ namespace ClearPlan.Rendering
             using (var pen = new Pen(Border, 1)) g.DrawLine(pen, 1030, y, 1470, y);
         }
 
+        /// <summary>Draws the captured target projection of this control point: native outlines if
+        /// present, otherwise the projected strips. Display only; no area or fraction is computed here.</summary>
+        private static bool DrawTargetProjection(Graphics g, ReviewControlPointSample cp, double extent)
+        {
+            if (cp == null) return false;
+            bool drawn = false;
+            using (var pen = new Pen(TargetProjectionColor, 2.6f))
+            using (var fill = new SolidBrush(Color.FromArgb(48, TargetProjectionColor)))
+            {
+                if (cp.TargetOutlines != null)
+                    foreach (var outline in cp.TargetOutlines)
+                    {
+                        if (outline == null || outline.Count < 3) continue;
+                        if (outline.Any(p => p == null || !Physical(p.X) || !Physical(p.Y))) continue;
+                        var points = outline.Select(p => Map(p.X, p.Y, extent)).ToArray();
+                        g.FillPolygon(fill, points);
+                        g.DrawPolygon(pen, points);
+                        drawn = true;
+                    }
+                if (!drawn && cp.TargetProjectionStrips != null)
+                    foreach (var strip in cp.TargetProjectionStrips)
+                    {
+                        if (strip == null || !ValidRectangle(strip, true)) continue;
+                        g.FillRectangle(fill, Map(strip, extent));
+                        drawn = true;
+                    }
+            }
+            return drawn;
+        }
+
         private static void OverlayLabel(Graphics g, string text, RectangleF rectangle, Color color, float size)
         {
             Fill(g, Color.FromArgb(205, Canvas), rectangle);
@@ -668,7 +805,7 @@ namespace ClearPlan.Rendering
 
         private static Color LayerColor(int index)
         {
-            return index % 2 == 0 ? Color.FromArgb(75, 245, 105) : Color.FromArgb(78, 155, 255);
+            return index % 2 == 0 ? Color.FromArgb(110, 205, 255) : Color.FromArgb(78, 130, 255);
         }
 
         private static string FieldSize(ApertureRectangle field)

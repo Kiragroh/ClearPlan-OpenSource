@@ -333,6 +333,35 @@ namespace ClearPlan.Review
             return true;
         }
 
+        /// <summary>2026-11-20: captures the BLD-to-display rotation per beam without a DRR, using the
+        /// same paired native outlines (target or EXTERNAL) as the DRR calibration. Read-only. Beams with
+        /// varying collimator angle or ambiguous outlines stay null and are drawn with the nominal angle.</summary>
+        public static void CaptureCollimatorCalibration(PlanSetup plan, ReviewPlanAnalysis analysis)
+        {
+            if(plan==null || analysis==null || analysis.Beams==null || plan.StructureSet==null) return;
+            Structure calibration;
+            try { calibration=SelectCalibrationStructure(plan,analysis.TargetStructureId); }
+            catch(Exception) { return; }
+            if(calibration==null) return;
+            foreach(var row in analysis.Beams)
+            {
+                try
+                {
+                    if(row==null || !row.BeamNumber.HasValue) continue;
+                    var matches=plan.Beams.Where(b=>!b.IsSetupField && !b.IsImagingTreatmentField && b.BeamNumber==row.BeamNumber.Value).ToList();
+                    if(matches.Count!=1) continue;
+                    var beam=matches[0];
+                    var cps=beam.ControlPoints.ToList();
+                    if(cps.Count==0 || cps.Any(cp=>!SameAngle(cp.CollimatorAngle,cps[0].CollimatorAngle))) continue;
+                    var beamOutline=CopyOutline(beam.GetStructureOutlines(calibration,false));
+                    var bevOutline=CopyOutline(beam.GetStructureOutlines(calibration,true));
+                    double rotation=MeshTargetProjector.NativeCoordinateRotation(bevOutline,beamOutline,cps[0].CollimatorAngle);
+                    row.BldToDisplayRotationDegrees=rotation*180/Math.PI;
+                }
+                catch(Exception) { row.BldToDisplayRotationDegrees=null; }
+            }
+        }
+
         private static Structure SelectCalibrationStructure(PlanSetup plan,string requestedTarget)
         {
             var structures=plan.StructureSet.Structures.ToList();

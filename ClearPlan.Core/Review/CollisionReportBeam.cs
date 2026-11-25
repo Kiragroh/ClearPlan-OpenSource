@@ -13,10 +13,16 @@ namespace ClearPlan.Core.Review
         public string Status { get; set; }
         public bool RadialOnly { get; set; }
         public bool BodyOnly { get; set; }
+        public bool CtCoverageIncomplete { get; set; }
+        [JsonIgnore] public string ScopeNote { get { return
+            (CtCoverageIncomplete ? "Outside the CT field of view, collisions remain possible. " : "") +
+            (BodyOnly ? "Body only; no separate table model." : "Captured body and support surfaces."); } }
         public string Summary { get; set; }
         public byte[] OverviewPng { get; set; }
         // Captured with OverviewPng at MinimumRow; absent in older private sidecars.
         public byte[] OrientationPng { get; set; }
+        // Explicit provenance for new captures; older images never acquire a guessed pose.
+        public bool FirstCapturedPoseWhenMinimumUnavailable { get; set; }
         public List<CollisionReportRow> Rows { get; set; } = new List<CollisionReportRow>();
         // Nullable for older sidecars: do not infer a minimum from formatted strings.
         [JsonIgnore] public CollisionReportRow MinimumRow { get { return Rows.Where(r => r.MinimumDistanceMm.HasValue &&

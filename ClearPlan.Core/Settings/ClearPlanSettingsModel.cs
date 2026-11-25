@@ -14,9 +14,11 @@ namespace ClearPlan.Core.Settings
             Checks = new ClearPlanCheckOptions();
             Privacy = new ClearPlanPrivacyOptions();
             ClinicalPaths = new ClearPlanClinicalPathOptions();
+            ReviewLog = new ClearPlanReviewLogOptions();
         }
 
         public ConstraintSourceOptions ConstraintSource { get; set; }
+        public ClearPlanReviewLogOptions ReviewLog { get; set; }
         public ClearPlanPathOptions Paths { get; set; }
         public ClearPlanLinkOptions Links { get; set; }
         public ClearPlanCheckOptions Checks { get; set; }
@@ -61,6 +63,17 @@ namespace ClearPlan.Core.Settings
         public string VersionSeenUsersFile { get; set; }
         public string ChangeLogFile { get; set; }
         public string FeedbackFile { get; set; }
+        public string ReviewLogDirectory { get; set; }
+        public string ReviewLogKeyFile { get; set; }
+    }
+
+    /// <summary>Structured review log (docs/REVIEW_LOG.md). Off unless enabled by local policy.</summary>
+    public sealed class ClearPlanReviewLogOptions
+    {
+        public bool Enabled { get; set; }
+        public bool LogClearIdentifiers { get; set; }
+        public bool LogPlanLabel { get; set; }
+        public bool LogMessages { get; set; } = true;
     }
 
     public sealed class ClearPlanLinkOptions

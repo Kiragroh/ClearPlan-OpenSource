@@ -162,8 +162,15 @@ namespace ClearPlan.Core.Tests
             string adapter = System.IO.File.ReadAllText(System.IO.Path.Combine(root.FullName, "ClearPlan.Script", "Review", "EsapiReviewSnapshotBuilder.cs"));
             TestAssert.True(adapter.Contains("GetDvhDoseOrNull(() => planSetup.DosePerFraction)"));
             TestAssert.True(adapter.Contains("GetDvhDoseOrNull(() => planSetup.TotalDose)"));
-            // Private headless-runner integration is tested in the local deployment,
-            // not shipped in the vendor-free public source/test package.
+            // The internal headless report tool is not part of the public source release; check it only where present.
+            string reportPath = System.IO.Path.Combine(root.FullName, "tools", "clinical-report", "HeadlessPlanReport.cs");
+            if (!System.IO.File.Exists(reportPath)) return;
+            string report = System.IO.File.ReadAllText(reportPath);
+            TestAssert.True(report.Contains("if (hasDose && doseValid == true)\r\n                    analysis = await new EsapiBevBuilder().BuildStartsAsync") ||
+                report.Contains("if (hasDose && doseValid == true)\n                    analysis = await new EsapiBevBuilder().BuildStartsAsync"),
+                "Dose-less diagnostic report must not request a dose-bound DRR snapshot.");
+            TestAssert.True(report.Contains("!plan.PlanNormalizationValue.Equals(initialNormalization)"),
+                "An unchanged unavailable normalization must not be mistaken for a native write (NaN != NaN).");
         }
 
         public static void SanitizesPathsAndDicomUids()

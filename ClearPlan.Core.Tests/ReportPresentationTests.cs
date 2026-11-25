@@ -336,7 +336,7 @@ namespace ClearPlan.Core.Tests
             using (var bitmap = new System.Drawing.Bitmap(stream))
             {
                 var color = bitmap.GetPixel(720, 720);
-                TestAssert.True(color.G > color.R + 25 && color.G > color.B,
+                TestAssert.True(color.G > color.R + 25 && color.B > color.G + 20,
                     "The projected isocenter crosshair must lie at the exact image center, not at the old full-CT position.");
             }
             var document = new Document(); var section = document.AddSection();
@@ -370,7 +370,7 @@ namespace ClearPlan.Core.Tests
                     for (int x = 690; x < 750; x++)
                     {
                         var color = bitmap.GetPixel(x, y);
-                        if (color.G > color.R + 40 && color.G > color.B) visibleOrientationPixels++;
+                        if (color.G > color.R + 40 && color.B > color.G + 20) visibleOrientationPixels++;
                     }
                     TestAssert.True(visibleOrientationPixels > 20, "The simulation banner must not cover the bottom CT orientation: " + image.Kind);
                 }
@@ -428,7 +428,8 @@ namespace ClearPlan.Core.Tests
                 .Invoke(new ReportPdf(), new object[] { section, rows });
             string ddl = DdlWriter.WriteToString(document);
             var table = section.Elements.Cast<DocumentObject>().OfType<Table>().Single();
-            TestAssert.Equal(5, table.Columns.Count, "DVH statistics must omit the Curve and Availability columns.");
+            // 2026-11-20: structure, volume and six dose columns (Dmin, D98, D50, Dmean, D2, Dmax).
+            TestAssert.Equal(8, table.Columns.Count, "DVH statistics must omit the Curve and Availability columns.");
             TestAssert.False(ddl.Contains("Availability") || ddl.Contains("Shown in plot") || ddl.Contains("Not selected"));
             TestAssert.False(ddl.Contains("GTV_small"), "Default report table must not add every smaller inner target.");
             TestAssert.False(ddl.Contains("Kidney_unselected"), "Unselected OARs must not appear in the PDF table even without GUI hidden IDs.");
@@ -533,8 +534,31 @@ namespace ClearPlan.Core.Tests
             int withQuality = populated.Sections[0].Elements.Cast<DocumentObject>().OfType<PageBreak>().Count();
             data.PlanAnalysis.TargetQuality.Clear();
             var unavailable = (Document)create.Invoke(new ReportPdf(), new object[] { data });
-            TestAssert.Equal(withQuality - 1, unavailable.Sections[0].Elements.Cast<DocumentObject>().OfType<PageBreak>().Count());
+            TestAssert.Equal(withQuality, unavailable.Sections[0].Elements.Cast<DocumentObject>().OfType<PageBreak>().Count(),
+                "Compact target quality must flow in the summary, without a dedicated page in either state.");
             TestAssert.True(DdlWriter.WriteToString(unavailable).Contains("PTV quality unavailable"));
+        }
+
+        public static void CompactCtPlateUsesOnePageAndSharedLegend()
+        {
+            var data = new ReviewSnapshotReportMapper().Map(SyntheticScenarioFactory.Create("baseline-pass"));
+            var document = (Document)typeof(ReportPdf).GetMethod("CreateReviewReport", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(new ReportPdf(), new object[] { data });
+            var section = document.Sections[0]; section.Elements.Clear();
+            var images = SyntheticPlanImageFactory.Create("synthetic-plan");
+            string before = Newtonsoft.Json.JsonConvert.SerializeObject(images);
+            using (ClearPlan.Core.Localization.ReviewLanguage.Scope("en"))
+                typeof(ReportPdf).GetMethod("AddPlanImagePlate", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(new ReportPdf(), new object[] { section, images, true, false });
+            string ddl = DdlWriter.WriteToString(document);
+            TestAssert.True(ddl.Contains("Transversal") && ddl.Contains("Coronal") && ddl.Contains("Sagittal"), "The compact plate must label all three planes.");
+            TestAssert.True(ddl.Contains("Isodoses / plan Rx:") && ddl.Contains("Structures:"));
+            TestAssert.Equal(0, section.Elements.Cast<DocumentObject>().OfType<PageBreak>().Count());
+            var renderer = new MigraDoc.Rendering.PdfDocumentRenderer(true) { Document = document };
+            renderer.RenderDocument();
+            TestAssert.Equal(1, renderer.PdfDocument.PageCount, "Three CT views and a shared external legend must fit one compact plate.");
+            AssertPageBodyClearsFooter(renderer, section);
+            TestAssert.Equal(before, Newtonsoft.Json.JsonConvert.SerializeObject(images), "Report layout must not change pixels, overlays or measurements.");
         }
         public static void PqmSourcesAreGroupedAndMatchesStayVisible()
         {
@@ -553,7 +577,8 @@ namespace ClearPlan.Core.Tests
             TestAssert.False(ddl.Contains("Reference test paper") || ddl.Contains("Another reference paper") || ddl.Contains("S1:"),
                 "Clinical report goals must not print literature references or bibliography footnotes.");
             TestAssert.False(ddl.Contains("Source / structure match") || ddl.Contains("Exact name") || ddl.Contains("Exact native structure"));
-            TestAssert.Equal(8, section.Elements.Cast<DocumentObject>().OfType<Table>().Single().Columns.Count);
+            TestAssert.Equal(5, section.Elements.Cast<DocumentObject>().OfType<Table>().Single().Columns.Count,
+                "Combine mapping and omit the variation column only when no variation is supplied.");
             TestAssert.True(ddl.Contains("Heart") && ddl.Contains("Lung"));
             TestAssert.True(rows[0].SourceLabel.Contains("Reference test paper"), "Report formatting must retain original configuration provenance in the detached data.");
             TestAssert.True(ddl.Contains("Not evaluated") && !ddl.Contains("(Note)") && !ddl.Contains("(info)"),

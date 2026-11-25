@@ -11,6 +11,30 @@ namespace ClearPlan.Core.Tests
 {
     internal static class CollisionSweepInteractionTests
     {
+        public static void DioramaHeadFirstAndTransparentRing()
+        {
+            var type=typeof(ClearPlan.Presentation.Views.CollisionView);
+            var patient=type.GetMethod("CreatePatientAxis",BindingFlags.NonPublic|BindingFlags.Static);
+            var pose=new CollisionPose { GantryDegrees=45,PatientSupportAngleDegrees=0 };
+            var group=(System.Windows.Media.Media3D.Model3DGroup)patient.Invoke(null,new object[]{pose,true});
+            var head=group.Transform.Transform(new System.Windows.Media.Media3D.Point3D(0,18,320));
+            TestAssert.True(head.Z < 0,"Diorama HFS head must face the stand at negative Z.");
+            pose.PatientSupportAngleDegrees=90;
+            group=(System.Windows.Media.Media3D.Model3DGroup)patient.Invoke(null,new object[]{pose,true});
+            var rotated=group.Transform.Transform(new System.Windows.Media.Media3D.Point3D(0,18,320));
+            TestAssert.True(Math.Abs(rotated.X)>319 && Math.Abs(rotated.Z)<0.001,"Couch rotation must still apply after HFS orientation.");
+            var ring=(System.Windows.Media.Media3D.Model3DGroup)type.GetMethod("CreateRingReference",BindingFlags.NonPublic|BindingFlags.Static).Invoke(null,new object[]{pose});
+            bool transparent=false;
+            foreach(var child in ring.Children)
+            {
+                var geometry=child as System.Windows.Media.Media3D.GeometryModel3D;
+                var material=geometry==null?null:geometry.Material as System.Windows.Media.Media3D.DiffuseMaterial;
+                var brush=material==null?null:material.Brush as System.Windows.Media.SolidColorBrush;
+                if(brush!=null && brush.Color.A==45)transparent=true;
+            }
+            TestAssert.True(transparent,"Ring housing must be translucent, not an opaque wall over the patient.");
+            TestAssert.Equal(45d,pose.GantryDegrees);TestAssert.Equal(90d,pose.PatientSupportAngleDegrees);
+        }
         public static void BothAngleCirclesClearAndHalcyonNeverShowsCArm()
         {
             var model=Create(); model.Scene.PatientPosition="HFS";
@@ -39,19 +63,19 @@ namespace ClearPlan.Core.Tests
             }
             model.Scene.Profile.Kind="RingBore"; draw.Invoke(view,null);
             TestAssert.NotNull(gantry.Source,"A bore retains nominal angle circles.");
-            TestAssert.Equal(0,((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Children.Count,
+            TestAssert.Equal("Ring",((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Tag as string,
                 "A bore must not receive a TrueBeam C-arm schematic.");
             model.Scene.Profile=null;
             model.Scene.SourceModel=new SourceCollisionModel {Kind="HalcyonBoreSource",BoreWarningRadiusMm=90,BoreLimitRadiusMm=100};
             draw.Invoke(view,null);
             TestAssert.NotNull(gantry.Source); TestAssert.NotNull(couch.Source);
-            TestAssert.Equal(0,((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Children.Count,
+            TestAssert.Equal("Ring",((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Tag as string,
                 "Native Halcyon source geometry must not receive a TrueBeam C-arm schematic.");
             var staleProfile=Create().Scene.Profile; staleProfile.HeadRadiusMm=-1;
             model.Scene.Profile=staleProfile;
             TestAssert.False(model.UsesProfileGeometry,"Conflicting test profile must be unusable.");
             draw.Invoke(view,null);
-            TestAssert.Equal(0,((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Children.Count,
+            TestAssert.Equal("Ring",((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Tag as string,
                 "A stale C-arm profile must not override Halcyon bore identity.");
             model.Scene.SourceModel=null; draw.Invoke(view,null);
             TestAssert.Equal(0,((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Children.Count,
@@ -60,8 +84,13 @@ namespace ClearPlan.Core.Tests
             model.Scene.SourceModel=new SourceCollisionModel {Kind="TrueBeamHeadSource"};
             TestAssert.True(model.UsesProfileGeometry);
             draw.Invoke(view,null);
-            TestAssert.Equal(0,((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Children.Count,
+            TestAssert.Equal("Ring",((System.Windows.Controls.Viewport3D)view.FindName("RoomReferenceViewport")).Tag as string,
                 "An active ring profile must veto a conflicting C-arm source reference.");
+            model.Scene.SupportedCoordinates=false; model.Scene.NominalCoordinatesSupported=false;
+            draw.Invoke(view,null);
+            TestAssert.False(model.RoomView,"The orientation schematic must not grant a room transform to captured anatomy.");
+            TestAssert.Equal(System.Windows.Visibility.Visible,((System.Windows.FrameworkElement)view.FindName("RoomReferenceRoot")).Visibility);
+            TestAssert.NotNull(gantry.Source,"Nominal ring illustration remains available without measured clearance geometry.");
             model.SetLoading(); draw.Invoke(view,null);
             TestAssert.True(gantry.Source==null && couch.Source==null,"Loading must clear both old angle diagrams.");
         }
@@ -109,18 +138,18 @@ namespace ClearPlan.Core.Tests
             model.SetScene(model.Scene, null, sweep);
             TestAssert.Equal("SECOND", model.SelectedBeamId, "Start at global minimum, not the first field.");
             TestAssert.Equal("body-clear", model.SelectedFrame.StatusCode);
-            TestAssert.Equal("Still clear", model.SelectedFrame.StatusText);
-            TestAssert.Equal("#F2C45C", model.SelectedFrame.StatusColor, "Still clear is yellow, never full-clear green.");
-            TestAssert.Equal("#FFF5DD", model.SelectedFrame.StatusSurface);
+            TestAssert.Equal("Clear", model.SelectedFrame.StatusText);
+            TestAssert.Equal("#B7E7C3", model.SelectedFrame.StatusColor, "Body-only clear uses a light-green informational scope.");
+            TestAssert.Equal("#EAF6EE", model.SelectedFrame.StatusSurface);
             var full = new CollisionSweepFrameViewModel(new CollisionSweepFrame { ModelBodyStatus="model-clear", ModelTableStatus="model-clear" });
-            TestAssert.Equal("Full clear", full.StatusText);
+            TestAssert.Equal("Clear", full.StatusText);
             TestAssert.Equal("#69D391", full.StatusColor);
             TestAssert.Equal("#EAF6EE", full.StatusSurface);
             TestAssert.Equal("uncertain", model.SelectedFrame.Frame.Status, "Clinical evidence gate remains unchanged.");
             model.Scene.Surfaces.Add(new CollisionSurface { Role = "Support" }); // supplied but invalid is NOT absent
             model.SetScene(model.Scene, null, sweep);
             TestAssert.Equal("partial-clear", model.SelectedFrame.StatusCode);
-            TestAssert.Equal("Still clear", model.SelectedFrame.StatusText);
+            TestAssert.Equal("Teilweise bewertet", model.SelectedFrame.StatusText);
             TestAssert.Equal("#F2C45C", model.SelectedFrame.StatusColor);
             sweep.Frames[1].ModelTableStatus = "model-hit";
             model.SetScene(model.Scene, null, sweep);
@@ -243,7 +272,7 @@ namespace ClearPlan.Core.Tests
                 using (var stream = new MemoryStream(bytes)) using(var image = new System.Drawing.Bitmap(stream))
                 { TestAssert.Equal(360,image.Width); TestAssert.Equal(360,image.Height);
                   int green=0,blue=0;
-                  for(int y=0;y<360;y++) for(int x=0;x<360;x++) { var p=image.GetPixel(x,y); if(p.G>p.R*1.4 && p.G>p.B*1.2) green++; if(p.B>p.R*1.3 && p.B>p.G*1.1) blue++; }
+                  for(int y=0;y<360;y++) for(int x=0;x<360;x++) { var p=image.GetPixel(x,y); if(p.G>p.R*1.4 && p.B>p.G*1.1) green++; if(p.B>p.R*1.3 && p.B>p.G*1.5) blue++; }
                   TestAssert.True(green>80,"Physical/effective MLC must be visible.");
                   if(layers==2) TestAssert.True(blue>30,"Second physical layer must be blue."); }
             }
@@ -356,7 +385,7 @@ namespace ClearPlan.Core.Tests
         {
             var snapshot = SyntheticScenarioFactory.Create("baseline-pass"); snapshot.Synthetic = false;
             var scene = SyntheticCollisionFactory.Create(snapshot.ActivePlanKey); scene.Synthetic = false; scene.Profile = null;
-            scene.SourceModel = new SourceCollisionModel { ModelId = "synthetic-ring-source", Kind = "HalcyonBoreSource",
+            scene.SourceModel = new SourceCollisionModel { ModelId = "RS03-Halcyon-source-20260913", Kind = "HalcyonBoreSource",
                 BoreWarningRadiusMm = 90, BoreLimitRadiusMm = 100, LeadingWarningFromIsoMm = 190, LeadingLimitFromIsoMm = 200 };
             var model = new CollisionViewModel(snapshot); model.SetScene(scene, null);
             var view = new ClearPlan.Presentation.Views.CollisionView { DataContext = model };

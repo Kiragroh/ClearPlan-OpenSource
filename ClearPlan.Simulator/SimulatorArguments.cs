@@ -155,7 +155,8 @@ namespace ClearPlan.Simulator
 
             if (!SyntheticScenarioFactory.ScenarioIds.Contains(
                 parsed.ScenarioId,
-                StringComparer.Ordinal) && !SyntheticPublicationScenarioFactory.ScenarioIds.Contains(parsed.ScenarioId, StringComparer.Ordinal))
+                StringComparer.Ordinal) && !SyntheticPublicationScenarioFactory.ScenarioIds.Contains(parsed.ScenarioId, StringComparer.Ordinal) &&
+                !string.Equals(parsed.ScenarioId, SandboxSnapshotFile.ScenarioIdValue, StringComparison.Ordinal))
             {
                 throw new ArgumentException(
                     "Unknown synthetic scenario: " + parsed.ScenarioId,

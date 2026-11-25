@@ -95,6 +95,9 @@ namespace ClearPlan.Core.PlanAnalysis
         public string PamReason { get; set; }
         public string MetersetReason { get; set; }
         public List<ReviewControlPointSample> ControlPoints { get; set; }
+        /// <summary>Native BLD-to-display rotation of this beam in degrees, established from paired
+        /// native structure outlines (no DRR needed). Null when not captured. Display only.</summary>
+        public double? BldToDisplayRotationDegrees { get; set; }
     }
 
     public sealed class ReviewControlPointSample

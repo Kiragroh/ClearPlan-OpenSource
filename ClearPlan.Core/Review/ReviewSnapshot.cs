@@ -101,6 +101,10 @@ namespace ClearPlan.Core.Review
         [JsonIgnore] public string CollisionPreviewCaption { get; set; }
         [JsonIgnore] public bool IncludeCollisionPreview { get; set; }
         [JsonIgnore] public List<CollisionReportBeam> CollisionBeams { get; set; }
+        /// <summary>Sandbox from a real test plan: stored collision surfaces shown instead of the synthetic room.</summary>
+        [JsonIgnore] public Collision.CollisionScene SandboxCollisionScene { get; set; }
+        // Checks calculated but excluded by the configured check selection; review log only (included = 0).
+        [JsonIgnore] public List<ReviewCheckRow> ExcludedPlanCheckRows { get; set; }
 
         [OnDeserialized]
         internal void RestoreOptionalCollections(StreamingContext context)

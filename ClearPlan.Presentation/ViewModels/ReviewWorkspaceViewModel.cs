@@ -54,6 +54,14 @@ namespace ClearPlan.Presentation.ViewModels
             Func<ReviewBeamAnalysis, ReviewControlPointSample, BeamEyeViewImage> syntheticDrrProvider = null;
             if (snapshot.Synthetic && SyntheticPublicationScenarioFactory.ScenarioIds.Contains(snapshot.ScenarioId, StringComparer.Ordinal))
                 syntheticDrrProvider = SyntheticPublicationScenarioFactory.CreateDrr;
+            if (snapshot.Synthetic && snapshot.ScenarioId == ClearPlan.Core.Simulation.SandboxSnapshotFile.ScenarioIdValue)
+                syntheticDrrProvider = (beam, cp) => new BeamEyeViewImage
+                {
+                    SourceStatus = "unavailable", Synthetic = true,
+                    UnavailableReason = "Sandbox: DRR nur am Feldstart gespeichert.",
+                    ControlPointIndex = cp.Index, GantryAngleDegrees = cp.GantryAngleDegrees,
+                    CollimatorAngleDegrees = cp.CollimatorAngleDegrees, PatientSupportAngleDegrees = cp.PatientSupportAngleDegrees
+                };
             Analysis = new PlanAnalysisViewModel(snapshot.PlanAnalysis, snapshot.Synthetic, syntheticDrrProvider);
             Collision = new CollisionViewModel(snapshot);
             Collision.ReloadRequested += (sender, args) => Raise(CollisionRequested, "collision", null);
@@ -102,12 +110,15 @@ namespace ClearPlan.Presentation.ViewModels
             DvhSeries =
                 new ObservableCollection<ReviewDvhSeriesViewModel>(
                     (snapshot.DvhSeries ?? new List<ReviewDvhSeries>())
-                        .Select(row => new ReviewDvhSeriesViewModel(row)));
+                        .Select(row => new ReviewDvhSeriesViewModel(row, snapshot.Synthetic)));
 
             dvhFilterText = string.Empty;
             FilteredDvhSeries =
                 CollectionViewSource.GetDefaultView(DvhSeries);
             FilteredDvhSeries.Filter = FilterDvhSeries;
+            // Separate view for the DVH statistics table: shown structures only.
+            SelectedDvhSeries = new ListCollectionView(DvhSeries);
+            SelectedDvhSeries.Filter = row => ((ReviewDvhSeriesViewModel)row).IsSelected;
 
             foreach (ReviewDvhSeriesViewModel series in DvhSeries)
             {
@@ -137,6 +148,27 @@ namespace ClearPlan.Presentation.ViewModels
                 FieldRows.Count(
                     row => row.NameStatusCode == ReviewStatusCodes.Pass),
                 FieldRows.Count);
+
+            // Display-only counters for the navigation rail and overview tiles.
+            // They count the same rows as the summaries above and change no result.
+            PqmNavCount = BuildNavCount(PqmRows.Select(row => row.StatusCode));
+            PlanCheckNavCount = BuildNavCount(
+                PlanCheckRows.Select(row => row.StatusCode));
+            FieldNavCount = string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}/{1}",
+                FieldRows.Count(row =>
+                    row.IdStatusCode == ReviewStatusCodes.Pass &&
+                    row.NameStatusCode == ReviewStatusCodes.Pass),
+                FieldRows.Count);
+            IList<string> reviewStatuses = PqmRows.Select(row => row.StatusCode)
+                .Concat(PlanCheckRows.Select(row => row.StatusCode))
+                .ToList();
+            ReviewHintCount = reviewStatuses.Count(
+                value => value == ReviewStatusCodes.Variation ||
+                         value == ReviewStatusCodes.Info);
+            ReviewFailCount = reviewStatuses.Count(
+                value => value == ReviewStatusCodes.Fail);
 
             ReportCommand = new RelayCommand(
                 parameter => Raise(
@@ -278,6 +310,16 @@ namespace ClearPlan.Presentation.ViewModels
 
         public string FieldSummary { get; private set; }
 
+        public string PqmNavCount { get; private set; }
+
+        public string PlanCheckNavCount { get; private set; }
+
+        public string FieldNavCount { get; private set; }
+
+        public int ReviewHintCount { get; private set; }
+
+        public int ReviewFailCount { get; private set; }
+
         public ObservableCollection<ReviewSourceStatusViewModel> Sources
         {
             get;
@@ -322,6 +364,8 @@ namespace ClearPlan.Presentation.ViewModels
         }
 
         public ICollectionView FilteredDvhSeries { get; private set; }
+
+        public ICollectionView SelectedDvhSeries { get; private set; }
 
         public string DvhFilterText
         {
@@ -489,6 +533,16 @@ namespace ClearPlan.Presentation.ViewModels
                 unavailable);
         }
 
+        private static string BuildNavCount(IEnumerable<string> statuses)
+        {
+            IList<string> values = statuses.ToList();
+            return string.Format(
+                CultureInfo.InvariantCulture,
+                "{0}/{1}",
+                values.Count(value => value == ReviewStatusCodes.Pass),
+                values.Count);
+        }
+
         private static string BuildStatusSummary(IEnumerable<string> statuses)
         {
             IList<string> values = statuses.ToList();
@@ -508,6 +562,10 @@ namespace ClearPlan.Presentation.ViewModels
             object sender,
             PropertyChangedEventArgs eventArgs)
         {
+            if (eventArgs.PropertyName == "IsSelected" && SelectedDvhSeries != null)
+            {
+                SelectedDvhSeries.Refresh();
+            }
             if (eventArgs.PropertyName != "IsSelected" || updatingDvhSelections)
             {
                 return;

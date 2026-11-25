@@ -5,7 +5,7 @@
  xmlns:oxy="http://oxyplot.org/wpf" FontFamily="Segoe UI" FontWeight="Normal" Foreground="{DynamicResource ClinicalBlueprintText}">
  <UserControl.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../Styles/ClinicalBlueprint.xaml"/></ResourceDictionary.MergedDictionaries><BooleanToVisibilityConverter x:Key="VisibleIfTrue"/></ResourceDictionary></UserControl.Resources>
  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-  <StackPanel Margin="24,22">
+  <StackPanel Margin="24">
    <DockPanel Margin="0,0,0,18">
     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
      <Button Content="{lang:Translate Value='Referenz merken'}" Command="{Binding Comparison.PinReferenceCommand}" Style="{StaticResource ClinicalBlueprintPrimaryButton}" Margin="0,0,8,0"/>
@@ -31,14 +31,14 @@
    </DockPanel>
    <TextBlock Text="{lang:Translate Path=Comparison.ContextText}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,0,0,16"/>
    <Border Background="White" Padding="12" Height="355"><oxy:PlotView x:Name="ComparisonDvhPlot" Model="{Binding Comparison.DvhPlotModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/></Border>
-   <TextBlock Text="{lang:Translate Value='Constraints im Vergleich'}" FontSize="17" FontWeight="SemiBold" Margin="0,24,0,10"/>
+   <TextBlock Text="{lang:Translate Value='Constraints im Vergleich'}" Style="{StaticResource ClinicalBlueprintSubsectionTitle}" Margin="0,24,0,12"/>
    <DataGrid ItemsSource="{Binding Comparison.Constraints}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="90" MaxHeight="350"><DataGrid.Columns>
     <DataGridTextColumn Header="{lang:Translate Value='Struktur'}" Binding="{Binding Structure}" Width="1.2*"/><DataGridTextColumn Header="{lang:Translate Value='Kriterium'}" Binding="{Binding Objective}" Width="0.8*"/>
     <DataGridTextColumn Header="{lang:Translate Value='Referenz'}" Binding="{Binding ReferenceValue}" Width="85"/><DataGridTextColumn Header="{lang:Translate Value='Aktuell'}" Binding="{Binding CurrentValue}" Width="85"/><DataGridTextColumn Header="Δ" Binding="{Binding Difference}" Width="80"/>
     <DataGridTextColumn Header="{lang:Translate Value='Einheit'}" Binding="{Binding Unit}" Width="60"/><DataGridTextColumn Header="{lang:Translate Value='Ziel Ref.'}" Binding="{Binding ReferenceGoal}" Width="90"/><DataGridTextColumn Header="{lang:Translate Value='Ziel aktuell'}" Binding="{Binding CurrentGoal}" Width="90"/>
     <DataGridTextColumn Header="{lang:Translate Value='Einordnung'}" Binding="{Binding Note}" Width="2*"/>
    </DataGrid.Columns></DataGrid>
-   <TextBlock Text="{lang:Translate Value='Planparameter im Vergleich'}" FontSize="17" FontWeight="SemiBold" Margin="0,24,0,10"/>
+   <TextBlock Text="{lang:Translate Value='Planparameter im Vergleich'}" Style="{StaticResource ClinicalBlueprintSubsectionTitle}" Margin="0,24,0,12"/>
    <DataGrid ItemsSource="{Binding Comparison.Parameters}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="90"><DataGrid.Columns>
     <DataGridTextColumn Header="{lang:Translate Value='Metrik'}" Binding="{Binding Label}" Width="1.5*"/><DataGridTextColumn Header="{lang:Translate Value='Referenz'}" Binding="{Binding Reference}" Width="*"/><DataGridTextColumn Header="{lang:Translate Value='Aktuell'}" Binding="{Binding Current}" Width="*"/>
     <DataGridTextColumn Header="Δ" Binding="{Binding Difference}" Width="*"/><DataGridTextColumn Header="{lang:Translate Value='Einheit'}" Binding="{Binding Unit}" Width="0.7*"/><DataGridTextColumn Header="{lang:Translate Value='Einordnung'}" Binding="{Binding Note}" Width="2*"/>

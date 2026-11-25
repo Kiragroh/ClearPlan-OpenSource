@@ -82,6 +82,19 @@ namespace ClearPlan
             SharedConstraintComboBox.SelectedItem =
                 _vm.ActiveConstraintPath;
 
+            // Display preferences (2026-11-20): global DisplayDefaults.json next to the other global
+            // files, per-user file under State\Benutzer. User overrides global; display only.
+            try
+            {
+                var displayStore = new ClearPlan.Core.Settings.DisplayPreferencesStore(
+                    _settings.ResolvePath("DisplayDefaults.json"),
+                    System.IO.Path.Combine(_settings.GetStateDirectory(), "Benutzer",
+                        ClearPlan.Core.Settings.DisplayPreferencesStore.UserFileName(Environment.UserName)));
+                ClearPlan.Core.Settings.DisplayPreferences.Store = displayStore;
+                ClearPlan.Core.Settings.DisplayPreferences.Current = displayStore.Load();
+            }
+            catch (Exception) { ClearPlan.Core.Settings.DisplayPreferences.Store = null; }
+
             _clinicalReviewHost = new ClinicalReviewWorkspaceHost(
                 this,
                 _vm,
@@ -241,6 +254,7 @@ namespace ClearPlan
             UpdateWindowTitleForSyntheticDemo(false);
             Loaded -= MainView_Loaded;
             Unloaded -= MainView_Unloaded;
+            WriteLiveReviewLogOnClose();
             if (_clinicalReviewHost != null)
             {
                 _clinicalReviewHost.Dispose();
@@ -726,7 +740,9 @@ namespace ClearPlan
 
             try
             {
-                snapshot.PlanImages = ClearPlan.Core.Simulation.SyntheticPlanImageFactory.Create(snapshot.ActivePlanKey);
+                if (snapshot.PlanImages == null || snapshot.PlanImages.Count == 0 ||
+                    snapshot.ScenarioId != ClearPlan.Core.Simulation.SandboxSnapshotFile.ScenarioIdValue)
+                    snapshot.PlanImages = ClearPlan.Core.Simulation.SyntheticPlanImageFactory.Create(snapshot.ActivePlanKey);
                 foreach (var series in snapshot.DvhSeries)
                 {
                     var selection = workspace.DvhSeries.FirstOrDefault(row => row.StableId == series.StableId);
@@ -796,6 +812,7 @@ namespace ClearPlan
                     : (_vm.Patient == null ? "Name / ID unavailable" : _vm.Patient.LastName + ", " + _vm.Patient.FirstName + " | ID: " + _vm.Patient.Id);
                 new ReportPdf().Export(dialog.FileName, document);
                 ShowSavedReportStatus(dialog.FileName, document);
+                WriteLiveReviewLog(snapshot, dialog.FileName);
             }
             catch (Exception exception)
             {

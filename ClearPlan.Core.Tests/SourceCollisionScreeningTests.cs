@@ -179,13 +179,30 @@ namespace ClearPlan.Core.Tests
             var dir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
             while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "ClearPlan.Core"))) dir = dir.Parent;
             TestAssert.NotNull(dir);
-            var path = Path.Combine(dir.FullName, "ClearPlan.Script", "Distribution", "MachineGeometry", "SourceCollisionModels.example.json");
-            TestAssert.True(File.Exists(path), "Empty public source-model catalog is missing.");
+            var path = Path.Combine(dir.FullName, "ClearPlan.Core", "Collision", "Models", "SourceCollisionModels.raystation-20260913.json");
+            TestAssert.True(File.Exists(path), "Audited source model JSON is missing.");
             var models = SourceCollisionModelCatalog.Parse(File.ReadAllText(path));
             TestAssert.Equal(0, models.MachineBindings.Count, "Machine bindings require explicit local configuration.");
-            TestAssert.Equal(0, models.Models.Count, "The public catalog must not supply private or uncommissioned machine dimensions.");
-            TestAssert.True(models.Select("example-device") == null);
+            TestAssert.Equal(2, models.Models.Count);
+            TestAssert.True(models.Select("TB1_4632") == null);
             TestAssert.True(models.Select("Ethos") == null);
+            var tb = models.Models.Single(m => m.Kind == "TrueBeamHeadSource");
+            TestAssert.Equal("275455209B204D82B86D35947983379A8B5446430F4F663C8FA954ABBD5C1652", tb.SourceSha256);
+            TestAssert.Equal("2026-07-30", tb.MeasurementDate);
+            TestAssert.Equal(420.0, tb.HeadObstacles[0].FrontFaceFromIsoMm);
+            TestAssert.Equal(370.0, tb.HeadObstacles[0].RadiusMm);
+            TestAssert.Equal(400.0, tb.HeadObstacles[1].FrontFaceFromIsoMm);
+            TestAssert.Equal(200.0, tb.HeadObstacles[1].RadiusMm);
+            TestAssert.Equal(700.0, tb.ReachRadiusMm);
+            TestAssert.Equal(30.0, tb.WarningMarginMm);
+            TestAssert.Equal(5.0, tb.SourceAngularMarginDegrees);
+            var hal = models.Models.Single(m => m.Kind == "HalcyonBoreSource");
+            TestAssert.Equal("source-constants", hal.EvidenceLevel);
+            TestAssert.True(string.IsNullOrEmpty(hal.MeasurementDate));
+            TestAssert.Equal(480.0, hal.BoreWarningRadiusMm);
+            TestAssert.Equal(500.0, hal.BoreLimitRadiusMm);
+            TestAssert.Equal(850.0, hal.LeadingWarningFromIsoMm);
+            TestAssert.Equal(900.0, hal.LeadingLimitFromIsoMm);
         }
 
         public static void NativeWorkloadIsExplicitBoundedAndCancellableInFlight()

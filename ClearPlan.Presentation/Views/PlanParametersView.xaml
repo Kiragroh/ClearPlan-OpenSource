@@ -13,14 +13,14 @@
   <ResourceDictionary><ResourceDictionary.MergedDictionaries><ResourceDictionary Source="../Styles/ClinicalBlueprint.xaml"/></ResourceDictionary.MergedDictionaries></ResourceDictionary>
  </UserControl.Resources>
  <ScrollViewer x:Name="ParameterScrollViewer" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
-  <StackPanel Margin="24,22">
+  <StackPanel Margin="24">
    <DockPanel>
     <Button Content="{lang:Translate Value='ESAPI-Geometrie aktualisieren'}" Command="{Binding ImportPlanDataCommand}" DockPanel.Dock="Right" Style="{StaticResource ClinicalBlueprintSecondaryButton}" ToolTip="{lang:Translate Value='Native ESAPI-Kontrollpunkte lesen und mit dem Maschinenprofil aus settings.ini zuordnen. Kein DICOM-Export; keine TPS-Änderungen.'}" ToolTipService.ShowOnDisabled="True"/>
-    <Button x:Name="ShowParameterPlotsButton" Content="{lang:Translate Value='Dosisrate &amp; Apertur'}" Click="ShowParameterPlots" DockPanel.Dock="Right" Margin="0,0,10,0" Style="{StaticResource ClinicalBlueprintSecondaryButton}" ToolTip="{lang:Translate Value='Zum Kontrollpunktverlauf des ausgewählten Feldes springen.'}"/>
+    <Button x:Name="ShowParameterPlotsButton" Content="{lang:Translate Value='Dosisrate &amp; Apertur'}" Click="ShowParameterPlots" DockPanel.Dock="Right" Margin="0,0,8,0" Style="{StaticResource ClinicalBlueprintSecondaryButton}" ToolTip="{lang:Translate Value='Zum Kontrollpunktverlauf des ausgewählten Feldes springen.'}"/>
     <TextBlock Text="{lang:Translate Value='Planparameter'}" Style="{StaticResource ClinicalBlueprintSectionTitle}"/>
    </DockPanel>
-   <TextBlock Text="{lang:Translate Value='Modulation verstehen · Abgabeparameter prüfen · Werte nachvollziehen'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,5,0,20"/>
-   <TextBlock Text="{lang:Translate Value='PTV-Qualität · Konformität, Gradient &amp; Homogenität'}" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+   <TextBlock Text="{lang:Translate Value='Modulation verstehen · Abgabeparameter prüfen · Werte nachvollziehen'}" Style="{StaticResource ClinicalBlueprintPageSubtitle}" Margin="0,2,0,24"/>
+   <TextBlock Text="{lang:Translate Value='PTV-Qualität · Konformität, Gradient &amp; Homogenität'}" Style="{StaticResource ClinicalBlueprintSubsectionTitle}" Margin="0,0,0,12"/>
    <TextBlock Text="{lang:Translate Value='Bezug: Planverschreibung, nicht automatisch die PTV-spezifische Dosis. GI umfasst das gesamte EXTERNAL.'}"
               TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,0,0,10"/>
    <DataGrid x:Name="TargetQualityTable" ItemsSource="{Binding TargetQuality}" AutoGenerateColumns="False" IsReadOnly="True"
@@ -35,15 +35,15 @@
      <DataGridTextColumn Header="{lang:Translate Value='Verfügbarkeit'}" Binding="{Binding AvailabilityScope}" Width="*" MinWidth="110"/>
     </DataGrid.Columns>
    </DataGrid>
-   <Expander Header="{lang:Translate Value='Definitionen und Bezugsvolumen'}" Margin="0,8,0,20">
+   <Expander Header="{lang:Translate Value='Definitionen und Bezugsvolumen'}" Margin="0,8,0,24">
     <TextBlock Text="{Binding TargetQualityNote}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,8,0,0"/>
    </Expander>
-   <Border Background="White" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="0,1" Padding="18,14" Margin="0,0,0,20">
+   <Border Background="White" BorderBrush="{StaticResource ClinicalBlueprintBorder}" BorderThickness="0,1" Padding="16,12" Margin="0,0,0,24">
     <UniformGrid Columns="4">
-     <StackPanel><TextBlock Text="{lang:Translate Value='Gesamt-MU'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{lang:Translate Path=TotalMuText}" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
-     <StackPanel><TextBlock Text="{lang:Translate Value='Pro Fraktionsdosis'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{lang:Translate Path=MuPerGyText}" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
-     <StackPanel><TextBlock Text="{lang:Translate Value='PAM · dimensionslos'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{lang:Translate Path=PamText}" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
-     <StackPanel><TextBlock Text="{lang:Translate Value='Mittlere Apertur'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{lang:Translate Path=AreaText}" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="{lang:Translate Value='Gesamt-MU'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{lang:Translate Path=TotalMuText}" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}" Margin="0,2,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="{lang:Translate Value='Pro Fraktionsdosis'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{lang:Translate Path=MuPerGyText}" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}" Margin="0,2,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="{lang:Translate Value='PAM · dimensionslos'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{lang:Translate Path=PamText}" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}" Margin="0,2,0,0"/></StackPanel>
+     <StackPanel><TextBlock Text="{lang:Translate Value='Mittlere Apertur'}" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/><TextBlock Text="{lang:Translate Path=AreaText}" FontSize="20" FontWeight="SemiBold" Foreground="{StaticResource ClinicalBlueprintCobaltDark}" Margin="0,2,0,0"/></StackPanel>
     </UniformGrid>
    </Border>
    <DockPanel x:Name="ParameterPlotsHeading" Margin="0,0,0,12">
@@ -51,7 +51,7 @@
      <TextBlock Text="{lang:Translate Value='Feld'}" VerticalAlignment="Center" Margin="0,0,10,0"/>
      <ComboBox ItemsSource="{Binding Beams}" SelectedItem="{Binding SelectedBeam}" DisplayMemberPath="BeamId" MinWidth="140" Padding="8,5" AutomationProperties.Name="{lang:Translate Value='Feld für Kontrollpunktverlauf'}"/>
     </StackPanel>
-    <StackPanel><TextBlock Text="{lang:Translate Value='Verlauf über die Kontrollpunkte'}" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="{lang:Translate Path=BeamText}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,4,14,0" TextWrapping="Wrap"/></StackPanel>
+    <StackPanel><TextBlock Text="{lang:Translate Value='Verlauf über die Kontrollpunkte'}" Style="{StaticResource ClinicalBlueprintSubsectionTitle}"/><TextBlock Text="{lang:Translate Path=BeamText}" Foreground="{StaticResource ClinicalBlueprintTextMuted}" Margin="0,4,14,0" TextWrapping="Wrap"/></StackPanel>
    </DockPanel>
    <Grid x:Name="ParameterPlots" Height="330">
     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -86,8 +86,8 @@
     </Grid>
     <Border Grid.Row="1" Grid.Column="2" Background="White" Padding="10,0,10,10"><oxy:PlotView x:Name="AperturePlot" Model="{Binding AperturePlotModel}" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/></Border>
    </Grid>
-   <TextBlock Text="{lang:Translate Path=DoseRateProfileText}" ToolTip="{lang:Translate Path=DoseRateText}" Focusable="True" Foreground="{StaticResource ClinicalBlueprintTextMuted}" TextWrapping="Wrap" Margin="0,8,0,22"/>
-   <TextBlock Text="{lang:Translate Value='Behandlungsfelder'}" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+   <TextBlock Text="{lang:Translate Path=DoseRateProfileText}" ToolTip="{lang:Translate Path=DoseRateText}" Focusable="True" Foreground="{StaticResource ClinicalBlueprintTextMuted}" TextWrapping="Wrap" Margin="0,8,0,24"/>
+   <TextBlock Text="{lang:Translate Value='Behandlungsfelder'}" Style="{StaticResource ClinicalBlueprintSubsectionTitle}" Margin="0,0,0,12"/>
    <DataGrid ItemsSource="{Binding Beams}" SelectedItem="{Binding SelectedBeam}" AutoGenerateColumns="False" IsReadOnly="True" MinHeight="85" MaxHeight="240">
     <DataGrid.Columns>
      <DataGridTextColumn Header="{lang:Translate Value='Feld'}" Binding="{Binding BeamId}" Width="*"/>
@@ -104,14 +104,14 @@
    <Grid Margin="0,24,0,0">
     <Grid.ColumnDefinitions><ColumnDefinition Width="1.5*"/><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
     <StackPanel>
-     <TextBlock Text="{lang:Translate Value='Metriken &amp; Definitionen'}" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+     <TextBlock Text="{lang:Translate Value='Metriken &amp; Definitionen'}" Style="{StaticResource ClinicalBlueprintSubsectionTitle}" Margin="0,0,0,12"/>
      <DataGrid ItemsSource="{Binding Metrics}" IsReadOnly="True" AutoGenerateColumns="False"><DataGrid.Columns>
       <DataGridTextColumn Header="{lang:Translate Value='Metrik'}" Binding="{Binding Name}" Width="1.5*"/><DataGridTextColumn Header="{lang:Translate Value='Wert'}" Binding="{Binding ValueText}" Width="80"/><DataGridTextColumn Header="{lang:Translate Value='Einheit'}" Binding="{Binding Unit}" Width="65"/>
       <DataGridTextColumn Header="{lang:Translate Value='Definition'}" Binding="{Binding Note}" Width="2*"/>
      </DataGrid.Columns></DataGrid>
     </StackPanel>
     <StackPanel Grid.Column="2">
-     <TextBlock Text="{lang:Translate Value='PAM-Zielstruktur'}" FontSize="17" FontWeight="SemiBold" Margin="0,0,0,10"/>
+     <TextBlock Text="{lang:Translate Value='PAM-Zielstruktur'}" Style="{StaticResource ClinicalBlueprintSubsectionTitle}" Margin="0,0,0,12"/>
      <DockPanel Margin="0,0,0,10"><Button Content="{lang:Translate Value='Berechnen'}" DockPanel.Dock="Right" Command="{Binding CalculateTargetCommand}" Style="{StaticResource ClinicalBlueprintSecondaryButton}" Margin="8,0,0,0"/><ComboBox ItemsSource="{Binding AvailableTargets}" SelectedItem="{Binding SelectedTargetStructureId}" Padding="7,4" AutomationProperties.Name="{lang:Translate Value='Zielstruktur für PAM'}"/></DockPanel>
      <TextBlock Text="{Binding TargetText}" FontWeight="SemiBold" Margin="0,0,0,8"/>
      <TextBlock Text="{lang:Translate Path=MethodText}" TextWrapping="Wrap" Foreground="{StaticResource ClinicalBlueprintTextMuted}"/>

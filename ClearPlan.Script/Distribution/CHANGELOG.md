@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.3.0] Review log and revised review interface
+- Added the structured review log (five linked CSV tables, pseudonymised identifiers, rule-set fingerprint, report SHA-256), the SQLite importer with example views and retrospective evaluation with the same rules; see docs/REVIEW_LOG.md.
+- Revised the review interface: task-grouped navigation, status chips, summary tiles, consistent spacing and English texts; dose views fitted to a chosen isodose plus 1 cm; BEV modes DRR, PTV contour and MLC only, collimator at its planned angle; collision playback with the MLC opening following the arc.
+- Added a DVH statistics table (volume, Dmin, D98, D50, Dmean, D2, Dmax) to the interface and the PDF report, display preferences stored globally and per user, and a sandbox mode for a stored test-plan snapshot marked as non-clinical.
+- Phantom check: with the verification configuration, goal entries, plan parameters and check findings were identical to the verified build. This is not a commissioned clinical release.
+
 ## [3.2.0-dev.20260916.1] Display language and exact CT approvals
 - Added a shared German/English selector, display-only labels and plot refresh. Reports capture their display language independently of later GUI changes; clinical identifiers, numeric values and canonical status codes are not renamed.
 - Added a versioned exact manufacturer/model/serial/HU-calibration approval configuration with an empty public starter. Missing, invalid, disabled or absent approvals cannot pass. Native integration is deliberately limited to the documented legacy fallback tuple; other private checks are unchanged.

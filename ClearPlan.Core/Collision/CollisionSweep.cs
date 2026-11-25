@@ -96,9 +96,12 @@ namespace ClearPlan.Core.Collision
                 // Reuse only these identical distance evaluations; keep every angle and
                 // its own coverage/coordinate/arc classification. Never simplify the mesh.
                 bool stationaryBore = !profile && solid != null && modelReason == null && scene.SourceModel.Kind == "HalcyonBoreSource";
+                bool capturedRadialOnly = stationaryBore && scene.CapturedRadialCoordinatesSupported && scene.Poses.Count > 0 &&
+                    scene.Poses.All(p => Math.Abs(Math.IEEERemainder(p.PatientSupportAngleDegrees,360)) < 1e-6 &&
+                        Math.Abs(p.Source.Z-p.Isocenter.Z) < 0.5);
                 bool spatialHead = !profile && solid != null && modelReason == null && scene.SourceModel.Kind == "TrueBeamHeadSource";
                 int evaluations = stationaryBore ? result.Frames.Select(f => BoreKey(f.Pose)).Distinct().Count() : result.Frames.Count;
-                bool distancePossible = (profile || (solid != null && modelReason == null)) && (scene.SupportedCoordinates || scene.NominalCoordinatesSupported);
+                bool distancePossible = (profile || (solid != null && modelReason == null)) && (scene.SupportedCoordinates || scene.NominalCoordinatesSupported || capturedRadialOnly);
                 if ((distancePossible && !spatialHead && (triangleCount * evaluations > MaximumTrianglePosePairs || vertexCount * evaluations > MaximumTrianglePosePairs)) ||
                     triangleCount > MaximumTrianglePosePairs || vertexCount > MaximumTrianglePosePairs ||
                     (long)surfaces.Count * result.Frames.Count > 20000)
@@ -134,7 +137,7 @@ namespace ClearPlan.Core.Collision
                     if (profileReason != null) reasons.Add(profileReason);
                     if (modelReason != null) reasons.Add(modelReason);
                     bool nominalCoordinates = !scene.SupportedCoordinates;
-                    if (nominalCoordinates) reasons.Add(scene.NominalCoordinatesSupported
+                    if (nominalCoordinates) reasons.Add(capturedRadialOnly ? "Captured CT geometry relative to native isocenter; radial bore distance only. Actual table coordinates and setup are not confirmed." : scene.NominalCoordinatesSupported
                         ? "Nominal coordinates only; couch pitch/roll or coordinate assurance is unconfirmed."
                         : "Supported coordinates are missing; no distance is available.");
                     bool coverage = (scene.Synthetic || scene.CtCoverageKnown) && !scene.ExternalTruncatedAtCtBoundary;
@@ -210,7 +213,7 @@ namespace ClearPlan.Core.Collision
                     frame.ModelTableStatus = spatialHead ? table.ModelStatus : null;
                     frame.Status = body.Hit || table.Hit ? "hit" : body.Status == "pass" && table.Status == "pass" ? "pass" : "uncertain";
                     frame.Reason = string.Join(" ", reasons.Distinct());
-                    if (stationaryBore && (scene.SupportedCoordinates || scene.NominalCoordinatesSupported))
+                    if (stationaryBore && (scene.SupportedCoordinates || scene.NominalCoordinatesSupported || capturedRadialOnly))
                     {
                         CollisionRadialReview radial;
                         var radialKey = BoreKey(frame.Pose);
@@ -256,11 +259,14 @@ namespace ClearPlan.Core.Collision
             {
                 var selected = surfaces.Where(s => s.Surface.Role == role).ToList();
                 double? clearance = null;
-                if (selected.Count > 0 && selected.All(s => s.Valid && s.RadialSurfaceValid))
+                if (selected.Count > 0 && selected.All(s => s.Valid && s.HasSurfaceFaces))
                 {
                     double maxRadiusSquared = 0;
                     // Convex radial norm attains its maximum on a triangle at a vertex.
-                    // Referenced vertices only; no end-cap or missing-anatomy inference.
+                    // Include ALL referenced vertices, even zero-area fragments:
+                    // extra points can only reduce this gap, never falsely enlarge it.
+                    // A real surface face is still required. No mesh repair, end-cap
+                    // or missing-anatomy inference; unrelated C-arm tests stay strict.
                     foreach (var surface in selected)
                     {
                         var mesh = surface.Surface.Mesh;

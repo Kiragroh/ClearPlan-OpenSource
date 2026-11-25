@@ -7,9 +7,10 @@ CT overlays, and optional BEV/geometry views into one review workflow. Its purpo
 is to make a clinic's own checks and documentation easier to maintain, inspect,
 and reuse—not to approve a treatment plan automatically.
 
-The current source is **3.2.0-dev.20260916.1**, a development snapshot requiring
-local commissioning. [The evaluated code snapshot](https://github.com/Kiragroh/ClearPlan-OpenSource/tree/98aed7bc2fb3ecbced7cc2a520f691da36c53bfa)
-is distinct from the older [v3.2.0 release](https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.2.0).
+The current release is **[v3.3.0](https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.3.0)**, a development release requiring
+local commissioning. It accompanies the Short Communication on configurable plan review
+and reporting ([release notes](docs/releases/v3.3.0.md)); the older
+[v3.2.0 release](https://github.com/Kiragroh/ClearPlan-OpenSource/releases/tag/v3.2.0) is retained.
 Software tests are not evidence of clinical safety or effectiveness.
 
 ## Start here

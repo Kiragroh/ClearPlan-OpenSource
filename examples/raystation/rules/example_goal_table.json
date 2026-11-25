@@ -1,0 +1,104 @@
+{
+  "schema": "ClearPlan.goal_table.v1",
+  "table_id": "Example prostate 5x5 Gy (illustrative)",
+  "scope": {
+    "fractions": 5,
+    "dose_per_fraction_gy": 5.0
+  },
+  "targets": [
+    "PTV"
+  ],
+  "_comment": "Illustrative numbers for software tests only. Not a clinical protocol.",
+  "goals": [
+    {
+      "template_code": "PTV-D98",
+      "template_structure": "PTV",
+      "aliases": [],
+      "objective": "D98%[Gy]",
+      "comparator": ">=",
+      "goal": 23.75,
+      "variation": 22.5,
+      "source_label": "Example table (illustrative)"
+    },
+    {
+      "template_code": "PTV-D2",
+      "template_structure": "PTV",
+      "aliases": [],
+      "objective": "D2%[Gy]",
+      "comparator": "<=",
+      "goal": 26.75,
+      "variation": 27.5,
+      "source_label": "Example table (illustrative)"
+    },
+    {
+      "template_code": "PTV-V95",
+      "template_structure": "PTV",
+      "aliases": [],
+      "objective": "V95%[%]",
+      "comparator": ">=",
+      "goal": 95,
+      "variation": 90,
+      "source_label": "Example table (illustrative)"
+    },
+    {
+      "template_code": "Rectum-D0.035cc",
+      "template_structure": "Rectum",
+      "aliases": [
+        "Rektum"
+      ],
+      "objective": "D0.035cc[Gy]",
+      "comparator": "<=",
+      "goal": 26,
+      "variation": 26.5,
+      "source_label": "Example table (illustrative)"
+    },
+    {
+      "template_code": "Rectum-V18",
+      "template_structure": "Rectum",
+      "aliases": [
+        "Rektum"
+      ],
+      "objective": "V18Gy[%]",
+      "comparator": "<=",
+      "goal": 15,
+      "variation": 25,
+      "source_label": "Example table (illustrative)"
+    },
+    {
+      "template_code": "Rectum-CV20",
+      "template_structure": "Rectum",
+      "aliases": [
+        "Rektum"
+      ],
+      "objective": "CV20Gy[cc]",
+      "comparator": ">=",
+      "goal": 35,
+      "variation": null,
+      "source_label": "Example table (illustrative)"
+    },
+    {
+      "template_code": "Rectum-Dmean",
+      "template_structure": "Rectum",
+      "aliases": [
+        "Rektum"
+      ],
+      "objective": "Dmean[Gy]",
+      "comparator": "<=",
+      "goal": 12,
+      "variation": null,
+      "source_label": "Example table (illustrative)"
+    },
+    {
+      "template_code": "Bladder-D0.035cc",
+      "template_structure": "Bladder",
+      "aliases": [
+        "Blase"
+      ],
+      "objective": "D0.035cc[Gy]",
+      "comparator": "<=",
+      "goal": 26,
+      "variation": null,
+      "source_label": "Example table (illustrative)"
+    }
+  ]
+}

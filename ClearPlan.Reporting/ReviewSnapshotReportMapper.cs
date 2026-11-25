@@ -19,6 +19,8 @@ namespace ClearPlan.Reporting
                 BeamId = beam.BeamId, Status = beam.Status, Summary = beam.Summary, RadialOnly = beam.RadialOnly, BodyOnly = beam.BodyOnly,
                 OverviewPng = beam.OverviewPng == null ? null : (byte[])beam.OverviewPng.Clone(),
                 OrientationPng = beam.OrientationPng == null ? null : (byte[])beam.OrientationPng.Clone(),
+                FirstCapturedPoseWhenMinimumUnavailable = beam.FirstCapturedPoseWhenMinimumUnavailable,
+                CtCoverageIncomplete = beam.CtCoverageIncomplete,
                 Rows = (beam.Rows ?? new List<CollisionReportRow>()).Where(row => row != null).Select(row => new CollisionReportRow { GantryDegrees = row.GantryDegrees,
                     CouchDegrees = row.CouchDegrees, MinimumDistanceMm = row.MinimumDistanceMm, CapturedControlPointIndex = row.CapturedControlPointIndex,
                     Interpolated = row.Interpolated, Status = row.Status, BodyDistance = row.BodyDistance,
@@ -236,12 +238,7 @@ namespace ClearPlan.Reporting
 
         private static ReviewReportDvhSeries MapDvh(ReviewDvhSeries series, bool synthetic)
         {
-            var statistics = ReviewDvhStatisticsCalculator.Calculate(
-                series.Points, series.MinimumDoseGy, series.MeanDoseGy,
-                series.MaximumDoseGy, allowCurveEstimates: synthetic);
-            if (series.D98DoseGy.HasValue && !double.IsNaN(series.D98DoseGy.Value) &&
-                !double.IsInfinity(series.D98DoseGy.Value) && series.D98DoseGy.Value >= 0)
-                statistics.D98Gy = series.D98DoseGy;
+            var statistics = ReviewDvhStatisticsCalculator.ForSeries(series, synthetic);
             return new ReviewReportDvhSeries
             {
                 StableId = series.StableId,

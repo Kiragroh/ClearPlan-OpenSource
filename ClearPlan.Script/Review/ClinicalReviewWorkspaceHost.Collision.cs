@@ -10,16 +10,42 @@ namespace ClearPlan.Review
     internal sealed partial class ClinicalReviewWorkspaceHost
     {
         private CancellationTokenSource collisionCancellation;
+        private bool collisionWaiting;
         internal Task CollisionTask { get; private set; }
         private void OnCollisionRequested(object sender, ReviewWorkspaceActionEventArgs args) { QueueCollision(true); }
         private void QueueCollision(bool force)
         {
-            if (disposed || CurrentViewModel == null || collisionCancellation != null) return;
+            if (disposed || CurrentViewModel == null || collisionCancellation != null || collisionWaiting) return;
             if (!force && CurrentViewModel.Collision.HasScene) return;
             if (IsSyntheticDemo) { CurrentViewModel.Collision.ReloadCommand.Execute(null); return; }
             if (analysisCancellation != null || imageCancellation != null)
-            { CurrentViewModel.Collision.SetFailure("Plananalyse läuft noch. Anschließend Geometrie laden."); return; }
+            {
+                // 2026-11-20: wait for the running native read instead of failing; the user
+                // no longer has to reload by hand. Native reads stay strictly sequential.
+                CollisionTask = WaitThenCaptureCollisionAsync(CurrentViewModel);
+                return;
+            }
             CollisionTask = CaptureCollisionAsync();
+        }
+
+        private async Task WaitThenCaptureCollisionAsync(ReviewWorkspaceViewModel workspace)
+        {
+            collisionWaiting = true;
+            try
+            {
+                workspace.Collision.SetLoading();
+                var started = DateTime.UtcNow;
+                while (!disposed && (analysisCancellation != null || imageCancellation != null))
+                {
+                    if (DateTime.UtcNow - started > TimeSpan.FromSeconds(120)) break;
+                    await Task.Delay(100);
+                }
+            }
+            finally { collisionWaiting = false; }
+            if (disposed || !ReferenceEquals(CurrentViewModel, workspace)) return;
+            if (analysisCancellation != null || imageCancellation != null)
+            { workspace.Collision.SetFailure("Plananalyse läuft noch. Anschließend Geometrie laden."); return; }
+            if (collisionCancellation == null) await CaptureCollisionAsync();
         }
         private async Task CaptureCollisionAsync()
         {

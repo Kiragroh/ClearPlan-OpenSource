@@ -21,6 +21,29 @@ namespace ClearPlan.Presentation.ViewModels
         private Task syntheticDrrTask;
         private readonly Func<ReviewBeamAnalysis, ReviewControlPointSample, BeamEyeViewImage> syntheticDrrProvider;
         public ImageSource BevImageSource { get; private set; }
+
+        private string bevDisplayMode;
+        /// <summary>GUI layer mode from the display preferences: drr, ptv or mlc. Display only.</summary>
+        public string BevDisplayMode
+        {
+            get { return bevDisplayMode ?? ClearPlan.Core.Settings.DisplayPreferences.Current.BevMode; }
+            set
+            {
+                if (value != ClearPlan.Core.Settings.DisplayPreferences.BevModeDrr && value != ClearPlan.Core.Settings.DisplayPreferences.BevModePtv &&
+                    value != ClearPlan.Core.Settings.DisplayPreferences.BevModeMlc) return;
+                if (bevDisplayMode == value) return;
+                bevDisplayMode = value;
+                ClearPlan.Core.Settings.DisplayPreferences.Update(p => p.BevMode = value);
+                Changed("BevDisplayMode"); Changed("BevModeDrr"); Changed("BevModePtv"); Changed("BevModeMlc");
+                if (!bevActive) return;
+                RenderBevPreview();
+                // The DRR is only requested once the DRR layer is actually shown.
+                if (value == ClearPlan.Core.Settings.DisplayPreferences.BevModeDrr) { var ignored = ActivateBevAsync(); }
+            }
+        }
+        public bool BevModeDrr { get { return BevDisplayMode == ClearPlan.Core.Settings.DisplayPreferences.BevModeDrr; } set { if (value) BevDisplayMode = ClearPlan.Core.Settings.DisplayPreferences.BevModeDrr; } }
+        public bool BevModePtv { get { return BevDisplayMode == ClearPlan.Core.Settings.DisplayPreferences.BevModePtv; } set { if (value) BevDisplayMode = ClearPlan.Core.Settings.DisplayPreferences.BevModePtv; } }
+        public bool BevModeMlc { get { return BevDisplayMode == ClearPlan.Core.Settings.DisplayPreferences.BevModeMlc; } set { if (value) BevDisplayMode = ClearPlan.Core.Settings.DisplayPreferences.BevModeMlc; } }
         public ICommand GenerateDrrCommand { get; internal set; }
         public ICommand PreviousControlPointCommand { get; private set; }
         public ICommand NextControlPointCommand { get; private set; }
@@ -63,6 +86,7 @@ namespace ClearPlan.Presentation.ViewModels
         {
             bevActive = true;
             RenderBevPreview();
+            if (BevDisplayMode != ClearPlan.Core.Settings.DisplayPreferences.BevModeDrr) return;
             if (bevSynthetic && SelectedControlPoint != null && SelectedControlPoint.BevImage == null)
                 await GenerateSyntheticDrrAsync();
             else if (!bevSynthetic && !initialNativeDrrRequested && SelectedControlPoint != null &&
@@ -81,7 +105,7 @@ namespace ClearPlan.Presentation.ViewModels
         public void RenderBevPreview()
         {
             var cp = SelectedControlPoint;
-            byte[] bytes = BeamEyeViewRenderer.Render(selectedBeam, cp, cp == null ? null : cp.BevImage, bevSynthetic, compactStatus: true);
+            byte[] bytes = BeamEyeViewRenderer.RenderGui(selectedBeam, cp, cp == null ? null : cp.BevImage, bevSynthetic, compactStatus: true, displayMode: BevDisplayMode);
             using (var stream = new MemoryStream(bytes, false))
             {
                 var image = new BitmapImage();

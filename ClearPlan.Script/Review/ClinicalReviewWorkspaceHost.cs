@@ -123,6 +123,21 @@ namespace ClearPlan.Review
             return true;
         }
 
+        /// <summary>2026-11-20: sandbox from the exported Varian test plan (Sandbox\sandbox-snapshot.json in
+        /// the program folder); null when absent or invalid, then the synthetic scenario is used.</summary>
+        private ClearPlan.Core.Review.ReviewSnapshot LoadSandboxSnapshot()
+        {
+            try
+            {
+                ClearPlan.Core.Collision.CollisionScene scene; string description;
+                var snapshot = ClearPlan.Core.Simulation.SandboxSnapshotFile.TryLoad(
+                    settingsProvider().ResolvePath(ClearPlan.Core.Simulation.SandboxSnapshotFile.DefaultRelativePath), out scene, out description);
+                if (snapshot == null) return null;
+                return ClearPlan.Core.Review.ReviewSnapshotValidator.Validate(snapshot).IsValid ? snapshot : null;
+            }
+            catch (Exception) { return null; }
+        }
+
         public bool TrySetSyntheticDemo(bool enabled)
         {
             ThrowIfDisposed();
@@ -131,7 +146,7 @@ namespace ClearPlan.Review
             Exception failure;
             bool succeeded = enabled
                 ? controller.TryShowSnapshot(
-                    SyntheticScenarioFactory.Create("mixed-review"),
+                    LoadSandboxSnapshot() ?? SyntheticScenarioFactory.Create("mixed-review"),
                     out failure)
                 : controller.TryRefresh(out failure);
             if (!succeeded)
@@ -322,6 +337,8 @@ namespace ClearPlan.Review
                 if (analysis.Beams.Any(b => b.ControlPoints.Any(cp => cp.Aperture != null)))
                     analysis = await builder.EnrichTargetProjectionsAsync(plan, analysis, analysisCancellation.Token);
                 analysisCancellation.Token.ThrowIfCancellationRequested();
+                // Display only: real collimator angle in BEV and collision views without a DRR.
+                EsapiBevBuilder.CaptureCollimatorCalibration(plan, analysis);
                 if (!AnalysisContextIsCurrent(original, expectedUid)) return;
                 var updated = ClearPlan.Core.Review.ReviewSnapshotJson.Deserialize(ClearPlan.Core.Review.ReviewSnapshotJson.Serialize(original));
                 updated.PlanAnalysis = analysis;
@@ -342,10 +359,32 @@ namespace ClearPlan.Review
                 view.DataContext = CurrentViewModel;
                 owner.ShowCompletedAnalysis("Native ESAPI-Parameter aktualisiert.", analysis,
                     "Fehlende Modell-/Lagenzuordnungen sind in den Planparametern mit der beobachteten Arraygröße gekennzeichnet; kein DICOM-Export erforderlich.");
+                PrefetchHeavyTabs(source.ActivePlanningItem);
             }
             catch (OperationCanceledException) { if (CanUpdateAnalysisStatus(original)) owner.ShowAnalysisStatus("Native Analyse abgebrochen / Zeitlimit erreicht; letzter gültiger Stand bleibt erhalten.", MainView.AnalysisStatusSeverity.Warning); }
             catch (Exception) { if (CanUpdateAnalysisStatus(original)) owner.ShowAnalysisStatus("Native Analyse nicht übernommen. MLC-Profilpfad in Einstellungen, JSON-Gültigkeit und ESAPI-Plankontext prüfen; letzter gültiger Stand bleibt erhalten.", MainView.AnalysisStatusSeverity.Error); }
             finally { analysisCancellation.Dispose(); analysisCancellation = null; }
+        }
+
+        /// <summary>2026-11-20: after the parameter analysis, read CT planes and then the collision
+        /// geometry in the background so both tabs are usually ready when opened. Same read-only
+        /// native calls as on tab activation, strictly one after the other; failures stay silent
+        /// here and are reported when the tab itself is opened.</summary>
+        private async void PrefetchHeavyTabs(PlanningItemViewModel expectedPlanningItem)
+        {
+            try
+            {
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                if (disposed || IsSyntheticDemo || CurrentViewModel == null || !ReferenceEquals(source.ActivePlanningItem, expectedPlanningItem)) return;
+                QueuePlanImages(false);
+                var images = PlanImagesTask;
+                if (images != null) { try { await images; } catch (Exception) { } }
+                while (!disposed && (analysisCancellation != null || imageCancellation != null)) await Task.Delay(100);
+                await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                if (disposed || IsSyntheticDemo || CurrentViewModel == null || !ReferenceEquals(source.ActivePlanningItem, expectedPlanningItem)) return;
+                QueueCollision(false);
+            }
+            catch (Exception) { }
         }
 
         private bool CanUpdateAnalysisStatus(ClearPlan.Core.Review.ReviewSnapshot original)
@@ -683,7 +722,9 @@ namespace ClearPlan.Review
             if (disposed || CurrentViewModel == null) return;
             if (IsSyntheticDemo)
             {
-                CurrentViewModel.PlanImages.ReplaceImages(SyntheticPlanImageFactory.Create(CurrentViewModel.ActivePlanKey));
+                var sandboxImages = controller.CurrentSnapshot == null ? null : controller.CurrentSnapshot.PlanImages;
+                CurrentViewModel.PlanImages.ReplaceImages(sandboxImages != null && sandboxImages.Count > 0
+                    ? sandboxImages : SyntheticPlanImageFactory.Create(CurrentViewModel.ActivePlanKey));
                 return;
             }
             if (!force && CurrentViewModel.PlanImages.HasImages) return;

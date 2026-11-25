@@ -27,6 +27,7 @@ namespace ClearPlan.Review
             // This ESAPI exposes no table pitch/roll. Require separate, per-plan
             // operator assurance, never pretend these angles were read from ESAPI.
             bool coordinates = plan.TreatmentOrientation == PatientOrientation.HeadFirstSupine && machines.Count == 1;
+            bool radialCoordinates = coordinates;
             ControlPoint referenceTable = null;
             foreach (var structure in plan.StructureSet.Structures)
             {
@@ -49,6 +50,7 @@ namespace ClearPlan.Review
                     Mesh = new TargetMeshGeometry { Vertices = vertices, TriangleIndices = mesh.TriangleIndices.ToArray() } });
             }
             if (scene.Surfaces.Count(s => s.Role == "External") != 1) coordinates = false;
+            radialCoordinates &= scene.Surfaces.Count(s => s.Role == "External") == 1;
             // Capture the actual acquisition grid, never infer coverage from cropped report images.
             // A topologically closed mesh may contain artificial caps at the CT limits.
             scene.CtCoverageKnown = false;
@@ -75,7 +77,7 @@ namespace ClearPlan.Review
                 catch (Exception) { scene.NativeBeamFingerprints[beam.Id] = null; }
                 var points = beam.ControlPoints.ToList();
                 if (diagnostic != null) diagnostic("collision-field ordinal=" + (beams.IndexOf(beam) + 1) + " controlPoints=" + points.Count);
-                if (points.Count == 0 || scene.Poses.Count + points.Count > CollisionSweep.MaximumInputPoses) { coordinates = false; break; }
+                if (points.Count == 0 || scene.Poses.Count + points.Count > CollisionSweep.MaximumInputPoses) { coordinates = false; radialCoordinates = false; break; }
                 if (referenceTable == null) referenceTable = points[0];
                 if (diagnostic != null)
                 {
@@ -97,6 +99,14 @@ namespace ClearPlan.Review
                         !Same(referenceTable.TableTopVerticalPosition, cp.TableTopVerticalPosition)) coordinates = false;
                     var source = beam.GetSourceLocation(cp.GantryAngle);
                     var iso = beam.IsocenterPosition;
+                    // Ring devices may expose NaN for all table coordinates. CT
+                    // surface-to-ISO radial separation still exists in the plan.
+                    // Do not convert that into confirmed physical setup coordinates.
+                    radialCoordinates &= Finite(cp.PatientSupportAngle) && Math.Abs(Math.IEEERemainder(cp.PatientSupportAngle,360)) < 1e-6 &&
+                        SameOrBothMissing(referenceTable.TableTopLateralPosition, cp.TableTopLateralPosition) &&
+                        SameOrBothMissing(referenceTable.TableTopLongitudinalPosition, cp.TableTopLongitudinalPosition) &&
+                        SameOrBothMissing(referenceTable.TableTopVerticalPosition, cp.TableTopVerticalPosition) &&
+                        Math.Abs(source.z-iso.z) < 0.5;
                     if (!Finite(cp.GantryAngle) || !Finite(source.x) || !Finite(source.y) || !Finite(source.z) ||
                         !Finite(iso.x) || !Finite(iso.y) || !Finite(iso.z)) throw new ArgumentException("Invalid source or isocenter coordinates.");
                     scene.Poses.Add(new CollisionPose { BeamId = beam.Id, ControlPointIndex = pointIndex, GantryDegrees = cp.GantryAngle,
@@ -105,6 +115,7 @@ namespace ClearPlan.Review
                 }
             }
             scene.NominalCoordinatesSupported = coordinates;
+            scene.CapturedRadialCoordinatesSupported = radialCoordinates && scene.Poses.Count > 0;
             // Noncoplanar display uses the beam's native source positions in the
             // patient frame. It is nominal only until separate local acceptance.
             scene.SupportedCoordinates = coordinates && zeroPitchRollConfirmed &&
@@ -120,6 +131,8 @@ namespace ClearPlan.Review
             // Unknown table coordinates are not evidence of a fixed treatment position.
             return Finite(a) && Finite(b) && Math.Abs(a - b) < 1e-6;
         }
+        private static bool SameOrBothMissing(double a, double b)
+        { return Same(a,b) || (double.IsNaN(a) && double.IsNaN(b)); }
         private static bool Finite(double value) { return !double.IsNaN(value) && !double.IsInfinity(value); }
     }
 }

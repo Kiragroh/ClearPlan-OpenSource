@@ -13,7 +13,7 @@ namespace ClearPlan.Rendering
     public static class PlanImageRenderer
     {
         private static readonly Color Background = Color.FromArgb(13, 24, 40);
-        private static readonly Color Orientation = Color.FromArgb(75, 220, 195);
+        private static readonly Color Orientation = Color.FromArgb(110, 205, 255);
 
         public static IList<ReviewImageOverlay> IsodoseScale(ReviewPlanImage image)
         {
@@ -34,6 +34,22 @@ namespace ClearPlan.Rendering
                 image.WidthPixels >= 2 && image.HeightPixels >= 2 && image.WidthPixels <= 2048 && image.HeightPixels <= 2048 &&
                 image.GrayscalePixels != null && image.GrayscalePixels.Length == (long)image.WidthPixels * image.HeightPixels &&
                 Positive(image.PixelSpacingXMillimeters) && Positive(image.PixelSpacingYMillimeters);
+        }
+
+        /// <summary>Margin beyond the outermost shown isodose for the GUI's tight frame.</summary>
+        public const double GuiIsodoseMarginMillimeters = 10;
+
+        /// <summary>Native GUI frame: reference isodose (display preference, default 20 %) plus margin when
+        /// focused; reports use CalculateViewport.</summary>
+        public static PlanImageViewport CalculateGuiViewport(ReviewPlanImage image, bool focusIsocenter)
+        {
+            if (focusIsocenter)
+            {
+                var preferences = ClearPlan.Core.Settings.DisplayPreferences.Current;
+                return PlanImageViewport.CalculateIsodoseFit(image, preferences.ZoomMarginMillimeters, preferences.ZoomIsodosePercent)
+                    ?? PlanImageViewport.Calculate(image);
+            }
+            return CalculateViewport(image, false);
         }
 
         public static PlanImageViewport CalculateViewport(ReviewPlanImage image, bool focusIsocenter)
@@ -57,6 +73,9 @@ namespace ClearPlan.Rendering
         { return RenderFiltered(image, showStructures, showDose, focusIsocenter, hiddenStructureIds, true); }
 
         public static byte[] RenderFiltered(ReviewPlanImage image, bool showStructures, bool showDose, bool focusIsocenter, IEnumerable<string> hiddenStructureIds, bool includeRasterScale)
+        { return RenderFiltered(image, showStructures, showDose, focusIsocenter, hiddenStructureIds, includeRasterScale, false); }
+
+        public static byte[] RenderFiltered(ReviewPlanImage image, bool showStructures, bool showDose, bool focusIsocenter, IEnumerable<string> hiddenStructureIds, bool includeRasterScale, bool isodoseFit)
         {
             var hidden = new HashSet<string>(hiddenStructureIds ?? Enumerable.Empty<string>(), StringComparer.OrdinalIgnoreCase);
             if (!IsRenderable(image)) throw new ArgumentException("Invalid or unavailable detached overview image.");
@@ -81,7 +100,7 @@ namespace ClearPlan.Rendering
                     System.Runtime.InteropServices.Marshal.Copy(buffer, 0, data.Scan0, buffer.Length);
                 }
                 finally { pixels.UnlockBits(data); }
-                var viewport = CalculateViewport(image, focusIsocenter);
+                var viewport = isodoseFit ? CalculateGuiViewport(image, focusIsocenter) : CalculateViewport(image, focusIsocenter);
                 var sourceViewport = PlanImageViewport.Calculate(image);
                 var view = new RectangleF(30, 30, 660, 660);
                 Func<double, float> mapX = x => view.Left + (float)viewport.MapX(x) * view.Width;

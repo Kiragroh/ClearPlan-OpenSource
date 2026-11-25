@@ -229,8 +229,8 @@ $dvhTabBlock = [regex]::Match(
     '(?s)<TabItem\s+x:Name="DvhTab".*?</TabItem>').Value
 Require-Pattern `
     -Text $dvhTabBlock `
-    -Pattern '<Grid Margin="16"' `
-    -Description "DVH page margin 16"
+    -Pattern '<Grid Margin="24"' `
+    -Description "DVH page margin 24 (UKL layout grid, 2026-11-20)"
 Require-Pattern `
     -Text $dvhTabBlock `
     -Pattern 'Grid\.Column="2"[^>]*\sPadding="10"' `

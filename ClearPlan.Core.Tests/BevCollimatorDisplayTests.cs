@@ -12,12 +12,30 @@ namespace ClearPlan.Core.Tests
 {
     internal static class BevCollimatorDisplayTests
     {
+        public static void AngularMetersetIsNotDoseRate()
+        {
+            var beam=new ReviewBeamAnalysis { MetersetMu=200, GantryDirection="Clockwise" };
+            var a=new ReviewControlPointSample {GantryAngleDegrees=359,CumulativeMetersetWeight=0};
+            var b=new ReviewControlPointSample {GantryAngleDegrees=1,CumulativeMetersetWeight=0.1};
+            var c=new ReviewControlPointSample {GantryAngleDegrees=11,CumulativeMetersetWeight=1};
+            beam.ControlPoints.Add(a);beam.ControlPoints.Add(b);beam.ControlPoints.Add(c);
+            TestAssert.Equal((double?)10,AngularMeterset.Density(beam,a,b));
+            TestAssert.Equal((double?)18,AngularMeterset.Density(beam,b,c));
+            b.PlannedDoseRateMuPerMin=600;b.EstimatedDoseRateMuPerMin=100;
+            TestAssert.Equal((double?)10,AngularMeterset.Density(beam,a,b));
+            beam.GantryDirection="CounterClockwise";a.GantryAngleDegrees=1;b.GantryAngleDegrees=359;
+            TestAssert.Equal((double?)10,AngularMeterset.Density(beam,a,b));
+            b.GantryAngleDegrees=a.GantryAngleDegrees;TestAssert.False(AngularMeterset.Density(beam,a,b).HasValue);
+            b.GantryAngleDegrees=359;b.CumulativeMetersetWeight=-1;TestAssert.False(AngularMeterset.Density(beam,a,b).HasValue);
+            b.CumulativeMetersetWeight=.1;beam.MetersetMu=null;TestAssert.False(AngularMeterset.Density(beam,a,b).HasValue);
+            beam.MetersetMu=200;beam.GantryDirection="None";TestAssert.False(AngularMeterset.Density(beam,a,b).HasValue);
+        }
         public static void PhysicalLayersUseGreenAndBlueWithExplicitMaximumField()
         {
             var color = typeof(BeamEyeViewRenderer).GetMethod("LayerColor", BindingFlags.NonPublic | BindingFlags.Static);
             var first = (Color)color.Invoke(null, new object[] { 0 });
             var second = (Color)color.Invoke(null, new object[] { 1 });
-            TestAssert.True(first.G > first.R + 60 && first.G > first.B + 40, "Single/distal MLC must be green.");
+            TestAssert.True(first.G > first.R + 60 && first.B > first.G + 35, "Single/distal MLC must be sky blue.");
             TestAssert.True(second.B > second.R + 60 && second.B > second.G + 20, "Proximal MLC must be visibly blue, not another green/yellow.");
             var beam = Beam(0);
             beam.ControlPoints[0].Aperture.FixedBoundingBox = new ApertureRectangle(-140, -140, 140, 140);
@@ -202,7 +220,7 @@ namespace ClearPlan.Core.Tests
         {
             for (int y = (int)point.Y - radius; y <= (int)point.Y + radius; y++)
             for (int x = (int)point.X - radius; x <= (int)point.X + radius; x++)
-            { var color = bitmap.GetPixel(x, y); if (color.G > 180 && color.G - color.R > 70 && color.G - color.B > 50) return true; }
+            { var color = bitmap.GetPixel(x, y); if (color.G > 170 && color.G - color.R > 65 && color.B - color.G > 30) return true; }
             return false;
         }
 

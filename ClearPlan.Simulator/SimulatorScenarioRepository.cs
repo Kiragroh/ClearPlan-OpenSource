@@ -25,17 +25,29 @@ namespace ClearPlan.Simulator
                 "Scenarios");
         }
 
+        private string SandboxPath { get { return Path.Combine(Path.GetDirectoryName(scenarioDirectory), SandboxSnapshotFile.DefaultRelativePath); } }
+
         public IList<string> ScenarioIds
         {
             get
             {
-                return new List<string>(
-                    SyntheticScenarioFactory.ScenarioIds.Concat(SyntheticPublicationScenarioFactory.ScenarioIds));
+                var ids = new List<string>();
+                if (File.Exists(SandboxPath)) ids.Add(SandboxSnapshotFile.ScenarioIdValue);
+                ids.AddRange(SyntheticScenarioFactory.ScenarioIds.Concat(SyntheticPublicationScenarioFactory.ScenarioIds));
+                return ids;
             }
         }
 
         public ReviewSnapshot Load(string scenarioId)
         {
+            // 2026-11-20: exported Varian test plan (MU blurred) next to the simulator, if present.
+            if (string.Equals(scenarioId, SandboxSnapshotFile.ScenarioIdValue, StringComparison.Ordinal))
+            {
+                Core.Collision.CollisionScene scene; string description;
+                var sandbox = SandboxSnapshotFile.TryLoad(SandboxPath, out scene, out description);
+                if (sandbox == null) throw new FileNotFoundException("The sandbox snapshot is missing or invalid.", SandboxPath);
+                return sandbox;
+            }
             // Publication geometry is generated in memory; JSON intentionally omits MLC/DRR pixels.
             if (SyntheticPublicationScenarioFactory.ScenarioIds.Contains(scenarioId, StringComparer.Ordinal))
                 return SyntheticPublicationScenarioFactory.Create(scenarioId);

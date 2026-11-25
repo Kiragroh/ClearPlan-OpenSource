@@ -397,7 +397,8 @@ namespace ClearPlan.Helpers
                 },
                 links = Links,
                 checks = Checks,
-                privacy = Privacy
+                privacy = Privacy,
+                reviewLog = ReviewLog
             };
             return JsonConvert.SerializeObject(options, Formatting.Indented);
         }
@@ -434,6 +435,11 @@ namespace ClearPlan.Helpers
             Checks = Checks ?? new ClearPlanCheckOptions();
             Privacy = Privacy ?? new ClearPlanPrivacyOptions();
             ClinicalPaths = ClinicalPaths ?? new ClearPlanClinicalPathOptions();
+            ReviewLog = ReviewLog ?? new ClearPlanReviewLogOptions();
+            Paths.ReviewLogDirectory = DefaultIfBlank(Paths.ReviewLogDirectory,
+                Path.Combine("Logs", "ReviewLog"));
+            Paths.ReviewLogKeyFile = DefaultIfBlank(Paths.ReviewLogKeyFile,
+                Path.Combine("State", "review-log.key"));
 
             ConstraintSource.ExcelWorkbookPath = DefaultIfBlank(
                 ConstraintSource.ExcelWorkbookPath,

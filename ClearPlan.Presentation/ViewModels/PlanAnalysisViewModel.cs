@@ -93,11 +93,11 @@ namespace ClearPlan.Presentation.ViewModels
         {
             DoseRatePlotModel = CreatePlot("Kontrollpunkt", "Dosisrate [MU/min]");
             AperturePlotModel = CreatePlot("Kontrollpunkt", "Aperturfläche [cm²]");
-            var planned = Line("Geplant (Kontrollpunkt)", "#0F766E", LineStyle.Solid);
+            var planned = Line("Geplant (Kontrollpunkt)", "#0072A6", LineStyle.Solid);
             planned.Tag = "planned";
-            var estimated = Line("Geschätzt (Segment)", "#0F766E", LineStyle.Dash);
+            var estimated = Line("Geschätzt (Segment)", "#0072A6", LineStyle.Dash);
             estimated.Tag = "estimated";
-            var area = Line("Effektive Apertur", "#0F766E", LineStyle.Solid);
+            var area = Line("Effektive Apertur", "#0072A6", LineStyle.Solid);
             foreach (var point in selectedBeam == null || selectedBeam.ControlPoints == null ? new List<ReviewControlPointSample>() : selectedBeam.ControlPoints)
             {
                 if (point == null) continue;

@@ -18,6 +18,9 @@ namespace ClearPlan.Core.Collision
         public string NativeMachineId { get; set; }
         public string PatientPosition { get; set; }
         public bool NominalCoordinatesSupported { get; set; }
+        // Captured CT surfaces relative to native ISO/source plane; permits only
+        // an open-bore radial review, never actual table-position assurance.
+        public bool CapturedRadialCoordinatesSupported { get; set; }
         public bool CtCoverageKnown { get; set; }
         public bool ExternalTruncatedAtCtBoundary { get; set; }
         public string CtCoverageReason { get; set; }

@@ -25,6 +25,19 @@ namespace ClearPlan.Core.Review
     /// </summary>
     public static class ReviewDvhStatisticsCalculator
     {
+        /// <summary>One rule for GUI and report: native extrema/mean first, curve D98/D50/D2,
+        /// native D98 overrides the curve value; curve estimates only for simulation.</summary>
+        public static ReviewDvhStatistics ForSeries(ReviewDvhSeries series, bool synthetic)
+        {
+            if (series == null) return new ReviewDvhStatistics();
+            var statistics = Calculate(series.Points, series.MinimumDoseGy, series.MeanDoseGy,
+                series.MaximumDoseGy, allowCurveEstimates: synthetic);
+            if (series.D98DoseGy.HasValue && !double.IsNaN(series.D98DoseGy.Value) &&
+                !double.IsInfinity(series.D98DoseGy.Value) && series.D98DoseGy.Value >= 0)
+                statistics.D98Gy = series.D98DoseGy;
+            return statistics;
+        }
+
         public static ReviewDvhStatistics Calculate(
             IList<ReviewDvhPoint> points,
             double? minimumDoseGy = null,

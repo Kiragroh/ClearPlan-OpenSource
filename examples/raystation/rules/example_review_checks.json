@@ -1,0 +1,16 @@
+{
+  "schema": "ClearPlan.review_checks.v1",
+  "ct_max_age_days": 30,
+  "field_name_regex": "^[0-9]{1,2} [A-Z0-9 -]+$",
+  "approved_ct_devices": [
+    {
+      "manufacturer": "ExampleVendor",
+      "model": "ExampleCT 1"
+    }
+  ],
+  "target_structures": [
+    "PTV"
+  ],
+  "external_structure": null,
+  "disabled_checks": []
+}

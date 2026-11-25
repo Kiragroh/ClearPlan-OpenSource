@@ -342,7 +342,7 @@ namespace ClearPlan.Core.Tests
             Near(95, (double?)frame.RadialReview.TableClearanceMm, 1e-8);
             TestAssert.Equal("clear", (string)frame.RadialReview.Status);
             var displayed = new ClearPlan.Presentation.ViewModels.CollisionSweepFrameViewModel((CollisionSweepFrame)frame);
-            TestAssert.Equal("Full clear", displayed.StatusText);
+            TestAssert.Equal("Clear", displayed.StatusText);
             TestAssert.Equal("95.0", displayed.BodyDistanceText);
             TestAssert.Equal("uncertain", (string)frame.Status, "A positive captured radial distance does not manufacture clinical assurance or missing anatomy.");
             TestAssert.True(((string)frame.RadialReview.Scope).Contains("captured") && ((string)frame.RadialReview.Scope).Contains("outside CT"));
@@ -361,13 +361,35 @@ namespace ClearPlan.Core.Tests
             Near(95, (double?)frame.RadialReview.BodyClearanceMm, 1e-8);
             scene.Surfaces[0].Mesh.Vertices[8].X = 0; // Dangling degenerate geometry not represented by any proper face.
             frame = CollisionSweep.Evaluate(scene, CancellationToken.None).Frames.Single();
-            TestAssert.Equal("uncertain", (string)frame.RadialReview.Status, "Detached unsupported primitives remain uncertain.");
+            TestAssert.Equal("clear", (string)frame.RadialReview.Status, "All referenced degenerate points inside the bore are included conservatively, not discarded.");
+            Near(95, (double?)frame.RadialReview.BodyClearanceMm, 1e-8);
+            scene.Surfaces[0].Mesh.Vertices[8].X=120;
+            frame = CollisionSweep.Evaluate(scene, CancellationToken.None).Frames.Single();
+            TestAssert.Equal("model-hit", (string)frame.RadialReview.Status, "An outlying degenerate point must reduce the bound and detect intersection, not be repaired away.");
             scene.Surfaces[0].Mesh = null;
             frame = CollisionSweep.Evaluate(scene, CancellationToken.None).Frames.Single();
             TestAssert.Equal("uncertain", (string)frame.RadialReview.Status);
             scene.NominalCoordinatesSupported = false;
             frame = CollisionSweep.Evaluate(scene, CancellationToken.None).Frames.Single();
             TestAssert.True(frame.RadialReview == null, "Unknown native positioning cannot yield a radial clearance result.");
+            scene.Surfaces[0].Mesh = Box(-3,-4,299,3,4,300);
+            scene.CapturedRadialCoordinatesSupported = true;
+            frame = CollisionSweep.Evaluate(scene, CancellationToken.None).Frames.Single();
+            Near(95,(double?)frame.RadialReview.BodyClearanceMm,1e-8);
+            Near(95,(double?)frame.RadialReview.TableClearanceMm,1e-8);
+            TestAssert.False(scene.SupportedCoordinates || scene.NominalCoordinatesSupported,
+                "Radial CT geometry must not grant actual table-position assurance.");
+            TestAssert.Equal("uncertain",(string)frame.Status);
+            scene.Poses[0].PatientSupportAngleDegrees=10;
+            frame = CollisionSweep.Evaluate(scene, CancellationToken.None).Frames.Single();
+            TestAssert.True(frame.RadialReview==null,"Nonzero couch must not use the fixed axial bore fallback.");
+            scene.Poses[0].PatientSupportAngleDegrees=0; scene.Poses[0].Source.Z=10;
+            frame = CollisionSweep.Evaluate(scene, CancellationToken.None).Frames.Single();
+            TestAssert.True(frame.RadialReview==null,"Source orbit must establish the native axial ring plane.");
+            scene.Poses[0].Source.Z=0; scene.SourceModel=SourceScene().SourceModel;
+            frame = CollisionSweep.Evaluate(scene, CancellationToken.None).Frames.Single();
+            TestAssert.True(frame.RadialReview==null && frame.BodyClearanceMm==null,
+                "The ring-only capture gate must not weaken C-arm coordinate checks.");
         }
 
         public static void SpatialPruningKeepsBoundsAndHonorsLimits()

@@ -74,6 +74,13 @@
     <Compile Include="Integration\AriaFileWork.cs" />
     <Compile Include="Configuration\ConfigurationRevision.cs" />
     <Compile Include="Configuration\ConfigurationHistoryStore.cs" />
+    <Compile Include="ReviewLog\ReviewLogSchema.cs" />
+    <Compile Include="ReviewLog\ReviewLogCsv.cs" />
+    <Compile Include="ReviewLog\ReviewLogPseudonymizer.cs" />
+    <Compile Include="ReviewLog\ReviewLogContext.cs" />
+    <Compile Include="ReviewLog\ReviewLogRulesetResolver.cs" />
+    <Compile Include="ReviewLog\ReviewLogRecordBuilder.cs" />
+    <Compile Include="ReviewLog\ReviewLogWriter.cs" />
     <Compile Include="Constraints\CatalogValidationIssue.cs" />
     <Compile Include="Constraints\CatalogStatistics.cs" />
     <Compile Include="Constraints\ConstraintCatalog.cs" />
@@ -129,6 +136,7 @@
     <Compile Include="PlanAnalysis\NativeMlcGeometryProfile.cs" />
     <Compile Include="PlanAnalysis\NativeMlcProfileFileSource.cs" />
     <Compile Include="Simulation\SyntheticDrrFactory.cs" />
+    <Compile Include="Simulation\SandboxSnapshotFile.cs" />
     <Compile Include="PlanAnalysis\SyntheticPlanAnalysisFactory.cs" />
     <Compile Include="Review\DvhSelectionPolicy.cs" />
     <Compile Include="Review\UserTargetCoverageRule.cs" />
@@ -165,6 +173,7 @@
     <Compile Include="Simulation\SyntheticScenarioFactory.cs" />
     <Compile Include="Simulation\SyntheticPublicationScenarioFactory.cs" />
     <Compile Include="Settings\ClearPlanSettingsModel.cs" />
+    <Compile Include="Settings\DisplayPreferences.cs" />
     <Compile Include="Settings\PathSettingsIni.cs" />
     <Compile Include="Settings\PathFailureClassifier.cs" />
     <Compile Include="Settings\SettingsPathResolver.cs" />
@@ -173,6 +182,7 @@
     <Compile Include="Settings\WritablePathFallback.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PlanAnalysis\AngularMeterset.cs" />
     <Compile Include="Localization\ReviewLanguage.cs" />
     <EmbeddedResource Include="Localization\ReviewLanguage.en.json"><LogicalName>ClearPlan.ReviewLanguage.en.json</LogicalName><WithCulture>false</WithCulture></EmbeddedResource>
   </ItemGroup>

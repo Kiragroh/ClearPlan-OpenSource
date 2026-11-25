@@ -36,7 +36,9 @@ namespace ClearPlan.Presentation.ViewModels
             allFrames = frames.AsReadOnly();
             ReloadCommand = new RelayCommand(p =>
             {
-                if (snapshot.Synthetic)
+                if (snapshot.Synthetic && snapshot.SandboxCollisionScene != null)
+                    SetScene(snapshot.SandboxCollisionScene, null);
+                else if (snapshot.Synthetic)
                     SetScene(SyntheticCollisionFactory.Create(snapshot.ActivePlanKey, DemoKind), null);
                 else { var handler = ReloadRequested; if (handler != null) handler(this, EventArgs.Empty); }
             }, p => !IsLoading);
@@ -74,6 +76,17 @@ namespace ClearPlan.Presentation.ViewModels
         public bool IsPlaying { get { return playing; } }
         public bool AllFieldsPlayback { get { return allFieldsPlayback; } set { allFieldsPlayback = value; Notify(); CommandManager.InvalidateRequerySuggested(); } }
         public bool RepeatPlayback { get { return repeatPlayback; } set { repeatPlayback = value; Notify(); } }
+        /// <summary>2026-11-20, display only: the MLC inset follows the arc during playback (like QuickLookRT).</summary>
+        public bool FollowMlc
+        {
+            get { return ClearPlan.Core.Settings.DisplayPreferences.Current.CollisionFollowMlc; }
+            set
+            {
+                if (value == FollowMlc) return;
+                ClearPlan.Core.Settings.DisplayPreferences.Update(p => p.CollisionFollowMlc = value);
+                Notify(); ChangeScene();
+            }
+        }
         public string PlayText { get { return playing ? "Pause" : "Abspielen"; } }
         public CollisionSweepResult Sweep { get; private set; }
         public List<CollisionSweepFrameViewModel> BeamFrames { get { return beamFrames; } }
@@ -135,6 +148,7 @@ namespace ClearPlan.Presentation.ViewModels
         public string StatusDetail { get { return message; } }
         public string StatusLabel { get { return CollisionSweepFrameViewModel.Label(CollisionSweepFrameViewModel.Aggregate(frames.Select(f => f.StatusCode))); } }
         public bool IsRadialReview { get { return SelectedFrame != null && SelectedFrame.Frame.RadialReview != null; } }
+        public bool CtCoverageIncomplete { get { return Scene != null && Scene.ExternalTruncatedAtCtBoundary; } }
         public string ShortLimitations { get { return IsRadialReview ? "Radialer Abstand der erfassten Geometrie · Offene Röhre · Außerhalb des CT nicht bewertet"
             : "Frei: Abstand der erfassten Flächen außerhalb des Warnabstands · 10°-Stichproben · Keine klinische Kollisionsfreigabe"; } }
         public string AssuranceText { get {
@@ -195,7 +209,7 @@ namespace ClearPlan.Presentation.ViewModels
             CollisionSweepFrameViewModel.Label(CollisionSweepFrameViewModel.Aggregate(BeamFrames.Select(f => f.StatusCode))) +
             " · Aktiv: " + (SelectedFrame == null ? "Ungewiss" : SelectedFrame.StatusText) + " · " + BeamFrames.Count + " Positionen / 10°"; } }
         public string IllustrationSummary { get { return (IsRadialReview ? "Radial (erfasst) · " : HasSourceModel && !UsesProfileGeometry ? "Quellmodell · " : "Feld: ") + CollisionSweepFrameViewModel.Label(CollisionSweepFrameViewModel.Aggregate(BeamFrames.Select(f=>f.StatusCode))); } }
-        public string IllustrationSummaryColor { get { var status=CollisionSweepFrameViewModel.Aggregate(BeamFrames.Select(f=>f.StatusCode)); return CollisionSweepFrameViewModel.IsFullyClear(status) ? "#69D391" : status=="hit"||status=="model-hit" ? "#FF7B72" : "#F2C45C"; } }
+        public string IllustrationSummaryColor { get { var status=CollisionSweepFrameViewModel.Aggregate(BeamFrames.Select(f=>f.StatusCode)); return status=="body-clear" ? "#B7E7C3" : CollisionSweepFrameViewModel.IsFullyClear(status) ? "#69D391" : status=="hit"||status=="model-hit" ? "#FF7B72" : "#F2C45C"; } }
         public string SamplingText { get { return " · "+BeamFrames.Count+" Positionen / 10°"; } }
         public string RoomAngles { get { return SelectedPose==null ? "" : "Gantry "+SelectedPose.GantryDegrees.ToString("0.#")+"°\nTisch "+SelectedPose.PatientSupportAngleDegrees.ToString("0.#")+"°"; } }
         public const string Limitations = "Modell-Stichproben in 10°-Schritten, keine kontinuierliche Kollisionsfreigabe. Offener Körper / CT-Rand und fehlende Lagerungs- oder Modellnachweise bleiben ungewiss. Einfahrt, Zubehör und behandlungstägliche 6D-Korrekturen sind nicht freigegeben.";
@@ -237,6 +251,17 @@ namespace ClearPlan.Presentation.ViewModels
             var cp = matches.Length == 1 ? matches[0] : null;
             if (cp == null || !SameAngle(cp.GantryAngleDegrees, frame.CapturedGantryDegrees) ||
                 !SameAngle(cp.PatientSupportAngleDegrees, frame.CapturedCouchDegrees)) return null;
+            if (FollowMlc && frame.Interpolated)
+            {
+                // Nearest analysed control point to this arc angle, same couch, at most 10 degrees away.
+                double gantry = frame.Pose.GantryDegrees;
+                var nearest = beam.ControlPoints.Where(p => p != null && p.Aperture != null &&
+                        SameAngle(p.PatientSupportAngleDegrees, frame.CapturedCouchDegrees) &&
+                        !double.IsNaN(p.GantryAngleDegrees) && !double.IsInfinity(p.GantryAngleDegrees))
+                    .Select(p => new { Point = p, Distance = Math.Abs(Math.IEEERemainder(p.GantryAngleDegrees - gantry, 360)) })
+                    .Where(x => x.Distance <= 10).OrderBy(x => x.Distance).ThenBy(x => x.Point.Index).FirstOrDefault();
+                if (nearest != null) cp = nearest.Point;
+            }
             var iso = cp.IsocenterMm; var expected = frame.Pose.Isocenter;
             if ((!IsSynthetic || iso != null) && (iso == null || iso.Length != 3 || expected == null ||
                 iso.Any(v => double.IsNaN(v) || double.IsInfinity(v)) ||
@@ -250,7 +275,8 @@ namespace ClearPlan.Presentation.ViewModels
                 "CP {0} · G {1:0.#}° · C {2:0.#}°", cp.Index, cp.GantryAngleDegrees, cp.CollimatorAngleDegrees);
         } }
         public string MlcScope { get { return MlcControlPoint == null ? "Geometrie fehlt oder Kontrollpunkt stimmt nicht überein." :
-            SelectedFrame.Frame.Interpolated ? "Erfasster Referenz-CP zum 10°-Schritt · BLD · kein DRR" : "Erfasster Kontrollpunkt · BLD · kein DRR"; } }
+            SelectedFrame.Frame.Interpolated ? (FollowMlc ? "Nächster Kontrollpunkt zum Bogenwinkel · Kollimator in Winkelstellung · kein DRR" : "Erfasster Referenz-CP zum 10°-Schritt · Kollimator in Winkelstellung · kein DRR")
+                : "Erfasster Kontrollpunkt · Kollimator in Winkelstellung · kein DRR"; } }
         public string PoseText
         {
             get
@@ -402,15 +428,15 @@ namespace ClearPlan.Presentation.ViewModels
         public string Reason { get { return Frame.RadialReview == null ? Frame.Reason : Frame.RadialReview.Scope; } }
         public string BodyResultText { get { return Label(BodyStatusCode); } }
         public string TableResultText { get { return !hasSeparateSupport ? "Kein separates Modell" : Label(TableStatusCode); } }
-        public string StatusColor { get { return IsFullyClear(StatusCode) ? "#69D391" : StatusCode == "hit" || StatusCode == "model-hit" ? "#FF7B72" : "#F2C45C"; } }
-        public string StatusSurface { get { return IsFullyClear(StatusCode) ? "#EAF6EE" : StatusCode == "hit" || StatusCode == "model-hit" ? "#FDEDEC" : "#FFF5DD"; } }
+        public string StatusColor { get { return StatusCode == "body-clear" ? "#B7E7C3" : IsFullyClear(StatusCode) ? "#69D391" : StatusCode == "hit" || StatusCode == "model-hit" ? "#FF7B72" : "#F2C45C"; } }
+        public string StatusSurface { get { return IsClear(StatusCode) ? "#EAF6EE" : StatusCode == "hit" || StatusCode == "model-hit" ? "#FDEDEC" : "#FFF5DD"; } }
         public string BodyDistanceText { get { return Frame.RadialReview == null ? Distance(Frame.BodyLowerBoundMm, Frame.BodyClearanceMm)
             : Distance(Frame.RadialReview.BodyClearanceMm, Frame.RadialReview.BodyClearanceMm); } }
         public string TableDistanceText { get { return Frame.RadialReview == null ? Distance(Frame.TableLowerBoundMm, Frame.TableClearanceMm)
             : Distance(Frame.RadialReview.TableClearanceMm, Frame.RadialReview.TableClearanceMm); } }
         public static bool IsClear(string status) { return status == "pass" || status == "clear" || status == "model-clear" || status == "body-clear"; }
         public static bool IsFullyClear(string status) { return status == "pass" || status == "clear" || status == "model-clear"; }
-        public static string Label(string status) { return status == "body-clear" || status == "partial-clear" ? "Still clear" : IsFullyClear(status) ? "Full clear" : status == "model-hit" ? "Modelltreffer" : status == "hit" ? "Treffer" : "Ungewiss"; }
+        public static string Label(string status) { return IsClear(status) ? "Clear" : status == "partial-clear" ? "Teilweise bewertet" : status == "model-hit" ? "Modelltreffer" : status == "hit" ? "Treffer" : "Ungewiss"; }
         public static string Aggregate(IEnumerable<string> codes)
         {
             var values = codes.ToArray();

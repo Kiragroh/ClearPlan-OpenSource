@@ -34,7 +34,7 @@ namespace ClearPlan.Reporting.MigraDoc
             if (document == null) throw new ArgumentNullException("document");
             var html = new StringBuilder(32768);
             html.Append("<!DOCTYPE html>\n<html lang=\"").Append(ReviewLanguage.Code).Append("\"><head><meta charset=\"utf-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
-            html.Append("<title>Plan Quality Report — ").Append(E(document.PlanDisplayLabel)).Append("</title><style>").Append(Styles).Append("</style></head><body>");
+            html.Append("<title>Plan Quality Report — ").Append(E(document.PlanDisplayLabel)).Append("</title><style>").Append(Styles).Append(CompactStyles).Append("</style></head><body>");
             html.Append("<!-- THESIS: inspect the current detached review without reacquiring plan data. OWN-WORLD: Clinical Blueprint navy headings, teal wayfinding, white evidence tables. STORY: identify the plan, inspect goals and checks, then dose and image evidence. FIRST VIEWPORT: report identity and timestamp above a compact plan table and clinical goals. FORM: precisely scoped report extension of DESIGN.md, code-led. FINISH: regression tests and bounded desktop/mobile review; incumbent DESIGN.md retained. -->");
             html.Append("<div class=\"report\"><header><h1>Plan Quality Report</h1><p class=\"identity\">").Append(E(document.PatientDisplayLabel)).Append(" <span class=\"separator\">/</span> ").Append(E(document.PlanDisplayLabel)).Append("</p>");
             html.Append("<p class=\"snapshot\">").Append(E(ReviewLanguage.Label("Aktueller Datenstand · ", "Current snapshot · "))).Append(document.GeneratedUtc == default(DateTimeOffset) ? Missing : E(document.GeneratedUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'", CultureInfo.InvariantCulture))).Append("</p>");
@@ -100,14 +100,20 @@ namespace ClearPlan.Reporting.MigraDoc
             Section(html, "collision", "Collision / 3D | Minimum model distance");
             var minimum = CollisionReportBeam.MinimumBeam(beams);
             Paragraph(html, minimum == null ? "Minimum model distance unavailable." : minimum.MinimumCaption, "note");
+            if (minimum == null)
+            {
+                minimum = beams.FirstOrDefault(b => b.FirstCapturedPoseWhenMinimumUnavailable && b.Rows.Count > 0);
+                if (minimum != null) Paragraph(html, "First captured field position · " + minimum.BeamId + ". Orientation only; no minimum-distance result available.", "note");
+            }
             if (minimum != null && minimum.OverviewPng != null && minimum.OverviewPng.Length > 0)
-                html.Append("<img style=\"width:100%;max-width:1050px;object-fit:contain\" alt=\"Minimum model distance position\" src=\"data:image/png;base64,")
+                html.Append("<img style=\"width:100%;max-width:1050px;object-fit:contain\" alt=\"Captured position identified in the preceding caption\" src=\"data:image/png;base64,")
                     .Append(Convert.ToBase64String(minimum.OverviewPng)).Append("\"/>");
             if (minimum != null && minimum.OrientationPng != null && minimum.OrientationPng.Length > 0)
-                html.Append("<div style=\"margin-top:8px\"><img style=\"width:100%;max-width:600px;object-fit:contain\" alt=\"Gantry and couch orientation at minimum model distance\" src=\"data:image/png;base64,")
+                html.Append("<div style=\"margin-top:8px\"><img style=\"width:100%;max-width:600px;object-fit:contain\" alt=\"Gantry and couch orientation at the captioned position\" src=\"data:image/png;base64,")
                     .Append(Convert.ToBase64String(minimum.OrientationPng)).Append("\"/></div>");
             else Paragraph(html, "Orientation strip unavailable; no substitute pose shown.", "note");
-            if (minimum != null) Paragraph(html, minimum.Summary, "note");
+            if (minimum != null) html.Append("<p style=\"font-size:12px;padding:6px;background:").Append(minimum.CtCoverageIncomplete ? "#eaf6ee" : "transparent")
+                .Append("\">").Append(E(minimum.ScopeNote)).Append("</p>");
             Table(html, "Field", "Gantry", "Couch", "Status (whole field)", "Body [mm]", "Table [mm]", "Min. [mm]");
             foreach (var beam in beams)
             {
@@ -122,13 +128,13 @@ namespace ClearPlan.Reporting.MigraDoc
                 html.Append("</tr>");
             }
             EndTable(html, beams.Count, 7);
-            Paragraph(html, "10° states plus endpoints. One minimum position per field; status covers all its samples. Body/table: conservative lower bound … sampled upper bound. Min.: smallest finite lower bound (open bore: radial gap). Green / Full clear*: captured body and table clear. Yellow / Still clear*: only part of the geometry assessed clear; see body/table results. Uncertain / Hit remain distinct. Not continuous-path or clinical clearance. Outside-CT anatomy and actual setup remain unverified. Orientation strip: nominal Gantry/Couch angles at the minimum pose. Gray C-arm reference, when present: schematic, not tested geometry.", "note");
+            Paragraph(html, "Clear: assessed geometry at sampled positions (10° + endpoints). Distances: conservative bound … sampled distance. Uncertain: assessment unavailable; Hit: model overlap. Machine illustration is schematic; no treatment clearance.", "note");
             html.Append("</section>");
         }
-        private static string CollisionLabel(string status) { return status == "body-clear" || status == "partial-clear" ? "Still clear*" : status == "model-clear" || status == "clear" || status == "pass" ? "Full clear*" : status == "model-hit" ? "Model hit" : status == "hit" ? "Hit" : "Uncertain"; }
+        private static string CollisionLabel(string status) { return status == "body-clear" || status == "model-clear" || status == "clear" || status == "pass" ? "Clear" : status == "partial-clear" ? "Partly assessed" : status == "model-hit" ? "Model hit" : status == "hit" ? "Hit" : "Uncertain"; }
         private static void CollisionCell(StringBuilder html, string value, string status)
         {
-            html.Append("<td style=\"background:").Append(status == "pass" || status == "clear" || status == "model-clear" ? "#daf2e0" : status == "hit" || status == "model-hit" ? "#fde0dc" : "#fff1cc")
+            html.Append("<td style=\"background:").Append(status == "body-clear" ? "#eaf6ee" : status == "pass" || status == "clear" || status == "model-clear" ? "#daf2e0" : status == "hit" || status == "model-hit" ? "#fde0dc" : "#fff1cc")
                 .Append(";color:#202b38\">").Append(E(value)).Append("</td>");
         }
 
@@ -145,17 +151,22 @@ namespace ClearPlan.Reporting.MigraDoc
         {
             Section(html, "goals", "Clinical goals");
             var rows = document.VisiblePqmRows();
-            Table(html, "Template structure → matched structure", "Objective", "Goal", "Variation", "Achieved", "Result");
+            bool hasVariation = rows.Any(row => row.Variation.HasValue);
+            var headings = new List<string> { "Template structure → matched structure", "Objective", "Goal" };
+            if (hasVariation) headings.Add("Variation");
+            headings.Add("Achieved"); headings.Add("Result");
+            Table(html, headings.ToArray());
             foreach (var row in rows)
             {
                 html.Append("<tr>");
-                Cell(html, T(row.TemplateStructure) + " → " + T(row.ResolvedStructureId));
+                Cell(html, row.TemplateStructure == row.ResolvedStructureId ? T(row.TemplateStructure) : T(row.TemplateStructure) + " → " + T(row.ResolvedStructureId));
                 Cell(html, row.Objective);
-                Cell(html, T(row.Comparator) + " " + WithUnit(row.Goal, row.Unit));
-                Cell(html, WithUnit(row.Variation, row.Unit)); Cell(html, WithUnit(row.AchievedValue, row.Unit));
+                Cell(html, row.Goal.HasValue ? T(row.Comparator) + " " + WithUnit(row.Goal, row.Unit) : ReviewLanguage.Label("Nicht festgelegt", "Not configured"));
+                if (hasVariation) Cell(html, WithUnit(row.Variation, row.Unit));
+                Cell(html, WithUnit(row.AchievedValue, row.Unit));
                 StatusCell(html, row.Status, ReviewImageRenderer.PqmUnavailableReason(row)); html.Append("</tr>");
             }
-            EndTable(html, rows.Count, 6); html.Append("</section>");
+            EndTable(html, rows.Count, headings.Count); html.Append("</section>");
         }
 
         private static void Checks(StringBuilder html, ReviewReportDocument document)
@@ -383,6 +394,10 @@ namespace ClearPlan.Reporting.MigraDoc
             html.Append("<img loading=\"lazy\" class=\"").Append(css).Append("\" src=\"data:image/png;base64,").Append(encoded.Substring(7)).Append("\" alt=\"").Append(E(label)).Append("\">");
         }
 
+        // Reading-oriented report density; preserve the incumbent Clinical Blueprint palette.
+        private const string CompactStyles = @"
+.report{max-width:1280px;padding:28px 36px}header{padding-bottom:16px}h1{font-size:32px;margin-bottom:8px}.identity{font-size:18px}.snapshot{font-size:13px}section{margin-top:24px}h2{font-size:20px;margin-bottom:8px}h3{margin-top:16px}.table-scroll{margin:8px 0 12px}table{font-size:13px}th,td{padding:7px 10px}.note{font-size:12px;line-height:1.45;margin:6px 0}nav a{text-underline-offset:4px}table{font-variant-numeric:tabular-nums}nav{padding:10px 0}.status{font-weight:600}#dvh .plot{max-height:540px;object-fit:contain}@media(max-width:800px){.report{padding:20px 16px}.identity{font-size:16px}#dvh .plot{min-width:0}#dvh{overflow-x:visible}}@media print{.report{padding:0}section{margin-top:16px}h2{font-size:14pt}.note{font-size:8pt}th,td{padding:4px 6px}#dvh .plot{max-height:100mm}}
+";
         private const string Styles = @"
 .field-review{margin-top:24px}.field-layout{display:table;table-layout:fixed;width:100%}.field-bev,.field-traces{display:table-cell;vertical-align:top}.field-bev{width:62.3%;padding-right:12px}.field-traces{width:37.7%}.parameter-traces{width:100%}.field-review h3{margin:0 0 8px}.field-review .note{font-size:12px;margin:6px 0}@media(max-width:800px){.field-layout,.field-bev,.field-traces{display:block;width:100%;padding:0}.field-traces{max-width:620px;margin-top:16px}}@media print{.field-review{page-break-before:always;page-break-inside:avoid;margin-top:0}.field-layout{display:table}.field-bev,.field-traces{display:table-cell}.field-bev{width:62.3%;padding-right:3mm}.field-traces{width:37.7%;margin-top:0}.field-review .note{font-size:8pt}.field-review details{display:none}.field-review h3{font-size:14pt}}
 .ct-legend{margin:10px 0;font-size:12px;line-height:1.4;color:#202B38}.ct-legend-group{margin:0 0 7px}.ct-legend-heading{display:block;font-size:11px;font-weight:600;color:#526474;margin-bottom:3px}.ct-legend ul{list-style:none;padding:0;margin:0}.ct-legend li{display:inline-block;max-width:100%;margin:0 12px 4px 0;overflow-wrap:break-word;word-wrap:break-word}.ct-legend-key{display:inline-block;vertical-align:middle;width:18px;margin-right:5px;border-top:1px solid}.ct-legend-key.isodose{border-top-width:3px}

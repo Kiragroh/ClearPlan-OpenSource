@@ -43,6 +43,11 @@ namespace ClearPlan.Core.Tests
             var capture=typeof(CollisionView).GetMethod("CapturePng",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static);
             var root=(System.Windows.FrameworkElement)view.FindName("RoomReferenceRoot");
             var expected=(byte[])capture.Invoke(null,new object[]{root});
+            if (!strip.SequenceEqual(expected))
+            {
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"orientation-actual.png"),strip);
+                System.IO.File.WriteAllBytes(System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"orientation-expected.png"),expected);
+            }
             TestAssert.True(strip.SequenceEqual(expected),"Orientation must show the minimum pose, not the restored GUI pose.");
             root.Visibility=System.Windows.Visibility.Hidden; view.UpdateLayout();
             var expectedOverview=(byte[])capture.Invoke(null,new object[]{view.FindName("IllustrationRoot")});
@@ -69,13 +74,34 @@ namespace ClearPlan.Core.Tests
             string collision=html.Substring(html.IndexOf("id=\"collision\"",StringComparison.Ordinal));
             collision=collision.Substring(0,collision.IndexOf("</section>",StringComparison.Ordinal));
             TestAssert.Equal(2,System.Text.RegularExpressions.Regex.Matches(collision,"<img ").Count);
-            TestAssert.True(collision.IndexOf("Minimum model distance position",StringComparison.Ordinal) <
+            TestAssert.True(collision.IndexOf("Captured position identified in the preceding caption",StringComparison.Ordinal) >= 0);
+            TestAssert.True(collision.IndexOf("Captured position identified in the preceding caption",StringComparison.Ordinal) <
                 collision.IndexOf("Gantry and couch orientation",StringComparison.Ordinal),"Orientation belongs below the main image.");
             property.SetValue(report.CollisionBeams.Single(),null);
             string legacy=new HtmlReviewReportRenderer().Render(report);
             TestAssert.True(legacy.Contains("Orientation strip unavailable; no substitute pose shown."),"Old sidecars must not fabricate orientation.");
             var roundTrip=Newtonsoft.Json.JsonConvert.DeserializeObject<CollisionReportBeam>(Newtonsoft.Json.JsonConvert.SerializeObject(captured));
             TestAssert.True(strip.SequenceEqual((byte[])property.GetValue(roundTrip)),"Private collision sidecar roundtrip must retain strip.");
+            foreach (var row in captured.Rows) row.MinimumDistanceMm = null;
+            captured.FirstCapturedPoseWhenMinimumUnavailable = true;
+            captured.CtCoverageIncomplete = true;
+            // Pose navigation above correctly invalidates the snapshot's cached report.
+            // Supply the explicit detached capture fixture for mapper/render tests.
+            snapshot.CollisionBeams = new System.Collections.Generic.List<CollisionReportBeam> { captured };
+            var orientationOnly = new ReviewSnapshotReportMapper().Map(snapshot);
+            TestAssert.True(orientationOnly.CollisionBeams.Single().FirstCapturedPoseWhenMinimumUnavailable,
+                "Mapper must retain explicit fallback capture provenance.");
+            TestAssert.True(CollisionReportBeam.MinimumBeam(orientationOnly.CollisionBeams) == null,
+                "A display fallback must never invent a minimum distance.");
+            string fallbackHtml = new HtmlReviewReportRenderer().Render(orientationOnly);
+            TestAssert.True(fallbackHtml.Contains("Orientation only; no minimum-distance result available."));
+            TestAssert.True(fallbackHtml.Contains("Outside the CT field of view, collisions remain possible."));
+            TestAssert.True(fallbackHtml.Contains("background:#eaf6ee"));
+            TestAssert.True(fallbackHtml.Contains(Convert.ToBase64String(strip)));
+            var fallbackDocument=(MigraDoc.DocumentObjectModel.Document)typeof(ReportPdf).GetMethod("CreateReviewReport",flags).Invoke(pdf,new object[]{orientationOnly});
+            string fallbackDdl=MigraDoc.DocumentObjectModel.IO.DdlWriter.WriteToString(fallbackDocument);
+            TestAssert.True(fallbackDdl.Contains("Orientation only; no minimum-distance result available."));
+            TestAssert.True(fallbackDdl.Contains(Convert.ToBase64String(strip)));
         }
 
         public static void UnavailableSweepDoesNotExportAnEmptyOverview()
@@ -127,17 +153,19 @@ namespace ClearPlan.Core.Tests
             collision = collision.Substring(0, collision.IndexOf("</section>", StringComparison.Ordinal));
             TestAssert.Equal(1, System.Text.RegularExpressions.Regex.Matches(collision, "<img ").Count,
                 "One global-minimum illustration, not one figure per field.");
-            foreach (string value in new[] { "10°", "Body [mm]", "Table [mm]", "Status", "Uncertain", "Hit", "Full clear", "Still clear" })
+            foreach (string value in new[] { "10°", "Body [mm]", "Table [mm]", "Status", "Uncertain", "Hit", "Clear" })
                 TestAssert.True(visible.Contains(value), "Collision report missing " + value);
-            TestAssert.True(collision.Contains("background:#daf2e0;color:#202b38\">Full clear*"));
+            TestAssert.True(collision.Contains("background:#daf2e0;color:#202b38\">Clear"));
             report.CollisionBeams[0].Status = "body-clear";
             report.CollisionBeams[1].Status = "partial-clear";
             var limited = new HtmlReviewReportRenderer().Render(report);
-            TestAssert.Equal(2, System.Text.RegularExpressions.Regex.Matches(limited, "background:#fff1cc;color:#202b38\">Still clear\\*").Count);
+            TestAssert.True(limited.Contains("background:#eaf6ee;color:#202b38\">Clear"));
+            TestAssert.True(limited.Contains("background:#fff1cc;color:#202b38\">Partly assessed"));
             foreach(var status in new[]{"body-clear","partial-clear"})
             {
                 var color = typeof(ReportPdf).GetMethod("CollisionColor", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{status});
-                TestAssert.Equal(MigraDoc.DocumentObjectModel.Color.FromRgb(255,241,204), color, "PDF still-clear rows must be yellow.");
+                TestAssert.Equal(status == "body-clear" ? MigraDoc.DocumentObjectModel.Color.FromRgb(234,246,238) : MigraDoc.DocumentObjectModel.Color.FromRgb(255,241,204), color,
+                    "Body-only clearance is informational green; a supplied but unresolved surface remains uncertain.");
             }
             model.IncludeInReport = false;
             TestAssert.Equal(0, ((IList)property.GetValue(mapper.Map(snapshot))).Count);

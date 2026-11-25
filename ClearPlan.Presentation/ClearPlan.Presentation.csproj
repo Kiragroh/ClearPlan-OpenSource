@@ -70,6 +70,7 @@
     <Compile Include="Localization\DisplayLanguage.cs" />
     <Compile Include="Views\HtmlReportPreviewWindow.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />
+    <Compile Include="ViewModels\DisplayPreferenceActions.cs" />
     <Compile Include="ViewModels\ReviewDvhSeriesViewModel.cs" />
     <Compile Include="ViewModels\ReviewPqmRowViewModel.cs" />
     <Compile Include="ViewModels\ReviewWorkspaceHostController.cs" />
@@ -79,6 +80,7 @@
     <Compile Include="ViewModels\PlanImagesViewModel.cs" />
     <Compile Include="ViewModels\PlanImagesViewModel.Isodoses.cs" />
     <Compile Include="ViewModels\CollisionViewModel.cs" />
+    <Compile Include="Views\DioramaDisplayModel.cs" />
     <Compile Include="Views\CollisionView.xaml.cs"><DependentUpon>CollisionView.xaml</DependentUpon></Compile>
     <Compile Include="Views\PlanImagesView.xaml.cs"><DependentUpon>PlanImagesView.xaml</DependentUpon></Compile>
     <Compile Include="Views\BeamEyeView.xaml.cs"><DependentUpon>BeamEyeView.xaml</DependentUpon></Compile>

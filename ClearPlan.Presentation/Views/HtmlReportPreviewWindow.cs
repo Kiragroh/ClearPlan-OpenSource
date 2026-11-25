@@ -37,7 +37,7 @@ namespace ClearPlan.Presentation.Views
             var toolbar = new DockPanel { Margin = new Thickness(16, 12, 16, 12) };
             DockPanel.SetDock(toolbar, Dock.Top);
             var save = new Button { Content = "HTML speichern …", Padding = new Thickness(14, 8, 14, 8),
-                Background = new SolidColorBrush(Color.FromRgb(15, 118, 110)), Foreground = Brushes.White,
+                Background = new SolidColorBrush(Color.FromRgb(0, 114, 166)), Foreground = Brushes.White,
                 BorderThickness = new Thickness(0), FontWeight = FontWeights.SemiBold };
             save.Click += SaveHtml;
             DockPanel.SetDock(save, Dock.Right);

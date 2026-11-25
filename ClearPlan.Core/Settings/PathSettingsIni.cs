@@ -71,6 +71,10 @@ namespace ClearPlan.Core.Settings
                 value => settings.Paths.ChangeLogFile = value);
             Apply(values, "FeedbackFile",
                 value => settings.Paths.FeedbackFile = value);
+            Apply(values, "ReviewLogDirectory",
+                value => settings.Paths.ReviewLogDirectory = value);
+            Apply(values, "ReviewLogKeyFile",
+                value => settings.Paths.ReviewLogKeyFile = value);
             Apply(values, "PrescriptionSettingsPath",
                 value => settings.ClinicalPaths.PrescriptionSettingsPath = value);
             Apply(values, "PlanCheckResourcesPath",
@@ -128,6 +132,8 @@ namespace ClearPlan.Core.Settings
                 settings.Paths.VersionSeenUsersFile);
             Append(builder, "ChangeLogFile", settings.Paths.ChangeLogFile);
             Append(builder, "FeedbackFile", settings.Paths.FeedbackFile);
+            Append(builder, "ReviewLogDirectory", settings.Paths.ReviewLogDirectory);
+            Append(builder, "ReviewLogKeyFile", settings.Paths.ReviewLogKeyFile);
             Append(builder, "PrescriptionSettingsPath",
                 settings.ClinicalPaths.PrescriptionSettingsPath);
             Append(builder, "PlanCheckResourcesPath",

@@ -19,12 +19,12 @@
             </Style>
             <Style x:Key="SyntheticDemoToggle" TargetType="ToggleButton">
                 <Setter Property="Content" Value="Sandbox (Manuskript)"/>
-                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Padding" Value="12,6"/>
                 <Setter Property="Margin" Value="0,0,12,0"/>
-                <Setter Property="Background" Value="#EEF2F6"/>
-                <Setter Property="BorderBrush" Value="#B9C5D0"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="BorderBrush" Value="{StaticResource UklBlueTintBorder}"/>
                 <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Foreground" Value="#334155"/>
+                <Setter Property="Foreground" Value="{StaticResource UklBlueDark}"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Cursor" Value="Hand"/>
                 <Style.Triggers>
@@ -46,9 +46,9 @@
         </Grid.RowDefinitions>
 
         <Border x:Name="NativeHeader" Grid.Row="0" Background="{StaticResource ClinicalBlueprintSurface}"
-                BorderBrush="{StaticResource ClinicalBlueprintBorder}"
-                BorderThickness="0,0,0,1">
-            <Grid Margin="22,10">
+                BorderBrush="{StaticResource UklPurple}"
+                BorderThickness="0,0,0,3">
+            <Grid Margin="24,12">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -60,7 +60,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
-                    <TextBlock Text="{lang:Translate Value='ClearPlan · Clinical Blueprint'}" FontSize="21"
+                    <TextBlock Text="{lang:Translate Value='ClearPlan'}" FontSize="20"
                                FontWeight="SemiBold" TextWrapping="Wrap"
                                Foreground="{StaticResource ClinicalBlueprintCobaltDark}"/>
                     <TextBlock x:Name="ClinicalContextText"
@@ -95,14 +95,14 @@
                 </StackPanel>
                 <Button x:Name="SwitchPlanButton" Grid.Column="1"
                         Content="{lang:Translate Value='Plan wechseln'}" Click="SwitchPlanClicked"
-                        MinHeight="36" Margin="0,0,12,0" Padding="12,8"
+                        MinHeight="32" Margin="0,0,12,0" Padding="12,6"
                         Style="{StaticResource ClinicalBlueprintSecondaryButton}"
                         ToolTip="{lang:Translate Value='Anderen Plan oder eine Plansumme des geöffneten Patienten prüfen. Keine Änderung in Eclipse.'}"
                         VerticalAlignment="Center"/>
                 <ToggleButton x:Name="SyntheticDemoToggle"
                               Grid.Column="2" MinHeight="36"
                               Style="{StaticResource SyntheticDemoToggle}"
-                              ToolTip="{lang:Translate Value='Manuskript-Modus: ausschließlich synthetische Pläne, DVHs, CT-Beispiele und BEVs. Fenstertitel, Ansicht und PDF verwenden Dummy-Angaben. Keine Anonymisierung klinischer Bilder; nur dieses Fenster, nicht gespeichert.'}"
+                              ToolTip="{lang:Translate Value='Sandbox: exportierter Varian-Testplan (zzVarianCases, MU unscharf), falls vorhanden, sonst synthetische Beispiele. Keine Patientendaten; Fenstertitel, Ansicht und PDF verwenden Platzhalter; nur dieses Fenster, nicht gespeichert.'}"
                               Click="SyntheticDemoToggle_Click"
                               VerticalAlignment="Center"/>
                 <Menu Grid.Column="3" VerticalAlignment="Center"
@@ -170,13 +170,13 @@
                                 Click="ConfirmConstraintTableClicked" Margin="12,0,0,0" Padding="10,6" MinHeight="36"
                                 Style="{StaticResource ClinicalBlueprintSecondaryButton}"/>
                     </Grid>
-                    <Border x:Name="ClinicalConstraintStatus" Grid.Column="1" Padding="12,7"
-                            Background="#E8EEF8" CornerRadius="5" VerticalAlignment="Center">
+                    <Border x:Name="ClinicalConstraintStatus" Grid.Column="1" Padding="12,6"
+                            Background="{StaticResource UklBlueTint}" CornerRadius="4" VerticalAlignment="Center">
                         <StackPanel>
                             <TextBlock Text="{Binding ConstraintSourceStatus}" TextWrapping="Wrap"
-                                       FontWeight="SemiBold" Foreground="#1E3A8A"/>
+                                       FontWeight="SemiBold" Foreground="{StaticResource UklNavy}"/>
                             <TextBlock Text="{Binding ActiveConstraintPath.ConstraintName}" TextWrapping="Wrap"
-                                       Foreground="#475569" FontSize="11"/>
+                                       Foreground="{StaticResource ClinicalBlueprintTextMuted}" FontSize="12"/>
                         </StackPanel>
                     </Border>
                 </Grid>

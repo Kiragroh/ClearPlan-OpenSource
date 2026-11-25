@@ -146,9 +146,14 @@ namespace ClearPlan.Reporting.MigraDoc
             document.Styles[StyleNames.Normal].Font.Size = 9;
             document.Styles[StyleNames.Heading1].Font.Color = Color.FromRgb(18, 48, 70);
             document.Styles[StyleNames.Heading2].Font.Color = Color.FromRgb(18, 92, 112);
-            document.Styles[StyleNames.Heading2].ParagraphFormat.Shading.Color = Color.FromRgb(226, 240, 244);
+            document.Styles[StyleNames.Heading2].ParagraphFormat.Shading.Color = Colors.White;
+            document.Styles[StyleNames.Heading2].Font.Size = 12;
             document.Styles[StyleNames.Heading2].ParagraphFormat.KeepWithNext = true;
-            document.Styles[StyleNames.Heading2].ParagraphFormat.SpaceBefore = Unit.FromPoint(4);
+            document.Styles[StyleNames.Heading2].ParagraphFormat.SpaceBefore = Unit.FromPoint(6);
+            document.Styles[StyleNames.Heading2].ParagraphFormat.SpaceAfter = Unit.FromPoint(3);
+            document.Styles[StyleNames.Heading2].ParagraphFormat.Borders.Distance = Unit.FromPoint(0);
+            document.Styles[StyleNames.Heading2].ParagraphFormat.LeftIndent = Unit.FromPoint(0);
+            document.Styles[StyleNames.Heading2].ParagraphFormat.RightIndent = Unit.FromPoint(0);
             string watermark = data.Synthetic
                 ? ReviewSnapshotReportMapper.SyntheticWatermark
                 : data.Watermark;
@@ -191,7 +196,7 @@ namespace ClearPlan.Reporting.MigraDoc
             section.PageSetup.PageFormat = PageFormat.A4;
             section.PageSetup.Orientation = Orientation.Landscape;
             section.PageSetup.LeftMargin = Unit.FromCentimeter(1.2);
-            section.PageSetup.TopMargin = Unit.FromCentimeter(1.8);
+            section.PageSetup.TopMargin = Unit.FromCentimeter(1.3);
             section.PageSetup.RightMargin = Unit.FromCentimeter(1.2);
             // Reserve the complete identity/version/status footer plus separation
             // from a table that fills the last available body line.
@@ -205,6 +210,9 @@ namespace ClearPlan.Reporting.MigraDoc
             ReviewReportDocument data,
             string watermark)
         {
+            var running = section.Headers.Primary.AddParagraph(ReviewReportDocument.ReportTitle + "  /  " + Safe(data.PlanDisplayLabel, "Active plan"));
+            running.Format.Font.Size = 8;
+            running.Format.Font.Color = Color.FromRgb(86, 103, 121);
             string identity = data.Synthetic
                 ? "Synthetic demo patient | ID: DEMO-" + Safe(data.ScenarioId, "example")
                 : Safe(data.PatientDisplayLabel, "Name / ID unavailable");
@@ -236,12 +244,6 @@ namespace ClearPlan.Reporting.MigraDoc
             ReviewReportDocument data,
             string watermark)
         {
-            Paragraph banner = section.AddParagraph(
-                ReviewLanguage.Text(Safe(watermark, data.ModeLabel)));
-            banner.Format.Font.Size = 8;
-            banner.Format.Font.Color = Color.FromRgb(86, 103, 121);
-            banner.Format.SpaceAfter = Unit.FromCentimeter(0.3);
-
             Paragraph title = section.AddParagraph(
                 ReviewReportDocument.ReportTitle);
             title.Style = StyleNames.Heading1;
@@ -261,19 +263,27 @@ namespace ClearPlan.Reporting.MigraDoc
                     "yyyy-MM-dd HH:mm 'UTC'",
                     CultureInfo.InvariantCulture));
             AddPlanRows(section, data.Plans);
+            AddPqmRows(section, data.VisiblePqmRows());
+            AddTargetQuality(section, data.PlanAnalysis);
             AddPlanAnalysis(section, data.PlanAnalysis);
             if (!string.IsNullOrWhiteSpace(data.VisibilityDisclosure()))
                 section.AddParagraph(data.VisibilityDisclosure()).Format.Font.Size = 8;
-
-            section.AddPageBreak();
-            AddPqmRows(section, data.VisiblePqmRows());
-
-            if (data.PlanAnalysis != null && data.PlanAnalysis.TargetQuality != null && data.PlanAnalysis.TargetQuality.Any(row => row != null))
+            // Summaries flow together. Do not dedicate a page to one metric row or
+            // an empty optional section; preserve every result and its status.
+            if ((data.PlanCheckRows != null && data.PlanCheckRows.Count > 0) ||
+                (data.FieldRows != null && data.FieldRows.Count > 0))
+            {
                 section.AddPageBreak();
-            AddTargetQuality(section, data.PlanAnalysis);
-            section.AddPageBreak();
-            AddPlanImagesWithSource(section, ReviewImageRenderer.VisiblePlanImages(data), data.Synthetic,
-                data.Synthetic && Core.Simulation.SyntheticPublicationScenarioFactory.ScenarioIds.Contains(data.ScenarioId, StringComparer.Ordinal));
+                if (data.PlanCheckRows != null && data.PlanCheckRows.Count > 0) AddPlanCheckRows(section, data.PlanCheckRows);
+            }
+            var planImages = ReviewImageRenderer.VisiblePlanImages(data);
+            if (planImages.Any(image => image != null && image.SourceStatus == ReviewStatusCodes.Available))
+            {
+                section.AddPageBreak();
+                AddPlanImagePlate(section, planImages, data.Synthetic,
+                    data.Synthetic && Core.Simulation.SyntheticPublicationScenarioFactory.ScenarioIds.Contains(data.ScenarioId, StringComparer.Ordinal));
+            }
+            else section.AddParagraph("CT views unavailable; no image pages generated.").Format.Font.Size = 8;
 
             section.AddPageBreak();
             AddHeading(section, "Dose-volume overview | Active plan");
@@ -285,12 +295,13 @@ namespace ClearPlan.Reporting.MigraDoc
                 var dvhImage = section.AddImage(dvhPng);
                 using (var stream = new System.IO.MemoryStream(Convert.FromBase64String(dvhPng.Substring(7))))
                 using (var image = System.Drawing.Image.FromStream(stream))
-                    dvhImage.Width = Unit.FromCentimeter(Math.Min(25.5, 15.2 * image.Width / image.Height));
+                    dvhImage.Width = Unit.FromCentimeter(Math.Min(25.5, 9.0 * image.Width / image.Height));
                 dvhImage.LockAspectRatio = true;
             }
             AddDvhRows(section, data.VisibleDvhSeries());
+            AddTargetQualityInputs(section, data.PlanAnalysis);
 
-            AddFieldReviews(section, data.PlanAnalysis, data.Synthetic, data.IncludeBeamEyeViews);
+            AddFieldReviewsWithNames(section, data.PlanAnalysis, data.Synthetic, data.IncludeBeamEyeViews, data.FieldRows);
             if (data.CollisionBeams != null && data.CollisionBeams.Count > 0) AddCollisionSweeps(section, data.CollisionBeams);
             else if (data.CollisionPreviewPng != null && data.CollisionPreviewPng.Length > 0)
             {
@@ -305,11 +316,12 @@ namespace ClearPlan.Reporting.MigraDoc
                 caption.Format.Font.Size = 9;
                 caption.Format.SpaceBefore = Unit.FromMillimeter(3);
             }
-            section.AddPageBreak();
-            AddHeading(section, "Review details | Active plan");
-            AddPlanCheckRows(section, data.PlanCheckRows);
-            AddFieldRows(section, data.FieldRows);
-            AddMappingRows(section, data.VisibleStructureMappings());
+            // Goal rows already show template -> resolved structure. Only retain
+            // additional mappings here, avoiding a second copy of the same data.
+            var extraMappings = data.VisibleStructureMappings().Where(mapping =>
+                !data.VisiblePqmRows().Any(goal => goal.TemplateStructure == mapping.TemplateStructure &&
+                    goal.ResolvedStructureId == mapping.SelectedStructureId)).ToList();
+            if (extraMappings.Count > 0) AddMappingRows(section, extraMappings);
         }
 
         private void AddPlanAnalysis(Section section, ReviewPlanAnalysis analysis)
@@ -373,12 +385,72 @@ namespace ClearPlan.Reporting.MigraDoc
                         QualityNumber(row.PlanCheckCi), QualityNumber(row.GradientIndex), QualityNumber(row.HomogeneityIndex));
                     if (!string.IsNullOrWhiteSpace(row.Note)) section.AddParagraph(row.StructureId + ": " + ReviewLanguage.Text(row.Note)).Format.Font.Size = 8;
                 }
-                Table inputs = CreateTable(section, 5.3, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0);
-                AddHeader(inputs, "PTV / inputs", "TV [cm3]", "TV at Rx [cm3]", "Body V100 [cm3]", "Body V50 [cm3]", "D2 [Gy]", "D98 [Gy]");
-                foreach (var row in rows) SetCells(inputs.AddRow(), row.StructureId, QualityNumber(row.TargetVolumeCm3),
-                    QualityNumber(row.CoveredTargetVolumeCm3), QualityNumber(row.BodyV100Cm3), QualityNumber(row.BodyV50Cm3), QualityNumber(row.D2Gy), QualityNumber(row.D98Gy));
             }
             section.AddParagraph("GI: whole EXTERNAL V50 / V100. HI: (D2 - D98) / plan Rx. Rx is the displayed plan prescription.").Format.Font.Size = 8;
+        }
+
+        private void AddTargetQualityInputs(Section section, ReviewPlanAnalysis analysis)
+        {
+            var rows = analysis == null ? null : analysis.TargetQuality;
+            if (rows == null || rows.Count == 0) return;
+            AddHeading(section, ReviewLanguage.Label("Eingangswerte der Zielvolumenmetriken", "Target quality inputs"));
+            Table inputs = CreateTable(section, 5.3, 3.0, 3.0, 3.0, 3.0, 2.0, 2.0);
+            AddHeader(inputs, "PTV / inputs", "TV [cm3]", "TV at Rx [cm3]", "Body V100 [cm3]", "Body V50 [cm3]", "D2 [Gy]", "D98 [Gy]");
+            foreach (var row in rows) SetCells(inputs.AddRow(), row.StructureId, QualityNumber(row.TargetVolumeCm3),
+                QualityNumber(row.CoveredTargetVolumeCm3), QualityNumber(row.BodyV100Cm3), QualityNumber(row.BodyV50Cm3), QualityNumber(row.D2Gy), QualityNumber(row.D98Gy));
+        }
+
+        private void AddPlanImagePlate(Section section, IList<ReviewPlanImage> images, bool synthetic, bool sharedAnalyticalPhantom)
+        {
+            AddHeading(section, "CT overview");
+            section.AddParagraph(synthetic ? "Synthetic CT fixture; not a clinical image." :
+                "Isocenter planes from the planning CT. Structures: thin lines; isodoses: thick lines.").Format.Font.Size = 8;
+            var plate = CreateTable(section, 1, 1, 1);
+            plate.Borders.Visible = false;
+            var titles = plate.AddRow(); var panels = plate.AddRow(); var captions = plate.AddRow();
+            string[] kinds = { "transversal", "coronal", "sagittal" };
+            string[] labels = { "Transversal", "Coronal (orthogonal)", "Sagittal" };
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                titles.Cells[i].AddParagraph(ReviewReportLabels.Text(labels[i])).Format.Font.Bold = true;
+                var source = images.FirstOrDefault(item => item != null && item.Kind == kinds[i]);
+                if (!ClearPlan.Rendering.PlanImageRenderer.IsRenderable(source))
+                {
+                    panels.Cells[i].AddParagraph("Image unavailable");
+                    captions.Cells[i].AddParagraph(source == null ? "No planning-image snapshot supplied." : source.UnavailableReason ?? "Invalid detached geometry.");
+                    continue;
+                }
+                var raster = ClearPlan.Rendering.PlanImageRenderer.RenderFiltered(source, true, true, true, null, false);
+                var image = panels.Cells[i].AddImage("base64:" + Convert.ToBase64String(raster));
+                image.Width = Unit.FromCentimeter(plate.Columns[i].Width.Centimeter - 0.3);
+                image.LockAspectRatio = true;
+                captions.Cells[i].AddParagraph(ReviewImageRenderer.CtSummary(source)).Format.Font.Size = 7.5;
+                string missing = ReviewImageRenderer.CtUnavailableOverlays(source);
+                if (!string.IsNullOrWhiteSpace(missing)) captions.Cells[i].AddParagraph(missing).Format.Font.Size = 7.5;
+            }
+            var visible = images.Where(image => image != null).SelectMany(image => image.Overlays ?? new List<ReviewImageOverlay>())
+                .Where(overlay => overlay != null && overlay.SourceStatus == ReviewStatusCodes.Available && overlay.Paths != null && overlay.Paths.Count > 0)
+                .GroupBy(overlay => new { overlay.Kind, overlay.Label, overlay.ColorHex }).Select(group => group.First()).ToList();
+            foreach (string kind in new[] { "isodose", "structure" })
+            {
+                var keys = kind == "isodose" ? visible.Where(overlay => overlay.Kind == "isodose").OrderBy(overlay => overlay.DoseGy) :
+                    visible.Where(overlay => overlay.Kind != "isodose");
+                var line = section.AddParagraph();
+                line.Format.Font.Size = 8.5;
+                line.Format.SpaceBefore = Unit.FromPoint(6);
+                line.AddFormattedText(kind == "isodose" ? "Isodoses / plan Rx:  " : "Structures:  ", TextFormat.Bold);
+                foreach (var key in keys)
+                {
+                    var swatch = line.AddFormattedText("\u2014 ", TextFormat.Bold);
+                    try { swatch.Color = Color.Parse(key.ColorHex); } catch (ArgumentException) { swatch.Color = Colors.Black; }
+                    line.AddText(key.Label + (kind == "isodose" && key.DoseGy.HasValue &&
+                        (key.Label ?? "").IndexOf("Gy", StringComparison.OrdinalIgnoreCase) < 0 ? " / " + FormatNumber(key.DoseGy) + " Gy" : "") + "    ");
+                }
+            }
+            section.AddParagraph("Shared legend: levels present in at least one plane. No line is added where that dose level is absent. Verify anatomy, dose and contours in the TPS.").Format.Font.Size = 8;
+            if (synthetic) section.AddParagraph(sharedAnalyticalPhantom ?
+                "Shared analytical phantom for CT, DVH and BEV; not dose calculated from apertures." :
+                "Synthetic CT fixture; not the source volume for the BEV DRRs.").Format.Font.Size = 8;
         }
 
         private static string QualityNumber(double? value)
@@ -447,14 +519,20 @@ namespace ClearPlan.Reporting.MigraDoc
         }
 
         private void AddFieldReviews(Section section, ReviewPlanAnalysis analysis, bool synthetic, bool includeBeamEyeViews)
+        { AddFieldReviewsWithNames(section, analysis, synthetic, includeBeamEyeViews, null); }
+
+        private void AddFieldReviewsWithNames(Section section, ReviewPlanAnalysis analysis, bool synthetic, bool includeBeamEyeViews,
+            IList<ReviewReportFieldRow> fieldRows)
         {
             var beams = analysis == null ? new List<ReviewBeamAnalysis>() : analysis.Beams ?? new List<ReviewBeamAnalysis>();
             if (beams.Count == 0)
             {
                 if (includeBeamEyeViews) section.AddParagraph("BEV unavailable - no detached beam geometry.").Format.Font.Size = 8;
+                if (fieldRows != null && fieldRows.Count > 0) AddFieldRows(section, fieldRows);
                 return;
             }
             var unavailable = new List<string>();
+            bool namingPrinted = false;
             foreach (var beam in beams.Where(item => item != null))
             {
                 var cp = ReviewImageRenderer.StartControlPoint(beam);
@@ -470,6 +548,11 @@ namespace ClearPlan.Reporting.MigraDoc
                     continue;
                 }
                 section.AddPageBreak(); AddHeading(section, ReviewLanguage.Label("Feldübersicht | ", "Field review | ") + Safe(beam.BeamId, "Beam"));
+                if (!namingPrinted && fieldRows != null && fieldRows.Count > 0)
+                {
+                    AddFieldRows(section, fieldRows);
+                    namingPrinted = true;
+                }
                 var introduction = section.AddParagraph(includeBeamEyeViews
                     ? "Beam's-eye view: field start · Exact CP 0 · Not arc-integrated fluence. Control-point trajectories: whole field."
                     : "Control-point trajectories | Whole field");
@@ -502,6 +585,7 @@ namespace ClearPlan.Reporting.MigraDoc
                 note.Format.SpaceBefore = Unit.FromMillimeter(1);
                 note.Format.SpaceAfter = Unit.FromPoint(0);
             }
+            if (!namingPrinted && fieldRows != null && fieldRows.Count > 0) AddFieldRows(section, fieldRows);
             if (unavailable.Count > 0)
             {
                 AddHeading(section, "Field reviews | Unavailable inputs");
@@ -578,42 +662,29 @@ namespace ClearPlan.Reporting.MigraDoc
                 section.AddParagraph("PQM not evaluated: no visible confirmed objectives. Not a passed review.");
                 return;
             }
-            Table table = CreateTable(
-                section,
-                3.0,
-                3.0,
-                2.2,
-                1.4,
-                2.0,
-                2.0,
-                2.0,
-                2.0);
-            AddHeader(
-                table,
-                "Template",
-                "Resolved structure",
-                "Objective",
-                "Rule",
-                "Goal",
-                "Variation",
-                "Achieved",
-                "Status");
+            bool hasVariation = rows.Any(row => row.Variation.HasValue);
+            Table table = hasVariation ? CreateTable(section, 7.2, 3.4, 4.0, 3.2, 3.2, 6.3) :
+                CreateTable(section, 7.2, 3.4, 4.0, 3.2, 6.3);
+            var headings = new List<string> { "Template structure → matched structure", "Objective", "Goal" };
+            if (hasVariation) headings.Add("Variation");
+            headings.Add("Achieved"); headings.Add("Status");
+            AddHeader(table, headings.ToArray());
             foreach (ReviewReportPqmRow row in rows ??
                      new List<ReviewReportPqmRow>())
             {
                 Row target = table.AddRow();
-                SetCells(
-                    target,
-                    row.TemplateStructure,
-                    row.ResolvedStructureId,
+                var values = new List<string> {
+                    row.TemplateStructure == row.ResolvedStructureId ? row.TemplateStructure :
+                        Safe(row.TemplateStructure, "-") + " → " + Safe(row.ResolvedStructureId, "Unmatched"),
                     row.Objective,
-                    row.Comparator,
-                    FormatValue(row.Goal, row.Unit),
-                    FormatValue(row.Variation, row.Unit),
-                    FormatValue(row.AchievedValue, row.Unit),
-                    StatusWithSeverity(row.Status, row.Severity == "info" ? null : row.Severity) +
+                    row.Goal.HasValue ? Safe(row.Comparator, "") + " " + FormatValue(row.Goal, row.Unit) :
+                        ReviewLanguage.Label("Nicht festgelegt", "Not configured") };
+                if (hasVariation) values.Add(FormatValue(row.Variation, row.Unit));
+                values.Add(FormatValue(row.AchievedValue, row.Unit));
+                values.Add(StatusWithSeverity(row.Status, row.Severity == "info" ? null : row.Severity) +
                     (string.IsNullOrWhiteSpace(ReviewImageRenderer.PqmUnavailableReason(row)) ? "" : "\n" + ReviewLanguage.Text(ReviewImageRenderer.PqmUnavailableReason(row))));
-                ShadeStatus(target.Cells[7], row.Status);
+                SetCells(target, values.ToArray());
+                ShadeStatus(target.Cells[values.Count - 1], row.Status);
             }
             if (rows.Any(row => row.Status == ReviewStatusCodes.NotEvaluated))
             {
@@ -628,6 +699,8 @@ namespace ClearPlan.Reporting.MigraDoc
         {
             AddHeading(section, "PlanCheck");
             Table table = CreateTable(section, 18.5, 3.0, 2.8, 3.0);
+            table.TopPadding = table.BottomPadding = Unit.FromMillimeter(0.6);
+            table.Format.Font.Size = 8;
             AddHeader(
                 table,
                 "Message",
@@ -725,8 +798,9 @@ namespace ClearPlan.Reporting.MigraDoc
         private void AddDvhRows(Section section, IList<ReviewReportDvhSeries> rows)
         {
             AddHeading(section, "DVH statistics | Dose in Gy");
-            Table table = CreateTable(section, 8.1, 3.0, 5.4, 5.4, 5.4);
-            AddHeader(table, "Structure", "Volume [cm3]", "Dmin / D98", "Dmean / D50", "Dmax / D2");
+            // One column per value, same order as the GUI table (2026-11-20).
+            Table table = CreateTable(section, 7.0, 2.8, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9);
+            AddHeader(table, "Structure", "Volume [cm3]", "Dmin", "D98", "D50", "Dmean", "D2", "Dmax");
             var displayed = (rows ?? new List<ReviewReportDvhSeries>()).Where(row => row != null &&
                 (row.Selected || row.RequiredForTargetReview))
                 .OrderBy(row => row.TargetKind == "PTV" ? 0 : row.RequiredForTargetReview ? 1 : 2)
@@ -735,12 +809,22 @@ namespace ClearPlan.Reporting.MigraDoc
             {
                 var stats = row.Statistics;
                 SetCells(table.AddRow(), row.DisplayName, FormatNumber(row.VolumeCc),
-                    stats == null ? "-" : DvhPair(stats.MinimumDoseGy, stats.D98Gy, stats.MinimumDoseEstimated),
-                    stats == null ? "-" : DvhPair(stats.MeanDoseGy, stats.MedianDoseGy, stats.MeanDoseEstimated),
-                    stats == null ? "-" : DvhPair(stats.MaximumDoseGy, stats.D2Gy, stats.MaximumDoseEstimated));
+                    stats == null ? "-" : DvhValue(stats.MinimumDoseGy, stats.MinimumDoseEstimated),
+                    stats == null ? "-" : DvhValue(stats.D98Gy, false),
+                    stats == null ? "-" : DvhValue(stats.MedianDoseGy, false),
+                    stats == null ? "-" : DvhValue(stats.MeanDoseGy, stats.MeanDoseEstimated),
+                    stats == null ? "-" : DvhValue(stats.D2Gy, false),
+                    stats == null ? "-" : DvhValue(stats.MaximumDoseGy, stats.MaximumDoseEstimated));
             }
-            var note = section.AddParagraph("D98 / D50 / D2: dose at 98% / 50% / 2% volume. Approx.: synthetic estimate; -: unavailable. Selected curves are plotted.");
+            bool estimates = displayed.Any(row => row.Statistics != null && (row.Statistics.MinimumDoseEstimated || row.Statistics.MeanDoseEstimated || row.Statistics.MaximumDoseEstimated));
+            var note = section.AddParagraph("Dose in Gy. D98 / D50 / D2: dose at 98% / 50% / 2% volume. " +
+                (estimates ? "~: estimated statistic; " : "") + "-: unavailable. Selected curves are plotted.");
             note.Format.Font.Size = 8;
+        }
+
+        private string DvhValue(double? value, bool estimated)
+        {
+            return value.HasValue ? (estimated ? "~" : "") + FormatNumber(value) : "-";
         }
 
         private string DvhPair(double? first, double? second, bool estimated)
@@ -762,11 +846,11 @@ namespace ClearPlan.Reporting.MigraDoc
             table.Borders.Width = 0.25;
             table.Borders.Color = Color.FromRgb(212, 225, 233);
             table.Rows.LeftIndent = 0;
-            table.Format.Font.Size = 7.5;
+            table.Format.Font.Size = 8.5;
             table.LeftPadding = Unit.FromMillimeter(1.2);
             table.RightPadding = Unit.FromMillimeter(1.2);
-            table.TopPadding = Unit.FromMillimeter(0.8);
-            table.BottomPadding = Unit.FromMillimeter(0.8);
+            table.TopPadding = Unit.FromMillimeter(1.0);
+            table.BottomPadding = Unit.FromMillimeter(1.0);
             // Call-site values are relative width weights; every review table spans the same content box.
             double totalWeight = columnWidthsCentimeter.Sum();
             double availableWidth = ContentWidthCentimeter(section);
@@ -793,7 +877,7 @@ namespace ClearPlan.Reporting.MigraDoc
             Row row = table.AddRow();
             row.HeadingFormat = true;
             row.Format.Font.Bold = true;
-            row.Shading.Color = Color.FromRgb(224, 237, 243);
+            row.Shading.Color = Color.FromRgb(233, 241, 244);
             SetCells(row, labels.Select(ReviewReportLabels.Text).ToArray());
         }
 
@@ -832,7 +916,7 @@ namespace ClearPlan.Reporting.MigraDoc
 
         private string StatusWithSeverity(string status, string severity)
         {
-            if (string.IsNullOrWhiteSpace(severity) ||
+            if (string.Equals(status, severity, StringComparison.OrdinalIgnoreCase) || string.IsNullOrWhiteSpace(severity) ||
                 severity.Equals("none", StringComparison.OrdinalIgnoreCase))
             {
                 return Safe(ReviewReportLabels.Status(status), string.Empty);

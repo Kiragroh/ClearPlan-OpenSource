@@ -27,7 +27,7 @@ namespace ClearPlan.Presentation.Views
         private readonly Dictionary<CollisionPose, List<MeshGeometry3D>> envelopeMeshes = new Dictionary<CollisionPose, List<MeshGeometry3D>>();
         private List<Point3D> framingPoints;
         private string framingBeam;
-        private bool framingBody, framingTable, framingEnvelope, framingRoom;
+        private bool framingBody, framingTable, framingEnvelope, framingRoom, framingGhosts;
         private bool framingPlayback, renderedPlayback;
         private CollisionPose framingPose;
         private bool captureRequested;
@@ -83,7 +83,9 @@ namespace ClearPlan.Presentation.Views
                         BodyStatus = f.BodyStatusCode, TableStatus = f.TableStatusCode, Reason = f.Reason }).ToList();
                     string status = CollisionSweepFrameViewModel.Aggregate(rows.Select(r => r.Status));
                     reports.Add(new CollisionReportBeam { BeamId = beam, Status = status, RadialOnly = source.IsRadialReview, BodyOnly = !source.HasSeparateSupport, OverviewPng = source.IllustrationPng,
-                        OrientationPng = minimum == null ? null : view.orientationPng,
+                        OrientationPng = view.orientationPng,
+                        FirstCapturedPoseWhenMinimumUnavailable = minimum == null,
+                        CtCoverageIncomplete = source.Scene.ExternalTruncatedAtCtBoundary,
                         Summary = source.IsRadialReview ? (source.HasSeparateSupport ? "Open bore: radial gap of captured body/support surfaces; no axial end wall."
                             : "Open bore: radial gap of captured body only; no axial end wall. No separate table model; table clearance not assessed.")
                             : source.HasSeparateSupport ? "Captured body and support surfaces; nominal source model."
@@ -184,6 +186,7 @@ namespace ClearPlan.Presentation.Views
             SceneViewport.Children.Clear();
             ClearRoomReference();
             DrawMlcInset();
+            ModulationLegend.Text = "Angular meterset unavailable / fixed gantry";
             // Live bindings can advance before the queued 3D draw. Keep every
             // label inside the scene on the pose rendered in this same pass.
             ScenePoseHeading.Text = model == null ? "" : ClearPlan.Core.Localization.ReviewLanguage.Display(model.PoseText);
@@ -197,12 +200,16 @@ namespace ClearPlan.Presentation.Views
             var pose = model.SelectedPose;
             // Conflicting ring/bore identity must never acquire a C-arm schematic.
             bool boreReference = (model.HasSourceModel && model.Scene.SourceModel.Kind == "HalcyonBoreSource") ||
-                (model.Scene.Profile != null && model.Scene.Profile.Kind == "RingBore");
+                (model.Scene.Profile != null && model.Scene.Profile.Kind == "RingBore") ||
+                (model.Scene.SourceModel == null && model.Scene.Profile == null && DioramaDisplayModel.IsExplicitRingDisplay(model.Scene.NativeMachineId));
             bool cArm = model.RoomView && pose != null && !boreReference &&
                 ((model.HasSourceModel && model.Scene.SourceModel.Kind == "TrueBeamHeadSource") ||
                 (model.UsesProfileGeometry && model.Scene.Profile.Kind == "CArmSphere"));
-            RoomReferenceRoot.Visibility = model.RoomView && pose != null ? Visibility.Visible : Visibility.Collapsed;
-            RoomReferenceUnavailable.Visibility = cArm ? Visibility.Collapsed : Visibility.Visible;
+            // A nominal ring schematic does not assert a supported transform for
+            // the actual captured anatomy; keep the main viewport in its native frame.
+            bool showReference = (model.RoomView || boreReference) && pose != null;
+            RoomReferenceRoot.Visibility = showReference ? Visibility.Visible : Visibility.Collapsed;
+            RoomReferenceUnavailable.Visibility = cArm || boreReference ? Visibility.Collapsed : Visibility.Visible;
             ConfigureOrientationLayout();
             SceneViewport.Margin = IsoOverlay.Margin = new Thickness(0,50,0,42);
             IllustrationRoot.UpdateLayout();
@@ -214,14 +221,25 @@ namespace ClearPlan.Presentation.Views
                     0,Math.Max(42,SceneLegend.ActualHeight+20));
                 IllustrationRoot.UpdateLayout();
             }
-            if (cArm)
+            if ((cArm || boreReference) && pose != null)
             {
-                RoomReferenceViewport.Children.Add(new ModelVisual3D { Content = CreateRoomReference(pose) });
-                var eye = new Vector3D(1.1,-0.75,-1.4); eye.Normalize();
-                double roomAspect = RoomReferenceViewport.ActualWidth / Math.Max(1, RoomReferenceViewport.ActualHeight);
-                RoomReferenceViewport.Camera = new OrthographicCamera(new Point3D(0,140,-40)+eye*5000, -eye, new Vector3D(0,-1,0), Math.Max(2600, 2450*roomAspect));
+                var reference = boreReference ? CreateRingReference(pose) : CreateRoomReference(pose);
+                RoomReferenceViewport.Tag = boreReference ? "Ring" : "CArm";
+                RoomReferenceViewport.Children.Add(new ModelVisual3D { Content = reference });
+                // The Diorama stand sits behind ISO at negative room Z: look
+                // from positive Z so the head and couch, not its back, are visible.
+                var eye = boreReference || DioramaDisplayModel.Available ? new Vector3D(1.1,-0.75,1.4) : new Vector3D(1.1,-0.75,-1.4); eye.Normalize();
+                double roomAspect = captureRequested ? 158d/90d : RoomReferenceViewport.ActualWidth / Math.Max(1, RoomReferenceViewport.ActualHeight);
+                var bounds = reference.Bounds;
+                var center = new Point3D(bounds.X+bounds.SizeX/2,bounds.Y+bounds.SizeY/2,bounds.Z+bounds.SizeZ/2);
+                var rightAxis=Vector3D.CrossProduct(-eye,new Vector3D(0,-1,0));rightAxis.Normalize();
+                var upAxis=Vector3D.CrossProduct(rightAxis,-eye);upAxis.Normalize();
+                double halfWidth=0,halfHeight=0;
+                foreach(double x in new[]{bounds.X,bounds.X+bounds.SizeX})foreach(double y in new[]{bounds.Y,bounds.Y+bounds.SizeY})foreach(double z in new[]{bounds.Z,bounds.Z+bounds.SizeZ})
+                {var offset=new Point3D(x,y,z)-center;halfWidth=Math.Max(halfWidth,Math.Abs(Vector3D.DotProduct(offset,rightAxis)));halfHeight=Math.Max(halfHeight,Math.Abs(Vector3D.DotProduct(offset,upAxis)));}
+                RoomReferenceViewport.Camera = new OrthographicCamera(center+eye*10000, -eye, upAxis, Math.Max(halfWidth,halfHeight*roomAspect)*2.08);
             }
-            if (model.RoomView && pose != null)
+            if (showReference)
             {
                 GantryCompass.Source = CreateAngleCompass(pose.GantryDegrees, false);
                 RoomCompass.Source = CreateAngleCompass(pose.PatientSupportAngleDegrees, true);
@@ -256,6 +274,8 @@ namespace ClearPlan.Presentation.Views
             // or suggest that the bore rotates with the gantry. The angle rows retain all states.
             if (model.GhostsVisible && !ring)
                 DrawTrajectory(group, origin);
+            if (model.GhostsVisible)
+                DrawAngularMeterset(group);
             if (model.HullsVisible && !ring)
             {
                 var distinct = new List<CollisionPose>();
@@ -359,7 +379,7 @@ namespace ClearPlan.Presentation.Views
         }
         private void ClearRoomReference()
         {
-            RoomReferenceViewport.Children.Clear(); RoomCompass.Source=null; GantryCompass.Source=null; orientationPng=null;
+            RoomReferenceViewport.Children.Clear(); RoomReferenceViewport.Tag=null; RoomCompass.Source=null; GantryCompass.Source=null; orientationPng=null;
             RoomReferenceRoot.Visibility=Visibility.Collapsed; RoomReferenceColumn.Width=new GridLength(0);
         }
         private static bool SameEnvelopePose(CollisionPose a, CollisionPose b)
@@ -374,12 +394,13 @@ namespace ClearPlan.Presentation.Views
             // every other gantry angle. Playback: one stable field-wide camera.
             // These points are display-only and never enter distance checks.
             if (framingPoints != null && framingBeam == model.SelectedBeamId && framingBody == model.BodyVisible &&
-                framingTable == model.TableVisible && framingEnvelope == model.EnvelopeVisible && framingRoom == model.RoomView &&
+                framingTable == model.TableVisible && framingEnvelope == model.EnvelopeVisible && framingRoom == model.RoomView && framingGhosts == model.GhostsVisible &&
                 framingPlayback == model.IsPlaying && (model.IsPlaying || ReferenceEquals(framingPose,model.SelectedPose)))
                 return framingPoints;
             framingPoints = new List<Point3D>(); framingBeam = model.SelectedBeamId;
             framingBody = model.BodyVisible; framingTable = model.TableVisible;
             framingEnvelope = model.EnvelopeVisible; framingRoom = model.RoomView;
+            framingGhosts = model.GhostsVisible;
             framingPlayback=model.IsPlaying; framingPose=model.SelectedPose;
             var bodyTransforms = new HashSet<string>();
             if (model.BeamFrames.Count == 0)
@@ -406,6 +427,14 @@ namespace ClearPlan.Presentation.Views
                     framingPoints.AddRange(((MeshGeometry3D)geometry.Geometry).Positions.Select(p=>transform.Transform(p)));
                 framingPoints.Add(Point(pose.Isocenter));
             }
+            if(model.GhostsVisible && model.MlcBeam!=null)
+                foreach(var pose in model.Scene.Poses.Where(p=>p.BeamId==model.SelectedBeamId))
+                {
+                    var direction=Point(pose.Source)-Point(pose.Isocenter);if(direction.Length<1e-6)continue;direction.Normalize();
+                    double trackRadius=DisplayTrackRadius();
+                    var transform=model.RoomView?RoomDisplayTransform(pose):Transform3D.Identity;
+                    framingPoints.Add(transform.Transform(Point(pose.Isocenter)+direction*(trackRadius*1.23)));
+                }
             return framingPoints;
         }
         private static Transform3D RoomDisplayTransform(CollisionPose pose)
@@ -423,6 +452,10 @@ namespace ClearPlan.Presentation.Views
             var group = new Model3DGroup();
             group.Children.Add(new AmbientLight(Color.FromRgb(175,175,175)));
             group.Children.Add(new DirectionalLight(Colors.White, new Vector3D(-1,-1,-2)));
+            var diorama = DioramaDisplayModel.Create(pose.GantryDegrees);
+            if (diorama != null) group.Children.Add(diorama);
+            else
+            {
             Add(group, Box(new Point3D(0,20,1090), 700,1500,180), Color.FromRgb(96,112,129));
             Add(group, Box(new Point3D(0,810,970), 950,70,650), Color.FromRgb(80,95,112));
             Add(group, Segment(new Point3D(0,0,-200), new Point3D(0,0,920), 10), Color.FromRgb(186,204,216));
@@ -440,6 +473,13 @@ namespace ClearPlan.Presentation.Views
             Add(group, Bar(rear,head,380,150), Color.FromRgb(169,188,202));
             Add(group, Bar(head-direction*160,head+direction*110,290,300), Color.FromRgb(218,230,238));
             Add(group, Segment(new Point3D(),head,3), Color.FromArgb(170,238,215,148));
+            }
+            group.Children.Add(CreatePatientAxis(pose, diorama != null));
+            Add(group, Marker(new Point3D(),25), Colors.White);
+            return group;
+        }
+        private static Model3DGroup CreatePatientAxis(CollisionPose pose, bool headTowardsNegativeZ)
+        {
             var patientAxis = new Model3DGroup();
             Add(patientAxis, Box(new Point3D(0,150,-340),380,65,1650), Color.FromRgb(66,150,147));
             Add(patientAxis, Box(new Point3D(0,480,-880),270,600,280), Color.FromRgb(66,150,147));
@@ -449,9 +489,34 @@ namespace ClearPlan.Presentation.Views
             Add(patientAxis, Sphere(new Point3D(0,18,320),90), Color.FromRgb(174,238,221));
             Add(patientAxis, Bar(new Point3D(-65,50,-420),new Point3D(-65,65,-1010),70,90), Color.FromRgb(130,215,200));
             Add(patientAxis, Bar(new Point3D(65,50,-420),new Point3D(65,65,-1010),70,90), Color.FromRgb(130,215,200));
-            patientAxis.Transform = new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(0,1,0),-pose.PatientSupportAngleDegrees));
-            group.Children.Add(patientAxis);
-            Add(group, Marker(new Point3D(),25), Colors.White);
+            // HFS orientation reference: head points toward the machine stand.
+            // The imported Diorama stand is at -Z; the legacy schematic is at +Z.
+            patientAxis.Transform = new RotateTransform3D(new AxisAngleRotation3D(new Vector3D(0,1,0),
+                (headTowardsNegativeZ ? 180 : 0)-pose.PatientSupportAngleDegrees));
+            return patientAxis;
+        }
+        private static Model3DGroup CreateRingReference(CollisionPose pose)
+        {
+            var group=new Model3DGroup();
+            group.Children.Add(new AmbientLight(Color.FromRgb(175,175,175)));
+            group.Children.Add(new DirectionalLight(Colors.White,new Vector3D(-1,-1,2)));
+            // Illustrative cutaway housing, NOT commissioned bore dimensions.
+            // Draw the opaque patient/couch before the transparent housing.
+            group.Children.Add(CreatePatientAxis(pose,true));
+            double angle=pose.GantryDegrees*Math.PI/180;
+            var head=new Point3D(Math.Sin(angle)*600,-Math.Cos(angle)*600,0);
+            Add(group,Box(head,150,150,180),Color.FromRgb(110,205,255));
+            Add(group,Segment(new Point3D(),head,3),Color.FromArgb(150,110,205,255));
+            var housing=new MeshGeometry3D();const int slices=64;
+            // Two concentric rings at each end, with visible inner passage.
+            foreach(double z in new[]{-280d,280d})foreach(double radius in new[]{510d,740d})
+                for(int i=0;i<slices;i++){double a=i*2*Math.PI/slices;housing.Positions.Add(new Point3D(Math.Sin(a)*radius,-Math.Cos(a)*radius,z));}
+            for(int i=0;i<slices;i++)
+            {int j=(i+1)%slices;Quad(housing,i,j,slices+j,slices+i);Quad(housing,2*slices+i,3*slices+i,3*slices+j,2*slices+j);
+                Quad(housing,i,2*slices+i,2*slices+j,j);Quad(housing,slices+i,slices+j,3*slices+j,3*slices+i);}
+            Add(group,housing,Color.FromArgb(45,196,218,237));
+            Add(group,BoreOutline(new Point3D(),510,280),Color.FromArgb(115,110,205,255));
+            Add(group,Marker(new Point3D(),25),Colors.White);
             return group;
         }
         private static MeshGeometry3D Bar(Point3D a, Point3D b, double width, double height)
@@ -520,7 +585,7 @@ namespace ClearPlan.Presentation.Views
                     depth = model.Scene.Profile.HeadCenterFromIsoMm-model.Scene.Profile.HeadRadiusMm;
                 else continue; // no inferred device dimensions when no model is drawable
                 var marker=Point(frame.Frame.Pose.Isocenter)+direction*depth;
-                var color=CollisionSweepFrameViewModel.IsFullyClear(frame.StatusCode) ? Color.FromRgb(105,211,145)
+                var color=frame.StatusCode == "body-clear" ? Color.FromRgb(183,231,195) : CollisionSweepFrameViewModel.IsFullyClear(frame.StatusCode) ? Color.FromRgb(105,211,145)
                     : frame.StatusCode == "hit" || frame.StatusCode == "model-hit" ? Color.FromRgb(255,123,114) : Color.FromRgb(242,196,92);
                 if (previous.HasValue) Add(group, Segment(previous.Value,marker,1.8), Color.FromArgb(150,180,195,205));
                 Add(group, Marker(marker,ReferenceEquals(frame,model.SelectedFrame) ? 12 : 7),color);
@@ -606,9 +671,11 @@ namespace ClearPlan.Presentation.Views
                     // All other angles show only a thin front-face boundary. The
                     // active model has opaque contours and a quiet volume tint.
                     // No geometry or status in the distance calculation is changed.
-                    if ((!active && i % 3 != 2) || (active && i % 3 == 2)) continue;
-                    materialColor = active && i % 3 == 0 ? Color.FromRgb(126,145,159) : materialColor;
-                    materialColor.A = active ? (i % 3 == 0 ? (byte)72 : (byte)255) : (byte)75;
+                    // The semi-infinite obstacle is a mathematical no-fly model,
+                    // not a physical cylinder above the patient. Show its front
+                    // boundary only; the same full obstacle still drives checks.
+                    if (i % 3 != 2) continue;
+                    materialColor.A = active ? (byte)80 : (byte)40;
                 }
                 // The fixed ring is a cage, not an opaque wall over the anatomy.
                 // Its active edges remain fully opaque; the shell only indicates the no-fly boundary.
@@ -618,6 +685,53 @@ namespace ClearPlan.Presentation.Views
             return radius;
         }
         private static Point3D Point(BeamPoint3D point) { return new Point3D(point.X, point.Y, point.Z); }
+
+        private void DrawAngularMeterset(Model3DGroup group)
+        {
+            var beam = model.MlcBeam; // Includes native plan/beam fingerprint guards.
+            if (beam == null || beam.ControlPoints == null || beam.ControlPoints.Count < 2) return;
+            var values = new List<Tuple<CollisionPose, CollisionPose, double, double>>();
+            for (int i=1;i<beam.ControlPoints.Count;i++)
+            {
+                var a=beam.ControlPoints[i-1]; var b=beam.ControlPoints[i];
+                double? density=AngularMeterset.Density(beam,a,b), travel=AngularMeterset.Travel(beam,a,b);
+                if(!density.HasValue || !travel.HasValue || Math.Abs(travel.Value)>=180)continue;
+                var pa=model.Scene.Poses.Where(p=>p.BeamId==beam.BeamId && p.ControlPointIndex==a.Index).ToArray();
+                var pb=model.Scene.Poses.Where(p=>p.BeamId==beam.BeamId && p.ControlPointIndex==b.Index).ToArray();
+                if(pa.Length!=1||pb.Length!=1||Math.Abs(Math.IEEERemainder(pa[0].PatientSupportAngleDegrees-pb[0].PatientSupportAngleDegrees,360))>0.01)continue;
+                values.Add(Tuple.Create(pa[0],pb[0],density.Value,Math.Abs(travel.Value)));
+            }
+            if(values.Count==0)return;
+            double maximum=values.Max(v=>v.Item3);
+            ModulationLegend.Text="Radial bars: angular meterset · 0–"+maximum.ToString("0.##",System.Globalization.CultureInfo.InvariantCulture)+" MU/° · not MU/min";
+            foreach(var interval in values)
+            {
+                var a=interval.Item1;var b=interval.Item2;
+                var u=Point(a.Source)-Point(a.Isocenter);var v=Point(b.Source)-Point(b.Isocenter);
+                if(u.Length<1e-6||v.Length<1e-6)continue;
+                u.Normalize();v.Normalize();double angle=Math.Acos(Math.Max(-1,Math.Min(1,Vector3D.DotProduct(u,v))));
+                int steps=Math.Max(1,(int)Math.Ceiling(interval.Item4));
+                for(int k=0;k<steps;k++)
+                {
+                    double t=k/(double)steps;
+                    var direction=angle<1e-6?u:(u*Math.Sin((1-t)*angle)+v*Math.Sin(t*angle))/Math.Sin(angle);
+                    direction.Normalize();var iso=Point(a.Isocenter)+(Point(b.Isocenter)-Point(a.Isocenter))*t;
+                    double radius=DisplayTrackRadius();
+                    // Display-only radial scale, separate from model distances.
+                    double length=maximum>0?radius*.23*interval.Item3/maximum:0;
+                    if(length>0)Add(group,Segment(iso+direction*radius,iso+direction*(radius+length),1.5),Color.FromRgb(110,205,255));
+                }
+            }
+        }
+        private double DisplayTrackRadius()
+        {
+            if (model.Scene.SourceModel != null)
+                return model.Scene.SourceModel.Kind == "TrueBeamHeadSource"
+                    ? model.Scene.SourceModel.HeadObstacles.Min(o => o.FrontFaceFromIsoMm)
+                    : model.Scene.SourceModel.BoreLimitRadiusMm * 0.8;
+            return model.Scene.Profile != null && model.Scene.Profile.Kind == "RingBore"
+                ? model.Scene.Profile.BoreRadiusMm * 0.8 : 400;
+        }
         private static void Add(Model3DGroup group, MeshGeometry3D mesh, Color color)
         {
             var material = new DiffuseMaterial(new SolidColorBrush(color));

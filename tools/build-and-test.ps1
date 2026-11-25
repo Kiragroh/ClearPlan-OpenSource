@@ -50,6 +50,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $workbookValidator = Join-Path $PSScriptRoot "validate-constraint-workbook.py"
+& python -B -m unittest discover -s (Join-Path $PSScriptRoot "clinical-report") -p "test_report_delivery_gate.py"
+if ($LASTEXITCODE -ne 0) {
+    throw "Native report delivery guard tests failed with exit code $LASTEXITCODE."
+}
 if (Test-Path -LiteralPath $workbookValidator -PathType Leaf) {
     & python $workbookValidator
     if ($LASTEXITCODE -ne 0) {
